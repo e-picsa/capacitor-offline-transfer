@@ -13,8 +13,6 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    env:
-      HUSKY: '0' # disable husky hooks
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -33,6 +31,9 @@ jobs:
 
       - run: bun install --ignore-scripts
         if: ${{ steps.release.outputs.release_created }}
-
-      - run: bun publish --provenance
+      
+        # Remove husky prepare script before publish
+      - run: |
+          npm pkg delete scripts.prepare
+          bun publish --provenance
         if: ${{ steps.release.outputs.release_created }}
