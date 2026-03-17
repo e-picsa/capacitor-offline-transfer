@@ -1,0 +1,92 @@
+{
+  "name": "@picsa/capacitor-offline-transfer",
+  "version": "8.0.0",
+  "workspaces": [
+    "example"
+  ],
+  "description": "Capacitor plugin for offline, large file transfer (Android Nearby & iOS Multipeer)",
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "unpkg": "dist/plugin.js",
+  "files": [
+    "android/src/main/",
+    "android/build.gradle",
+    "dist/",
+    "ios/Sources",
+    "ios/Tests",
+    "Package.swift",
+    "PicsaCapacitorOfflineTransfer.podspec"
+  ],
+  "author": "E-Picsa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-picsa/capacitor-offline-transfer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/e-picsa/capacitor-offline-transfer/issues"
+  },
+  "keywords": [
+    "capacitor",
+    "plugin",
+    "native",
+    "offline-transfer",
+    "multipeer",
+    "nearby"
+  ],
+  "scripts": {
+    "verify": "bun run verify:ios && bun run verify:android && bun run verify:web",
+    "verify:ios": "xcodebuild -scheme PicsaCapacitorOfflineTransfer -destination generic/platform=iOS",
+    "verify:android": "cd android && ./gradlew clean build test && cd ..",
+    "verify:web": "bun run build",
+    "example:android": "cd example && bun run build && bunx cap sync && bunx cap run android && cd ..",
+    "example:ios": "cd example && bun run build && bunx cap sync && bunx cap run ios && cd ..",
+    "lint": "bun run eslint && bun run prettier -- --check && bun run swiftlint -- lint",
+    "fmt": "bun run eslint -- --fix && bun run prettier -- --write && bun run swiftlint -- --fix --format",
+    "eslint": "eslint . --ext ts",
+    "prettier": "prettier \"**/*.{css,html,ts,js,java}\" --plugin=prettier-plugin-java",
+    "swiftlint": "node-swiftlint",
+    "docgen": "docgen --api OfflineTransferPlugin --output-readme README.md --output-json dist/docs.json",
+    "build": "bun run clean && bun run docgen && tsc && rollup -c rollup.config.mjs",
+    "clean": "rimraf ./dist",
+    "watch": "tsc --watch",
+    "prepublishOnly": "bun run build"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/docgen": "^0.3.1",
+    "@capacitor/ios": "^8.0.0",
+    "@ionic/eslint-config": "^0.4.0",
+    "@ionic/prettier-config": "^4.0.0",
+    "@ionic/swiftlint-config": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-java": "^2.7.7",
+    "rimraf": "^6.1.0",
+    "rollup": "^4.53.2",
+    "swiftlint": "^2.0.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=8.0.0"
+  },
+  "prettier": "@ionic/prettier-config",
+  "swiftlint": "@ionic/swiftlint-config",
+  "eslintConfig": {
+    "extends": "@ionic/eslint-config/recommended"
+  },
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    },
+    "android": {
+      "src": "android"
+    }
+  }
+}
