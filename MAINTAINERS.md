@@ -1,6 +1,6 @@
 # Maintainers Guide
 
-This document outlines workflows meant only for core maintainers of `@picsa/capacitor-video-player`. Please see `CONTRIBUTING.md` for general contribution guidelines.
+This document outlines workflows meant only for core maintainers of `@picsa/capacitor-offline-transfer`. Please see `CONTRIBUTING.md` for general contribution guidelines.
 
 ## Release Management
 
