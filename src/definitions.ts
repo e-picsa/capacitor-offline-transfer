@@ -96,11 +96,10 @@ export interface OfflineTransferPlugin {
   stopLocalHotspot(): Promise<void>;
 
   /**
-   * Starts the embedded NanoHTTPD server to serve files via HTTP.
+   * Android Only: Starts the embedded NanoHTTPD server to serve files via HTTP.
    * Used for Tier 3 fallback (uninstalled devices).
    * @param options.port The port to bind to (0 for dynamic selection).
    */
-  startServer(options: { port?: number }): Promise<{ port: number; url: string }>;
 
   /**
    * Stops the embedded HTTP server.
