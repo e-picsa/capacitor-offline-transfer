@@ -18,6 +18,7 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
     
     private var serviceType = "off-transfer"
     private var myPeerId: MCPeerID!
+    private var myUniqueId: String!
     private var session: MCSession!
     private var advertiser: MCNearbyServiceAdvertiser?
     private var browser: MCNearbyServiceBrowser?
@@ -25,11 +26,14 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
     private var peersDict = [String: MCPeerID]()
     private var discoveryDict = [String: MCPeerID]()
     private var invitations = [String: (MCPeerID, (Bool, MCSession?) -> Void)]()
+    private var peerIdToEndpointIdMap = [MCPeerID: String]()
     
     func initialize(serviceId: String) {
         // serviceType must be 1-15 chars, only [a-z0-9] and hyphen
         self.serviceType = String(serviceId.prefix(15)).lowercased().filter { "abcdefghijklmnopqrstuvwxyz0123456789-".contains($0) }
         if self.serviceType.isEmpty { self.serviceType = "off-transfer" }
+        
+        myUniqueId = UUID().uuidString
     }
     
     func startAdvertising(displayName: String) {
@@ -37,7 +41,8 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
         session = MCSession(peer: myPeerId, securityIdentity: nil, encryptionPreference: .required)
         session.delegate = self
         
-        advertiser = MCNearbyServiceAdvertiser(peer: myPeerId, discoveryInfo: nil, serviceType: serviceType)
+        let discoveryInfo = ["uid": myUniqueId]
+        advertiser = MCNearbyServiceAdvertiser(peer: myPeerId, discoveryInfo: discoveryInfo, serviceType: serviceType)
         advertiser?.delegate = self
         advertiser?.startAdvertisingPeer()
     }
@@ -66,11 +71,14 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
     
     func connect(endpointId: String) {
         guard let peer = discoveryDict[endpointId] else { return }
-        browser?.invitePeer(peer, to: session, withContext: nil, timeout: 30)
+        let context = myUniqueId.data(using: .utf8)
+        peerIdToEndpointIdMap[peer] = endpointId
+        browser?.invitePeer(peer, to: session, withContext: context, timeout: 30)
     }
     
     func acceptConnection(endpointId: String) {
         guard let (peer, invitationHandler) = invitations[endpointId] else { return }
+        peerIdToEndpointIdMap[peer] = endpointId
         invitationHandler(true, session)
         invitations.removeValue(forKey: endpointId)
     }
@@ -111,7 +119,7 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
 
 extension CapacitorOfflineTransfer: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        let endpointId = peerID.displayName // Simplification for demo, usually we use a uuid in discoveryInfo
+        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
         
         switch state {
         case .connected:
@@ -121,6 +129,7 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
             break
         case .notConnected:
             peersDict.removeValue(forKey: endpointId)
+            peerIdToEndpointIdMap.removeValue(forKey: peerID)
             delegate?.onConnectionResult(endpointId: endpointId, status: "FAILURE")
             delegate?.onEndpointLost(endpointId: endpointId)
         @unknown default:
@@ -129,8 +138,9 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
+        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
         if let message = String(data: data, encoding: .utf8) {
-            delegate?.onMessageReceived(endpointId: peerID.displayName, data: message)
+            delegate?.onMessageReceived(endpointId: endpointId, data: message)
         }
     }
     
@@ -139,7 +149,7 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
     }
     
     func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {
-        let endpointId = peerID.displayName
+        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
         
         let cancellable = progress.publisher(for: \.completedUnitCount)
             .sink { [weak self] completed in
@@ -157,7 +167,7 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
 
     
     func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {
-        let endpointId = peerID.displayName
+        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
         
         if let error = error {
             delegate?.onTransferProgress(endpointId: endpointId, payloadId: resourceName, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
@@ -184,7 +194,12 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
 
 extension CapacitorOfflineTransfer: MCNearbyServiceAdvertiserDelegate {
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
-        let endpointId = peerID.displayName
+        var endpointId: String
+        if let contextData = context, let remoteUid = String(data: contextData, encoding: .utf8) {
+            endpointId = remoteUid
+        } else {
+            endpointId = UUID().uuidString
+        }
         invitations[endpointId] = (peerID, invitationHandler)
         
         let authToken = context?.base64EncodedString() ?? ""
@@ -194,14 +209,17 @@ extension CapacitorOfflineTransfer: MCNearbyServiceAdvertiserDelegate {
 
 extension CapacitorOfflineTransfer: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
-        let endpointId = peerID.displayName
+        guard let endpointId = info?["uid"] else { return }
         discoveryDict[endpointId] = peerID
         delegate?.onEndpointFound(endpointId: endpointId, endpointName: peerID.displayName, serviceId: serviceType)
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
-        let endpointId = peerID.displayName
-        discoveryDict.removeValue(forKey: endpointId)
-        delegate?.onEndpointLost(endpointId: endpointId)
+        // When a peer is lost, we don't have the endpointId directly from lostPeer
+        // We need to search through discoveryDict to find and remove the peer
+        if let endpointId = discoveryDict.first(where: { $0.value == peerID })?.key {
+            discoveryDict.removeValue(forKey: endpointId)
+            delegate?.onEndpointLost(endpointId: endpointId)
+        }
     }
 }
