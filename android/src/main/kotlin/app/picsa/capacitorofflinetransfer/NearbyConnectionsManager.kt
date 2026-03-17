@@ -94,7 +94,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                     if (json.has("filePayloadId") && json.has("fileName")) {
                         val filePayloadId = json.getLong("filePayloadId")
                         val fileName = json.getString("fileName")
-                        incomingFileMetadata.put(filePayloadId, fileName)
+                        incomingFileMetadata.put(filePayloadId, fileName!!)
                         return
                     }
                 } catch (e: Exception) {
