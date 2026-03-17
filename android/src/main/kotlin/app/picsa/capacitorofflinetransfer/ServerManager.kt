@@ -38,7 +38,7 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
 
         override fun serve(session: IHTTPSession): Response {
             val uri = session.uri
-            val fileName = uri.substringAfterLast("/")
+            val fileName = File(uri).name
             val file = File(context.filesDir, fileName)
 
             return if (file.exists() && file.isFile) {
