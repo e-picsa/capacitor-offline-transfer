@@ -11,6 +11,14 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 
+/**
+ * Embedded HTTP server for serving files over local network.
+ * Uses NanoHTTPD (v2.3.1) - an older but stable library suitable for this use case.
+ * SECURITY: This server is only exposed on the local device network (Wi-Fi/hotspot),
+ * not to the public internet. The server binds to a local IP and is not accessible
+ * from outside the local network, mitigating potential vulnerabilities in older code.
+ */
+
 class ServerManager(private val context: Context, private val plugin: Plugin) {
 
     private var server: NanoTransferServer? = null

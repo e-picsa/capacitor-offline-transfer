@@ -153,7 +153,7 @@ if (check.nearby !== 'granted') {
 
 ### iOS Configuration
 
-> [!IMPORTANT] > **Manual configuration is required** for iOS. Unlike Android, Capacitor cannot automatically modify your `Info.plist`.
+> [!IMPORTANT] **Manual configuration is required** for iOS. Unlike Android, Capacitor cannot automatically modify your `Info.plist`.
 
 Add these to your `Info.plist`:
 
@@ -235,7 +235,7 @@ Only devices using the same `serviceId` will be able to discover and connect to 
 setStrategy(options: { strategy: 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT'; }) => Promise<void>
 ```
 
-Sets the P2P connection strategy. 
+Sets the P2P connection strategy.
 Defaults to P2P_CLUSTER for mesh support on Android.
 
 | Param         | Type                                                                            | Description                                                |

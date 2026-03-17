@@ -284,7 +284,7 @@ window.customElements.define(
         try {
           const strategy = strategySelect.value;
           await OfflineTransfer.setStrategy({ strategy });
-          await OfflineTransfer.initialize({ serviceId: 'com.picsa.offlinetransfer' });
+          await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
 
           setupListeners();
 

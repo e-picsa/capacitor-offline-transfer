@@ -1,6 +1,8 @@
 package app.picsa.capacitorofflinetransfer
 
 import android.Manifest
+import android.content.ContentResolver
+import android.net.Uri
 import android.os.Build
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
@@ -87,6 +89,62 @@ class CapacitorOfflineTransferPlugin : Plugin() {
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 1001
+    }
+
+    private fun getFileExtension(filePath: String): String {
+        return try {
+            val uri = Uri.parse(filePath)
+            if (uri.scheme == "content") {
+                val mimeType = context.contentResolver.getType(uri)
+                mimeTypeToExtension(mimeType)
+            } else {
+                java.io.File(filePath).extension
+            }
+        } catch (e: Exception) {
+            java.io.File(filePath).extension
+        }
+    }
+
+    private fun mimeTypeToExtension(mimeType: String?): String {
+        if (mimeType == null) return ""
+        return when (mimeType.lowercase()) {
+            "image/jpeg" -> "jpg"
+            "image/png" -> "png"
+            "image/gif" -> "gif"
+            "image/webp" -> "webp"
+            "image/bmp" -> "bmp"
+            "image/svg+xml" -> "svg"
+            "video/mp4" -> "mp4"
+            "video/webm" -> "webm"
+            "video/quicktime" -> "mov"
+            "video/x-matroska" -> "mkv"
+            "video/x-msvideo" -> "avi"
+            "audio/mpeg" -> "mp3"
+            "audio/wav" -> "wav"
+            "audio/ogg" -> "ogg"
+            "audio/flac" -> "flac"
+            "audio/webm" -> "webm"
+            "application/json" -> "json"
+            "application/xml" -> "xml"
+            "application/pdf" -> "pdf"
+            "application/zip" -> "zip"
+            "application/gzip" -> "gz"
+            "application/x-tar" -> "tar"
+            "application/x-rar-compressed" -> "rar"
+            "application/msword" -> "doc"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> "docx"
+            "application/vnd.ms-excel" -> "xls"
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> "xlsx"
+            "application/vnd.ms-powerpoint" -> "ppt"
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> "pptx"
+            "text/plain" -> "txt"
+            "text/html" -> "html"
+            "text/css" -> "css"
+            "text/javascript" -> "js"
+            "application/javascript" -> "js"
+            "text/csv" -> "csv"
+            else -> ""
+        }
     }
 
     override fun load() {
@@ -188,7 +246,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         if (fileName.isNullOrBlank()) {
             val timestamp = System.currentTimeMillis()
             val uuid = java.util.UUID.randomUUID().toString().take(8)
-            val extension = java.io.File(filePath).extension
+            val extension = getFileExtension(filePath)
             fileName = if (extension.isNotEmpty()) "file_${timestamp}_${uuid}.$extension" else "file_${timestamp}_${uuid}"
         }
         

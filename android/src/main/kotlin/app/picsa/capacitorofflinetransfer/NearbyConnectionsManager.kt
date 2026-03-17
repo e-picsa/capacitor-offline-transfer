@@ -15,12 +15,13 @@ import java.io.FileNotFoundException
 class NearbyConnectionsManager(private val context: Context, private val plugin: CapacitorOfflineTransferPlugin) {
 
     private val TAG = "NearbyTransfer"
-    private var serviceId: String = "com.picsa.offlinetransfer"
+    private var serviceId: String = "picsa-offline"
     private var strategy: Strategy = Strategy.P2P_CLUSTER
 
     private val incomingPayloads = SimpleArrayMap<Long, Payload>()
     private val outgoingPayloads = SimpleArrayMap<Long, Payload>()
     private val fileNames = SimpleArrayMap<Long, String>()
+    private val incomingFileMetadata = SimpleArrayMap<Long, String>()
 
     fun initialize(serviceId: String) {
         this.serviceId = serviceId
@@ -88,6 +89,16 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
             if (payload.type == Payload.Type.BYTES) {
                 val data = String(payload.asBytes()!!)
+                try {
+                    val json = JSObject(data)
+                    if (json.has("filePayloadId") && json.has("fileName")) {
+                        val filePayloadId = json.getLong("filePayloadId")
+                        val fileName = json.getString("fileName")
+                        incomingFileMetadata.put(filePayloadId, fileName)
+                        return
+                    }
+                } catch (e: Exception) {
+                }
                 val event = JSObject().apply {
                     put("endpointId", endpointId)
                     put("data", data)
@@ -119,7 +130,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 val payload = incomingPayloads.remove(update.payloadId)
                 if (payload != null && payload.type == Payload.Type.FILE) {
                     val file = payload.asFile()!!.asJavaFile()
-                    val targetFile = File(context.filesDir, fileNames.get(update.payloadId) ?: "received_${update.payloadId}")
+                    val targetFile = File(context.filesDir, incomingFileMetadata.remove(update.payloadId) ?: "received_${update.payloadId}")
                     if (file?.renameTo(targetFile) != true) {
                         Log.e(TAG, "Failed to rename received file to ${targetFile.absolutePath}")
                     }
@@ -191,6 +202,12 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
             context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
                 val filePayload = Payload.fromFile(pfd)
                 fileNames.put(filePayload.id, fileName)
+                val metadata = JSObject().apply {
+                    put("filePayloadId", filePayload.id)
+                    put("fileName", fileName)
+                }
+                val metadataPayload = Payload.fromBytes(metadata.toString().toByteArray())
+                Nearby.getConnectionsClient(context).sendPayload(endpointId, metadataPayload)
                 Nearby.getConnectionsClient(context).sendPayload(endpointId, filePayload)
             }
         } catch (e: Exception) {
