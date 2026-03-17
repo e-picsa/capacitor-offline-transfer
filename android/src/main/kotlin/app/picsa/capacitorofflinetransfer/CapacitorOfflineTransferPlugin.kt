@@ -129,7 +129,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         if (fileName.isNullOrBlank()) {
             val timestamp = System.currentTimeMillis()
             val uuid = java.util.UUID.randomUUID().toString().take(8)
-            val extension = filePath.substringAfterLast('.', "")
+            val extension = java.io.File(filePath).extension
             fileName = if (extension.isNotEmpty()) "file_${timestamp}_${uuid}.$extension" else "file_${timestamp}_${uuid}"
         }
         
