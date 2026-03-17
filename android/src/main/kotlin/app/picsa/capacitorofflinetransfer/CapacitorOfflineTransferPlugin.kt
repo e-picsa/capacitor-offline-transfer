@@ -124,7 +124,14 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     fun sendFile(call: PluginCall) {
         val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
         val filePath = call.getString("filePath") ?: return call.reject("filePath is required")
-        val fileName = call.getString("fileName") ?: "file"
+        
+        var fileName = call.getString("fileName")
+        if (fileName.isNullOrBlank()) {
+            val timestamp = System.currentTimeMillis()
+            val uuid = java.util.UUID.randomUUID().toString().take(8)
+            val extension = filePath.substringAfterLast('.', "")
+            fileName = if (extension.isNotEmpty()) "file_${timestamp}_${uuid}.$extension" else "file_${timestamp}_${uuid}"
+        }
         
         implementation.sendFile(endpointId, filePath, fileName)
         call.resolve()

@@ -62,7 +62,7 @@ npx cap sync
 ```typescript
 // serviceId ensures your app only connects to other instances of your app.
 // For iOS compatibility: 1-15 chars, lowercase, and hyphens only.
-await OfflineTransfer.initialize({ serviceId: 'picsa-xfer' }); 
+await OfflineTransfer.initialize({ serviceId: 'picsa-transfer' });
 ```
 
 > [!TIP]
@@ -94,13 +94,13 @@ const server = await OfflineTransfer.startServer({ port: 8080 });
 
 ```typescript
 // Monitor transfer progress
-OfflineTransfer.addListener('transferProgress', event => {
+OfflineTransfer.addListener('transferProgress', (event) => {
   const percentage = (event.bytesTransferred / event.totalBytes) * 100;
   console.log(`Transfer ${event.payloadId}: ${percentage.toFixed(2)}%`);
 });
 
 // Handle successful file reception
-OfflineTransfer.addListener('fileReceived', event => {
+OfflineTransfer.addListener('fileReceived', (event) => {
   console.log(`File saved to: ${event.path}`);
   // Use Capacitor.convertFileSrc(event.path) to display in WebView
 });
@@ -712,7 +712,7 @@ removeAllListeners() => Promise<void>
 
 ### Why is `serviceId` required?
 
-The `serviceId` acts as a **namespace** for your offline network. It ensures that your application doesn't accidentally discover or connect to other unrelated apps that might also be using this plugin nearby. 
+The `serviceId` acts as a **namespace** for your offline network. It ensures that your application doesn't accidentally discover or connect to other unrelated apps that might also be using this plugin nearby.
 
 Only devices that initialize with the **exact same string** will be able to see each other.
 
@@ -728,11 +728,13 @@ On iOS, this string is used as the Multipeer Connectivity `serviceType`, which h
 If you choose `serviceId: 'my-app-xfer'`:
 
 **In TypeScript:**
+
 ```typescript
 await OfflineTransfer.initialize({ serviceId: 'my-app-xfer' });
 ```
 
-**In Info.plist:**
+**In Info.plist:** Add your serviceId with `._tcp` and `._udp` suffixes to NSBonjourServices:
+
 ```xml
 <key>NSBonjourServices</key>
 <array>
@@ -740,6 +742,8 @@ await OfflineTransfer.initialize({ serviceId: 'my-app-xfer' });
   <string>_my-app-xfer._udp</string>
 </array>
 ```
+
+The underscore prefix is required as per Bonjour service naming conventions.
 
 Failure to match these exactly will result in discovery failing or the app crashing on iOS.
 
