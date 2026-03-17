@@ -7,7 +7,6 @@ Pods
 Podfile.lock
 Package.resolved
 Build
-xcuserdata
 /.build
 /Packages
 xcuserdata/

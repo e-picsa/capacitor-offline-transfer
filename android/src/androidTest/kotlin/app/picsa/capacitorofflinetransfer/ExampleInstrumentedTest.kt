@@ -21,6 +21,6 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
 
-        assertEquals("com.getcapacitor.android", appContext.packageName)
+        assertEquals("app.picsa.capacitorofflinetransfer", appContext.packageName)
     }
 }

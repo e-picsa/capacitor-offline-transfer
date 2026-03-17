@@ -8,7 +8,6 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
-import com.getcapacitor.permissionutil.PermissionHelper
 
 @CapacitorPlugin(
     name = "OfflineTransfer",
@@ -23,7 +22,9 @@ import com.getcapacitor.permissionutil.PermissionHelper
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.NEARBY_WIFI_DEVICES
+                Manifest.permission.NEARBY_WIFI_DEVICES,
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN
             ]
         )
     ]
@@ -31,11 +32,15 @@ import com.getcapacitor.permissionutil.PermissionHelper
 class CapacitorOfflineTransferPlugin : Plugin() {
 
     private val implementation = CapacitorOfflineTransfer()
+    private var pendingPermissionCall: PluginCall? = null
 
+    // Nearby Connections requires different Bluetooth permissions based on API level:
+    // - API 31+ (Android 12+): BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, NEARBY_WIFI_DEVICES
+    // - API 30 and below: legacy BLUETOOTH and BLUETOOTH_ADMIN permissions
+    @Suppress("DEPRECATION")
     override fun requestPermissions(call: PluginCall?) {
-        // Nearby Connections requires different Bluetooth permissions based on API level:
-        // - API 31+ (Android 12+): BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, NEARBY_WIFI_DEVICES
-        // - API 30 and below: legacy BLUETOOTH and BLUETOOTH_ADMIN permissions
+        if (call == null) return
+
         val permissionsToRequest = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -53,8 +58,35 @@ class CapacitorOfflineTransferPlugin : Plugin() {
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_ADMIN)
         }
 
+        pendingPermissionCall = call
         val permissionStrings = permissionsToRequest.toTypedArray()
-        PermissionHelper.requestPermissions(this, call, permissionStrings, "nearby")
+        pluginRequestPermissions(permissionStrings, PERMISSION_REQUEST_CODE)
+    }
+
+    @Deprecated("Use Capacitor 4+ permission APIs")
+    @Suppress("DEPRECATION")
+    override fun handleRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.handleRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            val savedCall = pendingPermissionCall
+            if (savedCall != null) {
+                val allGranted = grantResults.all { it == android.content.pm.PackageManager.PERMISSION_GRANTED }
+                if (allGranted) {
+                    savedCall.resolve()
+                } else {
+                    savedCall.reject("Permissions denied")
+                }
+                pendingPermissionCall = null
+            }
+        }
+    }
+
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 1001
     }
 
     override fun load() {

@@ -40,6 +40,8 @@
     "verify:ios": "xcodebuild -scheme PicsaCapacitorOfflineTransfer -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "bun run build",
+    "example:android": "cd example && bun run build && bunx cap sync && bunx cap run android && cd ..",
+    "example:ios": "cd example && bun run build && bunx cap sync && bunx cap run ios && cd ..",
     "lint": "bun run eslint && bun run prettier -- --check && bun run swiftlint -- lint",
     "fmt": "bun run eslint -- --fix && bun run prettier -- --write && bun run swiftlint -- --fix --format",
     "eslint": "eslint . --ext ts",
