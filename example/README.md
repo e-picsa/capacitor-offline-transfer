@@ -11,25 +11,22 @@ This is a demo application for the `@picsa/capacitor-offline-transfer` plugin, s
 
 ## Running this example
 
-To run the provided example, follow these steps:
+To run the provided example, follow these steps (from root):
 
-1. Install dependencies:
+1. Build the web assets:
 
 ```bash
+cd example
 bun install
-```
-
-2. Build the web assets:
-
-```bash
 bun run build
 ```
 
 3. Add iOS and/or Android platforms:
 
 ```bash
-npx cap add ios
-npx cap add android
+bunx cap add android
+bunx cap add ios
+
 ```
 
 4. Configure permissions:
@@ -41,10 +38,10 @@ npx cap add android
 
 ```bash
 # For iOS
-npx cap run ios
+bunx cap run ios
 
 # For Android
-npx cap run android
+bunx cap run android
 ```
 
 ## Testing
