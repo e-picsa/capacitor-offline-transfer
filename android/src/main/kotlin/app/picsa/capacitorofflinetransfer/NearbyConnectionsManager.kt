@@ -12,7 +12,7 @@ import com.google.android.gms.nearby.connection.*
 import java.io.File
 import java.io.FileNotFoundException
 
-class NearbyConnectionsManager(private val context: Context, private val plugin: Plugin) {
+class NearbyConnectionsManager(private val context: Context, private val plugin: CapacitorOfflineTransferPlugin) {
 
     private val TAG = "NearbyTransfer"
     private var serviceId: String = "com.picsa.offlinetransfer"
@@ -42,7 +42,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 put("authenticationToken", info.authenticationToken)
                 put("isIncomingConnection", info.isIncomingConnection)
             }
-            plugin.notifyListeners("connectionRequested", event)
+            plugin.emit("connectionRequested", event)
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
@@ -55,14 +55,14 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 put("endpointId", endpointId)
                 put("status", status)
             }
-            plugin.notifyListeners("connectionResult", event)
+            plugin.emit("connectionResult", event)
         }
 
         override fun onDisconnected(endpointId: String) {
             val event = JSObject().apply {
                 put("endpointId", endpointId)
             }
-            plugin.notifyListeners("endpointLost", event)
+            plugin.emit("endpointLost", event)
         }
     }
 
@@ -73,14 +73,14 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 put("endpointName", info.endpointName)
                 put("serviceId", info.serviceId)
             }
-            plugin.notifyListeners("endpointFound", event)
+            plugin.emit("endpointFound", event)
         }
 
         override fun onEndpointLost(endpointId: String) {
             val event = JSObject().apply {
                 put("endpointId", endpointId)
             }
-            plugin.notifyListeners("endpointLost", event)
+            plugin.emit("endpointLost", event)
         }
     }
 
@@ -92,7 +92,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                     put("endpointId", endpointId)
                     put("data", data)
                 }
-                plugin.notifyListeners("messageReceived", event)
+                plugin.emit("messageReceived", event)
             } else if (payload.type == Payload.Type.FILE) {
                 incomingPayloads.put(payload.id, payload)
             }
@@ -113,7 +113,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 put("totalBytes", update.totalBytes)
                 put("status", status)
             }
-            plugin.notifyListeners("transferProgress", event)
+            plugin.emit("transferProgress", event)
 
             if (update.status == PayloadTransferUpdate.Status.SUCCESS) {
                 val payload = incomingPayloads.remove(update.payloadId)
@@ -130,7 +130,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                         put("fileName", targetFile.name)
                         put("path", targetFile.absolutePath)
                     }
-                    plugin.notifyListeners("fileReceived", receivedEvent)
+                    plugin.emit("fileReceived", receivedEvent)
                 }
             }
         }
@@ -188,8 +188,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
     fun sendFile(endpointId: String, filePath: String, fileName: String) {
         try {
             val uri = Uri.parse(filePath)
-            val pfd: ParcelFileDescriptor? = context.contentResolver.openFileDescriptor(uri, "r")
-            if (pfd != null) {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
                 val filePayload = Payload.fromFile(pfd)
                 fileNames.put(filePayload.id, fileName)
                 Nearby.getConnectionsClient(context).sendPayload(endpointId, filePayload)

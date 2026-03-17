@@ -7,12 +7,12 @@ import com.getcapacitor.PluginCall
 
 class CapacitorOfflineTransfer {
     private lateinit var context: Context
-    private lateinit var plugin: Plugin
+    private lateinit var plugin: CapacitorOfflineTransferPlugin
     private lateinit var nearbyManager: NearbyConnectionsManager
     private lateinit var hotspotManager: HotspotManager
     private lateinit var serverManager: ServerManager
 
-    fun load(context: Context, plugin: Plugin) {
+    fun load(context: Context, plugin: CapacitorOfflineTransferPlugin) {
         this.context = context
         this.plugin = plugin
         nearbyManager = NearbyConnectionsManager(context, plugin)

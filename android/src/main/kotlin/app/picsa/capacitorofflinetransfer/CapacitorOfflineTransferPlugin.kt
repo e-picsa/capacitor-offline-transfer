@@ -34,6 +34,10 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         implementation.load(context, this)
     }
 
+    fun emit(event: String, data: JSObject) {
+        notifyListeners(event, data)
+    }
+
     @PluginMethod
     fun initialize(call: PluginCall) {
         val serviceId = call.getString("serviceId") ?: return call.reject("serviceId is required")
