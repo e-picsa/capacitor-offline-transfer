@@ -119,7 +119,13 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
 
 extension CapacitorOfflineTransfer: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
+        let endpointId: String
+        if let mappedId = peerIdToEndpointIdMap[peerID] {
+            endpointId = mappedId
+        } else {
+            endpointId = UUID().uuidString
+            NSLog("Warning: Unknown peer \(peerID.displayName), using fallback endpointId: \(endpointId)")
+        }
         
         switch state {
         case .connected:
@@ -138,7 +144,13 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
-        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
+        let endpointId: String
+        if let mappedId = peerIdToEndpointIdMap[peerID] {
+            endpointId = mappedId
+        } else {
+            endpointId = UUID().uuidString
+            NSLog("Warning: Unknown peer \(peerID.displayName), using fallback endpointId: \(endpointId)")
+        }
         if let message = String(data: data, encoding: .utf8) {
             delegate?.onMessageReceived(endpointId: endpointId, data: message)
         }
@@ -149,7 +161,13 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
     }
     
     func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {
-        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
+        let endpointId: String
+        if let mappedId = peerIdToEndpointIdMap[peerID] {
+            endpointId = mappedId
+        } else {
+            endpointId = UUID().uuidString
+            NSLog("Warning: Unknown peer \(peerID.displayName), using fallback endpointId: \(endpointId)")
+        }
         
         let cancellable = progress.publisher(for: \.completedUnitCount)
             .sink { [weak self] completed in
@@ -167,7 +185,13 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
 
     
     func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {
-        let endpointId = peerIdToEndpointIdMap[peerID] ?? myUniqueId
+        let endpointId: String
+        if let mappedId = peerIdToEndpointIdMap[peerID] {
+            endpointId = mappedId
+        } else {
+            endpointId = UUID().uuidString
+            NSLog("Warning: Unknown peer \(peerID.displayName), using fallback endpointId: \(endpointId)")
+        }
         
         if let error = error {
             delegate?.onTransferProgress(endpointId: endpointId, payloadId: resourceName, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
