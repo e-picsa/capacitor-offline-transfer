@@ -23,6 +23,10 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         CAPPluginMethod(name: "disconnect", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendMessage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendFile", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "startLocalHotspot", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stopLocalHotspot", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "startServer", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stopServer", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setLogLevel", returnType: CAPPluginReturnPromise)
     ]
     
@@ -135,6 +139,22 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     
     @objc func setLogLevel(_ call: CAPPluginCall) {
         call.resolve()
+    }
+    
+    @objc func startLocalHotspot(_ call: CAPPluginCall) {
+        call.reject("Local Hotspot feature is not available on iOS.")
+    }
+    
+    @objc func stopLocalHotspot(_ call: CAPPluginCall) {
+        call.reject("Local Hotspot feature is not available on iOS.")
+    }
+    
+    @objc func startServer(_ call: CAPPluginCall) {
+        call.reject("Embedded HTTP server is not available on iOS.")
+    }
+    
+    @objc func stopServer(_ call: CAPPluginCall) {
+        call.reject("Embedded HTTP server is not available on iOS.")
     }
     
     // MARK: - CapacitorOfflineTransferDelegate

@@ -160,6 +160,9 @@ export interface OfflineTransferPlugin {
    */
   requestPermissions(): Promise<PermissionStatus>;
 
+  /**
+   * Removes all listeners added by the plugin
+   */
   removeAllListeners(): Promise<void>;
 }
 

@@ -171,6 +171,37 @@ Add these to your `Info.plist`:
 
 ---
 
+## Platform Compatibility
+
+| API Method               | Android | iOS | Web |
+| ------------------------ | ------- | --- | --- |
+| `initialize`             | ✅      | ✅  | -   |
+| `setStrategy`            | ✅      | ✅  | -   |
+| `startAdvertising`       | ✅      | ✅  | -   |
+| `stopAdvertising`        | ✅      | ✅  | -   |
+| `startDiscovery`         | ✅      | ✅  | -   |
+| `stopDiscovery`          | ✅      | ✅  | -   |
+| `connect`                | ✅      | ✅  | -   |
+| `acceptConnection`       | ✅      | ✅  | -   |
+| `rejectConnection`       | ✅      | ✅  | -   |
+| `disconnectFromEndpoint` | ✅      | ✅  | -   |
+| `disconnect`             | ✅      | ✅  | -   |
+| `sendMessage`            | ✅      | ✅  | -   |
+| `sendFile`               | ✅      | ✅  | -   |
+| `startLocalHotspot`      | ✅      | ❌  | -   |
+| `stopLocalHotspot`       | ✅      | ❌  | -   |
+| `startServer`            | ✅      | ❌  | -   |
+| `stopServer`             | ✅      | ❌  | -   |
+| `setLogLevel`            | ✅      | ✅  | -   |
+
+- **✅** = Supported
+- **❌** = Not available (rejects with error)
+- **-** = Not applicable (Web is not a target platform for this offline plugin)
+
+**Tier 3 methods** (`startLocalHotspot`, `stopLocalHotspot`, `startServer`, `stopServer`) are Android-only and will reject if called on iOS.
+
+---
+
 ## API
 
 <docgen-index>
@@ -609,6 +640,8 @@ Request permissions
 ```typescript
 removeAllListeners() => Promise<void>
 ```
+
+Removes all listeners added by the plugin
 
 --------------------
 
