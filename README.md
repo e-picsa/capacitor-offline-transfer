@@ -641,6 +641,8 @@ Request permissions
 removeAllListeners() => Promise<void>
 ```
 
+Removes all listeners added by the plugin
+
 --------------------
 
 
