@@ -97,7 +97,8 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                         incomingFileMetadata.put(filePayloadId, fileName!!)
                         return
                     }
-                } catch (e: Exception) {
+                } catch (e: org.json.JSONException) {
+                    // Not a metadata JSON, so ignore and proceed to treat as a regular message.
                 }
                 val event = JSObject().apply {
                     put("endpointId", endpointId)

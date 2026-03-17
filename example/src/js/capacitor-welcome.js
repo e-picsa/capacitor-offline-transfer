@@ -1,5 +1,6 @@
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { Capacitor } from '@capacitor/core';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 
 window.customElements.define(
@@ -247,6 +248,11 @@ window.customElements.define(
       const progressBar = shadow.querySelector('#progress-bar');
       const progressText = shadow.querySelector('#progress-text');
       const progressFilename = shadow.querySelector('#progress-filename');
+      const tier3Section = shadow.querySelector('#android-tier3');
+
+      if (Capacitor.getPlatform() !== 'android') {
+        tier3Section.style.display = 'none';
+      }
 
       // State
       let endpoints = {};
