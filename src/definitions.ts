@@ -8,12 +8,12 @@ export interface PermissionStatus {
 export interface OfflineTransferPlugin {
   /**
    * Initializes the plugin with a unique service identifier.
-   * 
+   *
    * The `serviceId` is used to isolate your app's communication from other apps using this plugin.
    * Only devices using the same `serviceId` will be able to discover and connect to each other.
-   * 
+   *
    * @param options Initialization options
-   * @param options.serviceId A unique string (e.g., "my-app-xfer"). 
+   * @param options.serviceId A unique string (e.g., "my-app-xfer").
    *                          - **iOS Requirement**: Must be 1-15 characters, lowercase ASCII and hyphens only.
    *                          - **iOS Requirement**: Must match the `NSBonjourServices` entry in `Info.plist`.
    *                          - **Android**: Used as the Google Nearby Connections Service ID.
@@ -21,7 +21,7 @@ export interface OfflineTransferPlugin {
   initialize(options: { serviceId: string }): Promise<void>;
 
   /**
-   * Sets the P2P connection strategy. 
+   * Sets the P2P connection strategy.
    * Defaults to P2P_CLUSTER for mesh support on Android.
    * @param options Strategy ("P2P_STAR", "P2P_CLUSTER", "P2P_POINT_TO_POINT")
    */
@@ -50,7 +50,7 @@ export interface OfflineTransferPlugin {
   /**
    * Requests a connection to a discovered endpoint.
    */
-  connect(options: { endpointId: string, displayName: string }): Promise<void>;
+  connect(options: { endpointId: string; displayName: string }): Promise<void>;
 
   /**
    * Accepts an incoming connection request.
@@ -75,14 +75,14 @@ export interface OfflineTransferPlugin {
   /**
    * Sends a small text message to a connected endpoint.
    */
-  sendMessage(options: { endpointId: string, data: string }): Promise<void>;
+  sendMessage(options: { endpointId: string; data: string }): Promise<void>;
 
   /**
    * Sends a large file to a connected endpoint.
    * Uses Payload.Type.FILE (Android) or Resource URLs (iOS) to avoid OOM.
    * @param options.filePath The local path or URL to the file.
    */
-  sendFile(options: { endpointId: string, filePath: string, fileName: string }): Promise<void>;
+  sendFile(options: { endpointId: string; filePath: string; fileName: string }): Promise<void>;
 
   /**
    * Android Only: Starts a Local-Only Hotspot.
@@ -100,7 +100,7 @@ export interface OfflineTransferPlugin {
    * Used for Tier 3 fallback (uninstalled devices).
    * @param options.port The port to bind to (0 for dynamic selection).
    */
-  startServer(options: { port?: number }): Promise<{ port: number, url: string }>;
+  startServer(options: { port?: number }): Promise<{ port: number; url: string }>;
 
   /**
    * Stops the embedded HTTP server.
@@ -118,37 +118,37 @@ export interface OfflineTransferPlugin {
    */
   addListener(
     eventName: 'connectionRequested',
-    listenerFunc: (event: ConnectionRequestEvent) => void
+    listenerFunc: (event: ConnectionRequestEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
-  
+
   addListener(
     eventName: 'connectionResult',
-    listenerFunc: (event: ConnectionResultEvent) => void
+    listenerFunc: (event: ConnectionResultEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
-  
+
   addListener(
     eventName: 'endpointFound',
-    listenerFunc: (event: EndpointFoundEvent) => void
+    listenerFunc: (event: EndpointFoundEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
-  
+
   addListener(
     eventName: 'endpointLost',
-    listenerFunc: (event: EndpointLostEvent) => void
+    listenerFunc: (event: EndpointLostEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
-  
+
   addListener(
     eventName: 'messageReceived',
-    listenerFunc: (event: MessageReceivedEvent) => void
+    listenerFunc: (event: MessageReceivedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
-  
+
   addListener(
     eventName: 'transferProgress',
-    listenerFunc: (event: TransferProgressEvent) => void
+    listenerFunc: (event: TransferProgressEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   addListener(
     eventName: 'fileReceived',
-    listenerFunc: (event: FileReceivedEvent) => void
+    listenerFunc: (event: FileReceivedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -210,4 +210,3 @@ export interface FileReceivedEvent {
   fileName: string;
   path: string; // The absolute path where the file was saved (Context.getFilesDir() on Android)
 }
-

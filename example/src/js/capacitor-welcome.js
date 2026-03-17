@@ -227,22 +227,22 @@ window.customElements.define(
       const requestPermsBtn = shadow.querySelector('#request-perms');
       const strategySelect = shadow.querySelector('#strategy-select');
       const logLevelSelect = shadow.querySelector('#log-level-select');
-      
+
       const advertiseBtn = shadow.querySelector('#advertise-btn');
       const discoveryBtn = shadow.querySelector('#discovery-btn');
       const stopBtn = shadow.querySelector('#stop-btn');
-      
+
       const messageInput = shadow.querySelector('#message-input');
       const sendBtn = shadow.querySelector('#send-btn');
       const sendFileBtn = shadow.querySelector('#send-file-btn');
-      
+
       const hotspotBtn = shadow.querySelector('#hotspot-btn');
       const serverBtn = shadow.querySelector('#server-btn');
       const stopT3Btn = shadow.querySelector('#stop-t3-btn');
 
       const devicesList = shadow.querySelector('#devices-list');
       const messagesBox = shadow.querySelector('#messages');
-      
+
       const progressContainer = shadow.querySelector('#progress-container');
       const progressBar = shadow.querySelector('#progress-bar');
       const progressText = shadow.querySelector('#progress-text');
@@ -251,7 +251,7 @@ window.customElements.define(
       // State
       let endpoints = {};
       let connectedEndpointId = null;
-      
+
       const addLog = (msg) => {
         const time = new Date().toLocaleTimeString();
         messagesBox.innerHTML += `<div style="margin-bottom:4px"><span style="color:#8e8e93">[${time}]</span> ${msg}</div>`;
@@ -285,10 +285,10 @@ window.customElements.define(
           const strategy = strategySelect.value;
           await OfflineTransfer.setStrategy({ strategy });
           await OfflineTransfer.initialize({ serviceId: 'com.picsa.offlinetransfer' });
-          
+
           setupListeners();
-          
-          [advertiseBtn, discoveryBtn, stopBtn].forEach(b => b.disabled = false);
+
+          [advertiseBtn, discoveryBtn, stopBtn].forEach((b) => (b.disabled = false));
           addLog(`Initialized with ${strategy}`);
         } catch (e) {
           addLog(`Init Error: ${e.message}`);
@@ -298,16 +298,20 @@ window.customElements.define(
       // Discovery & Advertising
       advertiseBtn.addEventListener('click', async () => {
         try {
-          await OfflineTransfer.startAdvertising({ displayName: 'Device_' + Math.floor(Math.random()*100) });
+          await OfflineTransfer.startAdvertising({ displayName: 'Device_' + Math.floor(Math.random() * 100) });
           addLog('Advertising started...');
-        } catch (e) { addLog(`Error: ${e.message}`); }
+        } catch (e) {
+          addLog(`Error: ${e.message}`);
+        }
       });
 
       discoveryBtn.addEventListener('click', async () => {
         try {
           await OfflineTransfer.startDiscovery();
           addLog('Discovery started...');
-        } catch (e) { addLog(`Error: ${e.message}`); }
+        } catch (e) {
+          addLog(`Error: ${e.message}`);
+        }
       });
 
       stopBtn.addEventListener('click', async () => {
@@ -317,7 +321,7 @@ window.customElements.define(
         endpoints = {};
         connectedEndpointId = null;
         updateDevicesUI();
-        [sendBtn, sendFileBtn].forEach(b => b.disabled = true);
+        [sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
         addLog('Stopped all P2P activities');
       });
 
@@ -329,7 +333,9 @@ window.customElements.define(
           await OfflineTransfer.sendMessage({ endpointId: connectedEndpointId, data: val });
           addLog(`SENT: ${val}`);
           messageInput.value = '';
-        } catch (e) { addLog(`Send Error: ${e.message}`); }
+        } catch (e) {
+          addLog(`Send Error: ${e.message}`);
+        }
       });
 
       sendFileBtn.addEventListener('click', async () => {
@@ -338,21 +344,23 @@ window.customElements.define(
           const image = await Camera.getPhoto({
             quality: 90,
             allowEditing: false,
-            resultType: CameraResultType.Uri
+            resultType: CameraResultType.Uri,
           });
-          
+
           if (image.path) {
             addLog(`Sending file: ${image.path}`);
             progressContainer.style.display = 'block';
             progressFilename.textContent = 'Preparing image...';
-            
+
             await OfflineTransfer.sendFile({
               endpointId: connectedEndpointId,
               filePath: image.path,
-              fileName: `photo_${Date.now()}.jpg`
+              fileName: `photo_${Date.now()}.jpg`,
             });
           }
-        } catch (e) { addLog(`Camera/File Error: ${e.message}`); }
+        } catch (e) {
+          addLog(`Camera/File Error: ${e.message}`);
+        }
       });
 
       // Tier 3
@@ -360,14 +368,18 @@ window.customElements.define(
         try {
           const info = await OfflineTransfer.startLocalHotspot();
           addLog(`HOTSPOT: SSID=${info.ssid}, PWD=${info.password}`);
-        } catch (e) { addLog(`Hotspot Error: ${e.message}`); }
+        } catch (e) {
+          addLog(`Hotspot Error: ${e.message}`);
+        }
       });
 
       serverBtn.addEventListener('click', async () => {
         try {
           const info = await OfflineTransfer.startServer({ port: 8080 });
           addLog(`SERVER: ${info.url}`);
-        } catch (e) { addLog(`Server Error: ${e.message}`); }
+        } catch (e) {
+          addLog(`Server Error: ${e.message}`);
+        }
       });
 
       stopT3Btn.addEventListener('click', async () => {
@@ -389,7 +401,7 @@ window.customElements.define(
           delete endpoints[ev.endpointId];
           if (connectedEndpointId === ev.endpointId) {
             connectedEndpointId = null;
-            [sendBtn, sendFileBtn].forEach(b => b.disabled = true);
+            [sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
           }
           updateDevicesUI();
         });
@@ -402,7 +414,7 @@ window.customElements.define(
         OfflineTransfer.addListener('connectionResult', (ev) => {
           if (ev.status === 'SUCCESS') {
             connectedEndpointId = ev.endpointId;
-            [sendBtn, sendFileBtn].forEach(b => b.disabled = false);
+            [sendBtn, sendFileBtn].forEach((b) => (b.disabled = false));
             addLog(`Connected to ${ev.endpointId}`);
           } else {
             addLog(`Connection failed/rejected: ${ev.status}`);
@@ -423,20 +435,23 @@ window.customElements.define(
           progressBar.style.width = `${pc}%`;
           progressText.textContent = `${pc}%`;
           progressFilename.textContent = ev.status === 'IN_PROGRESS' ? 'Transferring...' : ev.status;
-          
+
           if (ev.status === 'SUCCESS' || ev.status === 'FAILURE' || ev.status === 'CANCELLED') {
-            setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
+            setTimeout(() => {
+              progressContainer.style.display = 'none';
+            }, 2000);
           }
         });
       };
 
       const updateDevicesUI = () => {
         if (Object.keys(endpoints).length === 0) {
-          devicesList.innerHTML = '<div style="color: #8e8e93; font-size: 0.9em; padding: 10px;">No devices found yet...</div>';
+          devicesList.innerHTML =
+            '<div style="color: #8e8e93; font-size: 0.9em; padding: 10px;">No devices found yet...</div>';
           return;
         }
         devicesList.innerHTML = '';
-        Object.values(endpoints).forEach(ep => {
+        Object.values(endpoints).forEach((ep) => {
           const el = document.createElement('div');
           el.className = 'device-item';
           const isConn = connectedEndpointId === ep.endpointId;
@@ -458,7 +473,7 @@ window.customElements.define(
         });
       };
     }
-  }
+  },
 );
 
 window.customElements.define(
@@ -487,5 +502,5 @@ window.customElements.define(
     <slot></slot>
     `;
     }
-  }
+  },
 );

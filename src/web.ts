@@ -1,15 +1,8 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type {
-  OfflineTransferPlugin,
-  HotspotInfo,
-  PermissionStatus
-} from './definitions';
+import type { OfflineTransferPlugin, HotspotInfo, PermissionStatus } from './definitions';
 
-export class OfflineTransferWeb
-  extends WebPlugin
-  implements OfflineTransferPlugin
-{
+export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlugin {
   async initialize(options: { serviceId: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available', options);
   }
@@ -34,7 +27,7 @@ export class OfflineTransferWeb
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async connect(options: { endpointId: string, displayName: string }): Promise<void> {
+  async connect(options: { endpointId: string; displayName: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available', options);
   }
 
@@ -54,11 +47,11 @@ export class OfflineTransferWeb
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async sendMessage(options: { endpointId: string, data: string }): Promise<void> {
+  async sendMessage(options: { endpointId: string; data: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available', options);
   }
 
-  async sendFile(options: { endpointId: string, filePath: string, fileName: string }): Promise<void> {
+  async sendFile(options: { endpointId: string; filePath: string; fileName: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available', options);
   }
 
@@ -71,7 +64,7 @@ export class OfflineTransferWeb
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async startServer(options: { port?: number }): Promise<{ port: number, url: string }> {
+  async startServer(options: { port?: number }): Promise<{ port: number; url: string }> {
     console.warn('OfflineTransfer: Web implementation not available', options);
     return Promise.reject('Embedded server not available on web');
   }
@@ -101,5 +94,3 @@ export class OfflineTransferWeb
     return super.removeAllListeners();
   }
 }
-
-
