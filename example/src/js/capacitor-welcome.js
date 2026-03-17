@@ -145,6 +145,17 @@ window.customElements.define(
               <option value="P2P_POINT_TO_POINT">P2P Point-to-Point (Direct)</option>
             </select>
           </div>
+          <div class="field">
+            <label>Log Level</label>
+            <select id="log-level-select">
+              <option value="0">None</option>
+              <option value="1">Error</option>
+              <option value="2">Warn</option>
+              <option value="3" selected>Info (Default)</option>
+              <option value="4">Debug</option>
+              <option value="5">Verbose</option>
+            </select>
+          </div>
           <div style="display: flex; flex-wrap: wrap;">
             <button class="button" id="init-btn">Initialize</button>
             <button class="button secondary" id="check-perms">Check Perms</button>
@@ -260,11 +271,13 @@ window.customElements.define(
         addLog(`Request result: nearby=${status.nearby}`);
       });
 
-      logLevelSelect.addEventListener('change', async () => {
-        const level = parseInt(logLevelSelect.value);
-        await OfflineTransfer.setLogLevel({ logLevel: level });
-      addLog(`Log Level set to ${level}`);
-      });
+      if (logLevelSelect) {
+        logLevelSelect.addEventListener('change', async () => {
+          const level = parseInt(logLevelSelect.value);
+          await OfflineTransfer.setLogLevel({ logLevel: level });
+          addLog(`Log Level set to ${level}`);
+        });
+      }
 
       // Plugin Init
       initBtn.addEventListener('click', async () => {

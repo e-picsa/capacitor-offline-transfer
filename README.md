@@ -59,6 +59,7 @@ npx cap sync
 
 ### 1. Initialization
 
+```typescript
 // serviceId ensures your app only connects to other instances of your app.
 // For iOS compatibility: 1-15 chars, lowercase, and hyphens only.
 await OfflineTransfer.initialize({ serviceId: 'picsa-xfer' }); 

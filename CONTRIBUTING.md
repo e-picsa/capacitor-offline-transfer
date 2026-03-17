@@ -44,14 +44,14 @@ This will automatically recompile your TypeScript changes as you work.
 cd example
 bun install
 # Start the web app with HMR (Hot Module Replacement)
-npm run start
+bun run start
 ```
 
 ### Testing on Native Emulators with Live Reload
 
 If you need to test native platform features (Android or iOS) with live reload enabled so changes propagate automatically:
 
-1. Ensure your plugin watcher (`npm run watch`) and your example app's server (`cd example && npm run start`) are both running.
+1. Ensure your plugin watcher (`bun run watch`) and your example app's server (`cd example && bun run start`) are both running.
 2. In a third terminal within the `example/` directory, run the Capacitor CLI with the live reload flag:
 
    **For iOS:**
@@ -70,7 +70,7 @@ _Note: When prompted, select the local network IP address that your emulator/dev
 
 ### Scripts
 
-#### `npm run build`
+#### `bun run build`
 
 Build the plugin web assets and generate plugin API documentation using [`@capacitor/docgen`](https://github.com/ionic-team/capacitor-docgen).
 
@@ -78,13 +78,13 @@ It will compile the TypeScript code from `src/` into ESM JavaScript in `dist/esm
 
 Then, Rollup will bundle the code into a single file at `dist/plugin.js`. This file is used in apps without bundlers by including it as a script in `index.html`.
 
-#### `npm run verify`
+#### `bun run verify`
 
 Build and validate the web and native projects.
 
 This is useful to run in CI to verify that the plugin builds for all platforms.
 
-#### `npm run lint` / `npm run fmt`
+#### `bun run lint` / `bun run fmt`
 
 Check formatting and code quality, autoformat/autofix if possible.
 
@@ -95,7 +95,7 @@ This template is integrated with ESLint, Prettier, and SwiftLint. Using these to
 There is a `prepublishOnly` hook in `package.json` which prepares the plugin before publishing, so all you need to do is run:
 
 ```shell
-npm publish
+bun run publish
 ```
 
 > **Note**: The [`files`](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files) array in `package.json` specifies which files get published. If you rename files/directories or add files elsewhere, you may need to update it.

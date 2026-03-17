@@ -120,7 +120,9 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 if (payload != null && payload.type == Payload.Type.FILE) {
                     val file = payload.asFile()!!.asJavaFile()
                     val targetFile = File(context.filesDir, fileNames.get(update.payloadId) ?: "received_${update.payloadId}")
-                    file?.renameTo(targetFile)
+                    if (file?.renameTo(targetFile) != true) {
+                        Log.e(TAG, "Failed to rename received file to ${targetFile.absolutePath}")
+                    }
                     
                     val receivedEvent = JSObject().apply {
                         put("endpointId", endpointId)

@@ -16,13 +16,13 @@ To run the provided example, follow these steps:
 1. Install dependencies:
 
 ```bash
-npm install
+bun install
 ```
 
 2. Build the web assets:
 
 ```bash
-npm run build
+bun run build
 ```
 
 3. Add iOS and/or Android platforms:
