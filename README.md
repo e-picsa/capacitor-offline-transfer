@@ -164,8 +164,8 @@ Add these to your `Info.plist`:
 <string>Required for Multipeer Connectivity data transfer</string>
 <key>NSBonjourServices</key>
 <array>
-  <string>_off-transfer._tcp</string>
-  <string>_off-transfer._udp</string>
+  <string>_picsa-transfer._tcp</string>
+  <string>_picsa-transfer._udp</string>
 </array>
 ```
 
