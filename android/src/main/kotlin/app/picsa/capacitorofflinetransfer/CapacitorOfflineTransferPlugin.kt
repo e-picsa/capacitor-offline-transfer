@@ -1,12 +1,14 @@
 package app.picsa.capacitorofflinetransfer
 
 import android.Manifest
+import android.os.Build
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
+import com.getcapacitor.permissionutil.PermissionHelper
 
 @CapacitorPlugin(
     name = "OfflineTransfer",
@@ -29,6 +31,31 @@ import com.getcapacitor.annotation.Permission
 class CapacitorOfflineTransferPlugin : Plugin() {
 
     private val implementation = CapacitorOfflineTransfer()
+
+    override fun requestPermissions(call: PluginCall?) {
+        // Nearby Connections requires different Bluetooth permissions based on API level:
+        // - API 31+ (Android 12+): BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, NEARBY_WIFI_DEVICES
+        // - API 30 and below: legacy BLUETOOTH and BLUETOOTH_ADMIN permissions
+        val permissionsToRequest = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.CHANGE_WIFI_STATE
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH_SCAN)
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
+            permissionsToRequest.add(Manifest.permission.NEARBY_WIFI_DEVICES)
+        } else {
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH)
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH_ADMIN)
+        }
+
+        val permissionStrings = permissionsToRequest.toTypedArray()
+        PermissionHelper.requestPermissions(this, call, permissionStrings, "nearby")
+    }
 
     override fun load() {
         implementation.load(context, this)
