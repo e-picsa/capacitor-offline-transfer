@@ -31,6 +31,14 @@ jobs:
 
       - run: bun install --ignore-scripts
         if: ${{ steps.release.outputs.release_created }}
+
+      # Ensure node setup to support npm oidc publishing
+      # (unsupported in bun as of 2026-03)
+      - uses: actions/setup-node@v6
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
       
         # Remove husky prepare script before publish
       - run: |
