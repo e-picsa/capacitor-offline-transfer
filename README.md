@@ -16,7 +16,7 @@ graph TD
     C --> F[P2P Mesh - High Speed]
     D --> G[P2P Infrastructure - High Speed]
     E --> H[Android startLocalOnlyHotspot]
-    H --> I[Embedded NanoHTTPD Web Server]
+    H --> I[Lightweight Embedded Web Server]
     I --> J[Standard HTTP Download]
 ```
 
@@ -33,7 +33,7 @@ Utilizes **Apple's Multipeer Connectivity** framework. Handles discovery and ses
 When cross-platform communication is required, or the receiving device doesn't have the app:
 
 1. The Android device spins up a **Local Only Hotspot** (`startLocalOnlyHotspot`).
-2. An embedded **NanoHTTPD** web server starts, serving files (including the Universal APK) via standard HTTP.
+2. A lightweight, zero-dependency **Embedded Web Server** starts, serving files (including the Universal APK) via standard HTTP.
 3. The receiver connects to the WiFi and downloads the file via a standard browser or QR code.
 
 ---
@@ -457,7 +457,7 @@ Android Only: Stops the Local-Only Hotspot.
 startServer(options: { port?: number; }) => Promise<{ port: number; url: string; }>
 ```
 
-Starts the embedded NanoHTTPD server to serve files via HTTP.
+Android Only: Starts a lightweight, embedded HTTP server to serve files via HTTP.
 Used for Tier 3 fallback (uninstalled devices).
 
 | Param         | Type                            |
