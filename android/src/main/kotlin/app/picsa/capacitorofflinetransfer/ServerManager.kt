@@ -90,7 +90,7 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
             }
 
             val rawUri = parts[1]
-            val fileName = URLDecoder.decode(File(rawUri).name, "UTF-8")
+            val fileName = File(URLDecoder.decode(rawUri, "UTF-8")).name
             val file = File(context.filesDir, fileName)
 
             if (file.exists() && file.isFile) {
@@ -117,13 +117,7 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
             
             out.write(header.toByteArray())
             
-            val fis = FileInputStream(file)
-            val buffer = ByteArray(8192)
-            var bytesRead: Int
-            while (fis.read(buffer).also { bytesRead = it } != -1) {
-                out.write(buffer, 0, bytesRead)
-            }
-            fis.close()
+            FileInputStream(file).use { it.copyTo(out) }
             out.flush()
         } catch (e: Exception) {
             Log.e(TAG, "Error sending file response", e)
