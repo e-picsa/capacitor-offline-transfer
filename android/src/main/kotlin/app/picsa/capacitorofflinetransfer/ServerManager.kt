@@ -71,6 +71,7 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
             serverSocket = null
             serverThread?.interrupt()
             serverThread = null
+            executor.shutdownNow()
         } catch (e: Exception) {
             Log.e(TAG, "Error stopping server", e)
         }
@@ -138,7 +139,9 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
             out.write(header.toByteArray())
             out.write(message.toByteArray())
             out.flush()
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to send error response to client", e)
+        }
     }
 
     private fun getMimeType(fileName: String): String {
