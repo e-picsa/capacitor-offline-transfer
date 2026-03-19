@@ -37,8 +37,8 @@
   ],
   "scripts": {
     "verify": "bun run verify:ios && bun run verify:android && bun run verify:web",
-    "verify:ios": "xcodebuild -scheme PicsaCapacitorOfflineTransfer -destination generic/platform=iOS",
-    "verify:android": "cd android && ./gradlew clean build test && cd ..",
+    "verify:ios": "xcodebuild -scheme PicsaCapacitorOfflineTransfer -destination 'platform=iOS Simulator,name=iPhone 15' test",
+    "verify:android": "cd android && ./gradlew clean build testDebugUnitTest && cd ..",
     "verify:web": "bun run build",
     "example:android": "cd example && bun run build && bunx cap sync && bunx cap run android && cd ..",
     "example:ios": "cd example && bun run build && bunx cap sync && bunx cap run ios && cd ..",
