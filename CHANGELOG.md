@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.1.5](https://github.com/e-picsa/capacitor-offline-transfer/compare/capacitor-offline-transfer-v8.1.4...capacitor-offline-transfer-v8.1.5) (2026-03-17)
+
+
+### Bug Fixes
+
+* **ci:** release env ([a4eebe4](https://github.com/e-picsa/capacitor-offline-transfer/commit/a4eebe49ca4279709d8a7cad126ad82b2b9f4494))
+
 ## [8.1.4](https://github.com/e-picsa/capacitor-offline-transfer/compare/capacitor-offline-transfer-v8.1.3...capacitor-offline-transfer-v8.1.4) (2026-03-17)
 
 
