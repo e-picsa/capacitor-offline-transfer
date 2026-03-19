@@ -20,6 +20,11 @@ graph TD
     I --> J[Standard HTTP Download]
 ```
 
+### Documentation
+
+- [User Guide](docs/user-guide.md) - Learn how to use several peer-to-peer (P2P) file transfer strategies.
+- [Testing Guide](docs/testing.md) - Manual E2E testing instructions and best practices.
+
 ### Tier 1: Android-to-Android
 
 Utilizes the **Google Nearby Connections API** (Strategy: `P2P_CLUSTER`). This provides a high-speed, offline mesh network capable of multi-device transfers.
