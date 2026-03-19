@@ -1,6 +1,8 @@
 package app.picsa.capacitorofflinetransfer
 
 import android.content.Context
+import android.util.Log
+import android.webkit.MimeTypeMap
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -11,9 +13,11 @@ import org.junit.Test
 import java.io.File
 import java.net.URL
 import java.net.HttpURLConnection
+import java.net.NetworkInterface
+import java.net.InetAddress
+import java.util.Collections
 
-class ServerManagerTest {
-
+class ServerManagerTest : BaseTest() {
     private lateinit var context: Context
     private lateinit var plugin: Plugin
     private lateinit var serverManager: ServerManager
@@ -24,13 +28,25 @@ class ServerManagerTest {
         context = mockk(relaxed = true)
         plugin = mockk(relaxed = true)
         
+        // Custom NetworkInterface mocking for this test
+        mockkStatic(NetworkInterface::class)
+        val mockInterface = mockk<NetworkInterface>()
+        val mockAddress = mockk<java.net.InetAddress>()
+        every { mockAddress.isLoopbackAddress } returns false
+        every { mockAddress.hostAddress } returns "127.0.0.1"
+        every { mockInterface.displayName } returns "wlan0"
+        every { mockInterface.inetAddresses } returns Collections.enumeration(listOf(mockAddress))
+        every { NetworkInterface.getNetworkInterfaces() } returns Collections.enumeration(listOf(mockInterface))
+        
+        // Need to override the default text/plain for some tests
+        mockMimeType("txt", "text/plain")
+        
         // Setup a real temporary directory for file serving tests
         tempDir = File.createTempFile("servertest", "")
         tempDir.delete()
         tempDir.mkdir()
         
         every { context.filesDir } returns tempDir
-        
         serverManager = ServerManager(context, plugin)
     }
 
