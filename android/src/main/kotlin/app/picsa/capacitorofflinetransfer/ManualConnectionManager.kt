@@ -18,7 +18,15 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
     fun connect(url: String, displayName: String?) {
         executor.execute {
             try {
-                // Simulate a connection by simply emitting an endpointFound and then connectionResult
+                // Verify reachability before simulating connection
+                val connection = openConnection(url)
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                connection.connect()
+                // We don't strictly care about the response code, just that we could connect to the socket
+                val responseCode = connection.responseCode
+                connection.disconnect()
+
                 val endpointId = url 
                 val foundEvent = JSObject().apply {
                     put("endpointId", endpointId)
@@ -34,7 +42,13 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
                 }
                 plugin.emit("connectionResult", resultEvent)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to connect manually", e)
+                Log.e(TAG, "Failed to connect manually to $url", e)
+                val resultEvent = JSObject().apply {
+                    put("endpointId", url)
+                    put("status", "FAILURE")
+                    put("message", e.message)
+                }
+                plugin.emit("connectionResult", resultEvent)
             }
         }
     }
