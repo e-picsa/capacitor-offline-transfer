@@ -10,5 +10,5 @@ const variantClass: Record<BadgeVariant, string> = {
 };
 
 export const Badge = ({ text, variant = '' }: { text: ComponentChildren; variant?: BadgeVariant }) => {
-  return <span className={variantClass[variant]}>{text}</span>;
+  return <span class={variantClass[variant]}>{text}</span>;
 };
