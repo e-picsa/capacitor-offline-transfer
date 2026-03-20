@@ -1,6 +1,8 @@
 /// <reference lib="esnext" />
 import type { PermissionState, PluginListenerHandle } from '@capacitor/core';
 
+import type { TransferState } from './reactive-state';
+
 export interface PermissionStatus {
   nearby: PermissionState;
 }
@@ -169,6 +171,12 @@ export interface OfflineTransferPlugin {
    * Removes all listeners added by the plugin
    */
   removeAllListeners(): Promise<void>;
+
+  /**
+   * Returns the shared reactive state instance for the plugin.
+   * Subscribe to state keys to receive updates on connection, transfer, and discovery events.
+   */
+  getState(): TransferState;
 }
 
 export interface ConnectionRequestEvent {

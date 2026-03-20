@@ -1,10 +1,15 @@
 import { WebPlugin } from '@capacitor/core';
 
 import type { OfflineTransferPlugin, PermissionStatus } from './definitions';
+import type { TransferState } from './reactive-state';
+import { transferState } from './reactive-state';
 
 export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlugin {
+  private initialized = false;
+
   async initialize(_options: { serviceId: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available');
+    this.initialized = true;
   }
 
   async setStrategy(_options: { strategy: 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT' }): Promise<void> {
@@ -73,8 +78,23 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
   }
 
   addListener(eventName: string, listenerFunc: (...args: any[]) => any): any {
-    console.warn(`OfflineTransfer: addListener(${eventName}) not supported on web`);
+    if (!this.initialized) {
+      this.setupEventBridge();
+      this.initialized = true;
+    }
     return super.addListener(eventName, listenerFunc);
+  }
+
+  private setupEventBridge(): void {
+    const bridge = (window as any).__capacitorOfflineTransferBridge;
+    if (!bridge) return;
+
+    bridge.onEndpointFound = (event: any) => transferState.onEndpointFound(event);
+    bridge.onEndpointLost = (event: any) => transferState.onEndpointLost(event);
+    bridge.onConnectionResult = (event: any) => transferState.onConnectionResult(event);
+    bridge.onDisconnected = (endpointId: string) => transferState.onDisconnected(endpointId);
+    bridge.onTransferProgress = (event: any) => transferState.onTransferProgress(event);
+    bridge.onFileReceived = (event: any) => transferState.onFileReceived(event);
   }
 
   async checkPermissions(): Promise<PermissionStatus> {
@@ -87,5 +107,9 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
 
   async removeAllListeners(): Promise<void> {
     return super.removeAllListeners();
+  }
+
+  getState(): TransferState {
+    return transferState;
   }
 }
