@@ -36,81 +36,94 @@
       </div>
     </section>
 
-    <div id="main-controls" style="display: none;">
+    <div id="main-controls" style="display: none">
       <section>
         <h3>2. Connections</h3>
-      
-      <!-- Nearby Controls -->
-      <div id="nearby-controls" style="display: block;">
+
+        <!-- Nearby Controls -->
+        <div id="nearby-controls" style="display: block">
+          <div style="display: flex; flex-wrap: wrap">
+            <button class="button" id="advertise-btn" disabled>Advertise</button>
+            <span id="advertise-status" class="status-badge"></span>
+            <button class="button" id="discovery-btn" disabled>Discover</button>
+            <span id="discovery-status" class="status-badge"></span>
+          </div>
+        </div>
+
+        <!-- Emulator Controls -->
+        <div
+          id="emulator-controls"
+          style="display: none; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; margin-bottom: 15px"
+        >
+          <div style="margin-bottom: 10px">
+            <label style="font-size: 0.8em; color: #666">Step A: Host Emulator (Server)</label>
+            <br />
+            <button class="button secondary" id="server-btn" style="margin: 5px 0" disabled>Start Server</button>
+            <span id="server-status" class="status-badge"></span>
+            <div style="font-size: 0.75em; color: #8e8e93; margin-top: 4px; line-height: 1.3">
+              <em>Note: The server is a passive listener. It will not show connected devices or enable sending.</em
+              ><br />
+              <strong>Emulator-to-Emulator Hint:</strong> Run
+              <code>adb -s host_emulator forward tcp:8080 tcp:8080</code> then connect from client emulator using
+              <code>http://10.0.2.2:8080</code>.
+            </div>
+          </div>
+
+          <div id="manual-connect-area">
+            <label style="font-size: 0.8em; color: #666">Step B: Client Emulator (Connect)</label>
+            <div style="display: flex; gap: 8px; margin-top: 5px">
+              <input
+                type="text"
+                id="manual-url-input"
+                placeholder="http://localhost:8080"
+                value="http://localhost:8080"
+              />
+              <button class="button secondary" id="manual-connect-btn" style="margin: 0" disabled>
+                Manual Connect
+              </button>
+              <span id="manual-connect-status" class="status-badge"></span>
+            </div>
+          </div>
+        </div>
+
+        <button class="button danger" id="stop-btn" disabled>Stop All Activities</button>
+
+        <div class="device-list" id="devices-list" style="margin-top: 15px">
+          <div style="color: #8e8e93; font-size: 0.9em; padding: 10px">No devices found yet...</div>
+        </div>
+      </section>
+
+      <section>
+        <h3>3. Transfer</h3>
+        <div class="field">
+          <label>Text Message</label>
+          <div style="display: flex; gap: 8px">
+            <input type="text" id="message-input" placeholder="Type here..." />
+            <button class="button" id="send-btn" disabled style="margin: 0">Send</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>File Transfer</label>
+          <button class="button secondary" id="send-file-btn" disabled style="margin-left: 0">Pick & Send Image</button>
+        </div>
+        <div id="progress-container" class="progress-container" style="display: none">
+          <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin-bottom: 4px">
+            <span id="progress-filename">Sending...</span>
+            <span id="progress-text">0%</span>
+          </div>
+          <div class="progress-bg">
+            <div id="progress-bar" class="progress-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="android-tier3">
+        <h3>Tier 3 (Android)</h3>
         <div style="display: flex; flex-wrap: wrap">
-          <button class="button" id="advertise-btn" disabled>Advertise</button>
-          <span id="advertise-status" class="status-badge"></span>
-          <button class="button" id="discovery-btn" disabled>Discover</button>
-          <span id="discovery-status" class="status-badge"></span>
+          <button class="button secondary" id="hotspot-btn">Start Hotspot</button>
+          <button class="button danger" id="stop-t3-btn">Stop Tier 3</button>
         </div>
-      </div>
-
-      <!-- Emulator Controls -->
-      <div id="emulator-controls" style="display: none; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-        <div style="margin-bottom: 10px;">
-          <label style="font-size: 0.8em; color: #666;">Step A: Host Emulator (Server)</label>
-          <br/>
-          <button class="button secondary" id="server-btn" style="margin: 5px 0" disabled>Start Server</button>
-          <span id="server-status" class="status-badge"></span>
-          <div style="font-size: 0.75em; color: #8e8e93; margin-top: 4px; line-height: 1.3;">
-            <em>Note: The server is a passive listener. It will not show connected devices or enable sending.</em><br/>
-            <strong>Emulator-to-Emulator Hint:</strong> Run <code>adb -s host_emulator forward tcp:8080 tcp:8080</code> then connect from client emulator using <code>http://10.0.2.2:8080</code>.
-          </div>
-        </div>
-        
-        <div id="manual-connect-area">
-          <label style="font-size: 0.8em; color: #666;">Step B: Client Emulator (Connect)</label>
-          <div style="display: flex; gap: 8px; margin-top: 5px;">
-            <input type="text" id="manual-url-input" placeholder="http://localhost:8080" value="http://localhost:8080" />
-            <button class="button secondary" id="manual-connect-btn" style="margin: 0" disabled>Manual Connect</button>
-            <span id="manual-connect-status" class="status-badge"></span>
-          </div>
-        </div>
-      </div>
-
-      <button class="button danger" id="stop-btn" disabled>Stop All Activities</button>
-
-      <div class="device-list" id="devices-list" style="margin-top: 15px;">
-        <div style="color: #8e8e93; font-size: 0.9em; padding: 10px">No devices found yet...</div>
-      </div>
-    </section>
-
-    <section>
-      <h3>3. Transfer</h3>
-      <div class="field">
-        <label>Text Message</label>
-        <div style="display: flex; gap: 8px">
-          <input type="text" id="message-input" placeholder="Type here..." />
-          <button class="button" id="send-btn" disabled style="margin: 0">Send</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>File Transfer</label>
-        <button class="button secondary" id="send-file-btn" disabled style="margin-left: 0">Pick & Send Image</button>
-      </div>
-      <div id="progress-container" class="progress-container" style="display: none">
-        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin-bottom: 4px">
-          <span id="progress-filename">Sending...</span>
-          <span id="progress-text">0%</span>
-        </div>
-        <div class="progress-bg">
-          <div id="progress-bar" class="progress-fill"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="android-tier3">
-      <h3>Tier 3 (Android)</h3>
-      <div style="display: flex; flex-wrap: wrap">
-        <button class="button secondary" id="hotspot-btn">Start Hotspot</button>
-        <button class="button danger" id="stop-t3-btn">Stop Tier 3</button>
-      </div>
-    </section>
+      </section>
     </div>
 
     <label>Log Console</label>
