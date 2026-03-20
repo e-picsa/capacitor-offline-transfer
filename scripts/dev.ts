@@ -40,7 +40,7 @@ async function syncExampleApp() {
         throw new Error('sync deps failed');
       }
     }
-    if ((hasWebChanges = true)) {
+    if (hasWebChanges) {
       hasWebChanges = false;
       // vite build will compile web code
       const ok = await runInExample(['bun', 'run', 'build:web'], 'build web');
@@ -68,7 +68,14 @@ console.log('\n👀 Watching for changes...\n');
 
 // --- Watch plugin native code ---
 watch(resolve(ROOT, 'android', 'src'), { recursive: true }, (_event, filename) => {
-  console.log(`\n📦 Plugin changed: ${filename}`);
+  console.log(`\n📦 Plugin Android changed: ${filename}`);
+  hasNativeChanges = true;
+  debouncedSync();
+});
+
+// --- Watch plugin iOS code ---
+watch(resolve(ROOT, 'ios', 'Sources'), { recursive: true }, (_event, filename) => {
+  console.log(`\n📦 Plugin iOS changed: ${filename}`);
   hasNativeChanges = true;
   debouncedSync();
 });
@@ -87,5 +94,3 @@ process.on('SIGINT', () => {
 });
 
 await new Promise(() => {}); // block forever
-
-// TODO - update contributing/dev docs
