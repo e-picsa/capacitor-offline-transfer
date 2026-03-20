@@ -6,6 +6,11 @@ import { PATHS } from '../paths';
 
 const APP_PACKAGE = 'com.example.app'; // adjust to your actual package name
 
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1_000;
+const BOOT_POLL_INTERVAL_MS = 3_000;
+const BOOT_TIMEOUT_MS = 120_000;
+
 export async function adbReverse(emulatorId: string, port: string): Promise<void> {
   await execCmd('adb', ['-s', emulatorId, 'reverse', `tcp:${port}`, `tcp:${port}`]);
 }
@@ -14,9 +19,6 @@ interface AdbInstallResult {
   success: boolean;
   error?: string;
 }
-
-const MAX_RETRIES = 3;
-const BASE_DELAY_MS = 1_000;
 
 /**
  * Errors where an uninstall + reinstall should fix it automatically.
@@ -28,6 +30,11 @@ const REINSTALL_PATTERNS: string[] = [
   'signatures do not match',
   'signature_mismatch',
 ];
+
+/**
+ * Errors that require waiting for the device to finish booting.
+ */
+const BOOT_PATTERNS: string[] = ['still boot', 'boot_not_complete', 'device not ready'];
 
 /**
  * Errors that are fatal and cannot be resolved automatically.
@@ -74,10 +81,37 @@ function matchesAny(haystack: string, needles: string[]): boolean {
   return needles.some((n) => haystack.includes(n));
 }
 
-function delay(attempt: number): Promise<void> {
+function delay(ms: number): Promise<void> {
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
+
+function retryDelay(attempt: number): Promise<void> {
   const ms = BASE_DELAY_MS * Math.pow(2, attempt - 2);
   console.log(`\n    retrying in ${ms}ms (attempt ${attempt}/${MAX_RETRIES})…`);
-  return new Promise<void>((r) => setTimeout(r, ms));
+  return delay(ms);
+}
+
+/**
+ * Polls `sys.boot_completed` until the device reports "1" or the timeout
+ * is reached. Falls back to a fixed delay if the property can't be read.
+ */
+async function waitForBoot(emulatorId: string): Promise<boolean> {
+  console.log(`\n    ⏳ emulator is still booting, waiting for boot…`);
+  const start = Date.now();
+
+  while (Date.now() - start < BOOT_TIMEOUT_MS) {
+    const { code, stdout } = await execCmd('adb', ['-s', emulatorId, 'shell', 'getprop', 'sys.boot_completed']);
+
+    if (code === 0 && stdout.trim() === '1') {
+      console.log(`    ✅ emulator booted after ${Date.now() - start}ms`);
+      return true;
+    }
+
+    await delay(BOOT_POLL_INTERVAL_MS);
+  }
+
+  console.error(`\n    ❌ emulator did not finish booting within ${BOOT_TIMEOUT_MS / 1_000}s`);
+  return false;
 }
 
 async function adbUninstall(emulatorId: string): Promise<boolean> {
@@ -100,9 +134,10 @@ async function adbFreshInstall(emulatorId: string, apkPath: string): Promise<Adb
   };
 }
 
-function classifyError(errorOutput: string): 'reinstall' | 'fatal' | 'retry' {
+function classifyError(errorOutput: string): 'reinstall' | 'boot' | 'fatal' | 'retry' {
   const lower = errorOutput.toLowerCase();
 
+  if (matchesAny(lower, BOOT_PATTERNS)) return 'boot';
   if (matchesAny(lower, REINSTALL_PATTERNS)) return 'reinstall';
 
   for (const { patterns } of FATAL_ERRORS) {
@@ -111,7 +146,6 @@ function classifyError(errorOutput: string): 'reinstall' | 'fatal' | 'retry' {
 
   if (matchesAny(lower, RETRYABLE_PATTERNS)) return 'retry';
 
-  // Unknown errors get retried — safe default for local emulators.
   return 'retry';
 }
 
@@ -131,7 +165,7 @@ export async function adbInstall(emulatorId: string): Promise<AdbInstallResult> 
   }
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    if (attempt > 1) await delay(attempt);
+    if (attempt > 1) await retryDelay(attempt);
 
     const { code, stdout, stderr } = await execCmd('adb', ['-s', emulatorId, 'install', '-r', apkPath]);
 
@@ -147,6 +181,19 @@ export async function adbInstall(emulatorId: string): Promise<AdbInstallResult> 
     if (classification === 'reinstall') {
       console.log(`\n    conflicting install detected, uninstalling and retrying…`);
       return adbFreshInstall(emulatorId, apkPath);
+    }
+
+    if (classification === 'boot') {
+      const booted = await waitForBoot(emulatorId);
+      if (!booted) {
+        return {
+          success: false,
+          error: `Emulator did not finish booting within ${BOOT_TIMEOUT_MS / 1_000}s`,
+        };
+      }
+      // Don't count the boot wait as a failed attempt — retry immediately.
+      attempt--;
+      continue;
     }
 
     // "retry" — transient or unknown error
