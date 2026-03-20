@@ -1,6 +1,6 @@
 import { Camera, CameraResultType } from '@capacitor/camera';
-import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 
 window.customElements.define(
