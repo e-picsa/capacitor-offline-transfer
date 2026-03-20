@@ -31,6 +31,10 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
     console.warn('OfflineTransfer: Web implementation not available', options);
   }
 
+  async connectByAddress(options: { url: string; displayName?: string }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available', options);
+  }
+
   async acceptConnection(options: { endpointId: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available', options);
   }
