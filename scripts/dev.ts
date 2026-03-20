@@ -1,41 +1,17 @@
 export {};
 
-import { watch, readFileSync, writeFileSync, existsSync } from 'fs';
+import { watch, readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { networkInterfaces } from 'os';
 import { spawn } from 'child_process';
 import { getEnv, saveEnv } from './env.utils';
 import { PATHS } from './paths';
+import { detectLocalIP, execCmd } from './utils/cli.utils';
 
 const DEFAULT_PORT = '5173';
 
 interface Emulator {
   id: string;
   state: string;
-}
-
-function execCmd(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
-  return new Promise((resolve) => {
-    const proc = spawn(cmd, args, { shell: true });
-    let stdout = '';
-    let stderr = '';
-    proc.stdout?.on('data', (d) => (stdout += d.toString()));
-    proc.stderr?.on('data', (d) => (stderr += d.toString()));
-    proc.on('close', (code) => resolve({ stdout, stderr, code: code ?? 0 }));
-  });
-}
-
-function detectLocalIP(): string | null {
-  const interfaces = networkInterfaces();
-  for (const [, addrs] of Object.entries(interfaces)) {
-    if (!addrs) continue;
-    for (const addr of addrs) {
-      if (addr.family === 'IPv4' && !addr.internal) {
-        return addr.address;
-      }
-    }
-  }
-  return null;
 }
 
 async function getRunningEmulators(): Promise<Emulator[]> {
@@ -133,17 +109,6 @@ async function syncPluginAndNative(): Promise<boolean> {
   const ok = await runInExample(['bun', 'run', 'sync:plugin'], 'sync plugin');
   if (!ok) return false;
   return await runInExample(['bun', 'run', 'sync:native'], 'cap sync');
-}
-
-async function killPort(port: string): Promise<void> {
-  const { code } = await execCmd('cmd', [
-    '/c',
-    `for /f "tokens=5" %a in ('netstat -ano ^| findstr :${port}') do taskkill /F /PID %a`,
-  ]);
-  if (code === 0) {
-    console.log(`  Killed process on port ${port}`);
-  }
-  await new Promise<void>((r) => setTimeout(r, 500));
 }
 
 function getApkPath(): string {
