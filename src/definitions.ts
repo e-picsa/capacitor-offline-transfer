@@ -53,6 +53,12 @@ export interface OfflineTransferPlugin {
   connect(options: { endpointId: string; displayName: string }): Promise<void>;
 
   /**
+   * Android Only: Manually connects to a device using its IP/URL.
+   * Useful for emulators and Tier 3 manual connections.
+   */
+  connectByAddress(options: { url: string; displayName?: string }): Promise<void>;
+
+  /**
    * Accepts an incoming connection request.
    */
   acceptConnection(options: { endpointId: string }): Promise<void>;
@@ -188,6 +194,7 @@ export interface EndpointFoundEvent {
   endpointId: string;
   endpointName: string;
   serviceId: string;
+  url?: string; // Optional: The URL if this is a manual/Tier 3 endpoint
 }
 
 export interface EndpointLostEvent {
