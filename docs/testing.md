@@ -75,9 +75,9 @@ If you have a Mac, you can test Multipeer Connectivity between an iPhone/iPad an
 
 ## 4. Cross-Platform Limitations
 
-- **Android <-> iOS (Tier 1)**: Native, high-performance P2P usually **does not work** directly between Android and iOS via custom apps. This is because Apple's *Multipeer Connectivity* (AWDL) and Google's *Nearby Connections* (Wi-Fi Direct) use different underlying link-layer protocols.
-- **Recent Updates (Late 2025)**: Google's system-level **Quick Share** (on Android) has implemented AWDL support to allow sending/receiving directly with Apple's **AirDrop**. 
-  - **Status**: This is currently a *system-level* feature of Google Play Services and is **not yet exposed** as a public API for third-party developers in the Nearby Connections SDK.
+- **Android <-> iOS (Tier 1)**: Native, high-performance P2P usually **does not work** directly between Android and iOS via custom apps. This is because Apple's _Multipeer Connectivity_ (AWDL) and Google's _Nearby Connections_ (Wi-Fi Direct) use different underlying link-layer protocols.
+- **Recent Updates (Late 2025)**: Google's system-level **Quick Share** (on Android) has implemented AWDL support to allow sending/receiving directly with Apple's **AirDrop**.
+  - **Status**: This is currently a _system-level_ feature of Google Play Services and is **not yet exposed** as a public API for third-party developers in the Nearby Connections SDK.
   - **Workaround**: You can use the standard Android/iOS "Share Sheet" to trigger these system-level transfers, but they will not be integrated into this plugin's P2P stream.
 - **Tier 3 Fallback**: This remains the recommended way for cross-platform sharing within your app:
   - Start the "Local Hotspot" (Android only) and "HTTP Server".
