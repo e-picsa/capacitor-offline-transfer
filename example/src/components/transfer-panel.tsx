@@ -2,15 +2,13 @@ import { Camera, CameraResultType } from '@capacitor/camera';
 import { Share } from '@capacitor/share';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 import { useSignal, signal } from '@preact/signals';
-import { html } from 'htm/preact';
-import type { FunctionComponent } from 'preact';
 
 import { connectedEndpointId, activeTransfers } from '../state';
 import { logService, errMsg } from '../state/log.service';
 
 import { ProgressBar } from './ui/progress-bar';
 
-export const TransferPanel: FunctionComponent = () => {
+export const TransferPanel = () => {
   const message = useSignal('');
   const progressState = signal({ visible: false, percent: 0, filename: '', status: '' });
   const isAndroid = signal(typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent));
@@ -78,7 +76,7 @@ export const TransferPanel: FunctionComponent = () => {
   const pct = firstT ? Math.round((firstT.bytesTransferred / firstT.totalBytes) * 100) : 0;
   const showProgress = !!firstT && firstT.status === 'IN_PROGRESS';
 
-  return html`
+  return (
     <section>
       <h2 class="text-lg font-semibold mb-3">3. Transfer</h2>
 
@@ -89,19 +87,19 @@ export const TransferPanel: FunctionComponent = () => {
             type="text"
             class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
             placeholder="Type here..."
-            value=${message.value}
-            onInput=${(e: Event) => {
+            value={message.value}
+            onInput={(e: Event) => {
               message.value = (e.target as HTMLInputElement).value;
             }}
-            onKeyDown=${(e: KeyboardEvent) => {
+            onKeyDown={(e: KeyboardEvent) => {
               if (e.key === 'Enter') handleSendMessage();
             }}
-            disabled=${!connectedEndpointId.value}
+            disabled={!connectedEndpointId.value}
           />
           <button
             class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded text-sm disabled:opacity-50"
-            onClick=${handleSendMessage}
-            disabled=${!connectedEndpointId.value || !message.value.trim()}
+            onClick={handleSendMessage}
+            disabled={!connectedEndpointId.value || !message.value.trim()}
           >
             Send
           </button>
@@ -112,32 +110,30 @@ export const TransferPanel: FunctionComponent = () => {
         <label class="block text-sm text-gray-600 mb-1">File Transfer</label>
         <button
           class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded text-sm border border-gray-300 disabled:opacity-50"
-          onClick=${handleSendFile}
-          disabled=${!connectedEndpointId.value}
+          onClick={handleSendFile}
+          disabled={!connectedEndpointId.value}
         >
           Pick &amp; Send Image
         </button>
       </div>
 
-      <${ProgressBar}
-        percent=${pct}
-        filename=${showProgress ? 'Transferring...' : firstT?.status}
-        status=${showProgress ? `${pct}%` : ''}
-        visible=${showProgress}
+      <ProgressBar
+        percent={pct}
+        filename={showProgress ? 'Transferring...' : firstT?.status}
+        status={showProgress ? `${pct}%` : ''}
+        visible={showProgress}
       />
 
-      ${isAndroid.value
-        ? html`
-            <div class="mt-4">
-              <button
-                class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded text-sm border border-gray-300"
-                onClick=${handleShare}
-              >
-                Share via System
-              </button>
-            </div>
-          `
-        : ''}
+      {isAndroid.value ? (
+        <div class="mt-4">
+          <button
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded text-sm border border-gray-300"
+            onClick={handleShare}
+          >
+            Share via System
+          </button>
+        </div>
+      ) : null}
     </section>
-  `;
+  );
 };
