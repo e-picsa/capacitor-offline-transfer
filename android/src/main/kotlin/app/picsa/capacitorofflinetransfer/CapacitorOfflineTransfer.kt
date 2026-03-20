@@ -9,17 +9,15 @@ class CapacitorOfflineTransfer {
     private lateinit var context: Context
     private lateinit var plugin: CapacitorOfflineTransferPlugin
     private lateinit var nearbyManager: NearbyConnectionsManager
-    private lateinit var hotspotManager: HotspotManager
-    private lateinit var serverManager: ServerManager
-    private lateinit var manualConnectionManager: ManualConnectionManager
+    private lateinit var lanClientManager: LanClientManager
+    private lateinit var lanServerManager: LanServerManager
 
     fun load(context: Context, plugin: CapacitorOfflineTransferPlugin) {
         this.context = context
         this.plugin = plugin
         nearbyManager = NearbyConnectionsManager(context, plugin)
-        hotspotManager = HotspotManager(context, plugin)
-        serverManager = ServerManager(context, plugin)
-        manualConnectionManager = ManualConnectionManager(context, plugin)
+        lanClientManager = LanClientManager(context, plugin)
+        lanServerManager = LanServerManager(context, plugin)
     }
 
     fun initialize(serviceId: String?) {
@@ -52,7 +50,7 @@ class CapacitorOfflineTransfer {
     }
 
     fun connectByAddress(url: String, displayName: String?) {
-        manualConnectionManager.connect(url, displayName)
+        lanClientManager.connect(url, displayName)
     }
 
     fun acceptConnection(endpointId: String) {
@@ -65,7 +63,7 @@ class CapacitorOfflineTransfer {
 
     fun disconnectFromEndpoint(endpointId: String) {
         if (endpointId.startsWith("http")) {
-            manualConnectionManager.disconnect(endpointId)
+            lanClientManager.disconnect(endpointId)
         } else {
             nearbyManager.disconnectFromEndpoint(endpointId)
         }
@@ -77,7 +75,7 @@ class CapacitorOfflineTransfer {
 
     fun sendMessage(endpointId: String, data: String) {
         if (endpointId.startsWith("http")) {
-            manualConnectionManager.sendMessage(endpointId, data)
+            lanClientManager.sendMessage(endpointId, data)
         } else {
             nearbyManager.sendMessage(endpointId, data)
         }
@@ -85,25 +83,17 @@ class CapacitorOfflineTransfer {
 
     fun sendFile(endpointId: String, filePath: String, fileName: String) {
         if (endpointId.startsWith("http")) {
-            manualConnectionManager.sendFile(endpointId, filePath, fileName)
+            lanClientManager.sendFile(endpointId, filePath, fileName)
         } else {
             nearbyManager.sendFile(endpointId, filePath, fileName)
         }
     }
 
-    fun startLocalHotspot(call: PluginCall) {
-        hotspotManager.start(call)
+    fun startLanServer(port: Int, call: PluginCall) {
+        lanServerManager.start(port, call)
     }
 
-    fun stopLocalHotspot() {
-        hotspotManager.stop()
-    }
-
-    fun startServer(port: Int, call: PluginCall) {
-        serverManager.start(port, call)
-    }
-
-    fun stopServer() {
-        serverManager.stop()
+    fun stopLanServer() {
+        lanServerManager.stop()
     }
 }

@@ -1,5 +1,6 @@
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import { SplashScreen } from '@capacitor/splash-screen';
 import type { EndpointFoundEvent } from '@picsa/capacitor-offline-transfer';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
@@ -19,15 +20,12 @@ window.customElements.define(
     }
 
     connectedCallback() {
-      const self = this;
-      const shadow = self;
+      const shadow = this;
       if (!shadow) return;
 
-      // Selectors
       const initBtn = shadow.querySelector('#init-btn') as HTMLButtonElement;
       const checkPermsBtn = shadow.querySelector('#check-perms') as HTMLButtonElement;
       const requestPermsBtn = shadow.querySelector('#request-perms') as HTMLButtonElement;
-      const strategySelect = shadow.querySelector('#strategy-select') as HTMLSelectElement;
       const logLevelSelect = shadow.querySelector('#log-level-select') as HTMLSelectElement;
 
       const advertiseBtn = shadow.querySelector('#advertise-btn') as HTMLButtonElement;
@@ -38,43 +36,42 @@ window.customElements.define(
       const sendBtn = shadow.querySelector('#send-btn') as HTMLButtonElement;
       const sendFileBtn = shadow.querySelector('#send-file-btn') as HTMLButtonElement;
 
-      const hotspotBtn = shadow.querySelector('#hotspot-btn') as HTMLButtonElement;
-      const serverBtn = shadow.querySelector('#server-btn') as HTMLButtonElement;
-      const stopT3Btn = shadow.querySelector('#stop-t3-btn') as HTMLButtonElement;
-
-      const nearbyControls = shadow.querySelector('#nearby-controls') as HTMLDivElement;
-      const emulatorControls = shadow.querySelector('#emulator-controls') as HTMLDivElement;
-
-      const devicesList = shadow.querySelector('#devices-list') as HTMLDivElement;
-      const messagesBox = shadow.querySelector('#messages') as HTMLDivElement;
+      const shareSystemBtn = shadow.querySelector('#share-system-btn') as HTMLButtonElement;
+      const startLanBtn = shadow.querySelector('#start-lan-btn') as HTMLButtonElement;
+      const stopLanBtn = shadow.querySelector('#stop-lan-btn') as HTMLButtonElement;
+      const lanServerControls = shadow.querySelector('#lan-server-controls') as HTMLDivElement;
+      const lanServerUrl = shadow.querySelector('#lan-server-url') as HTMLElement;
 
       const manualUrlInput = shadow.querySelector('#manual-url-input') as HTMLInputElement;
       const manualConnectBtn = shadow.querySelector('#manual-connect-btn') as HTMLButtonElement;
       const manualConnectArea = shadow.querySelector('#manual-connect-area') as HTMLDivElement;
 
+      const devicesList = shadow.querySelector('#devices-list') as HTMLDivElement;
+      const messagesBox = shadow.querySelector('#messages') as HTMLDivElement;
+
       const progressContainer = shadow.querySelector('#progress-container') as HTMLDivElement;
       const progressBar = shadow.querySelector('#progress-bar') as HTMLDivElement;
       const progressText = shadow.querySelector('#progress-text') as HTMLSpanElement;
       const progressFilename = shadow.querySelector('#progress-filename') as HTMLSpanElement;
-      const tier3Section = shadow.querySelector('#android-tier3') as HTMLElement;
 
       const errorBanner = shadow.querySelector('#error-banner') as HTMLDivElement;
       const initStatus = shadow.querySelector('#init-status') as HTMLSpanElement;
       const advertiseStatus = shadow.querySelector('#advertise-status') as HTMLSpanElement;
       const discoveryStatus = shadow.querySelector('#discovery-status') as HTMLSpanElement;
-      const serverStatus = shadow.querySelector('#server-status') as HTMLSpanElement;
       const manualConnectStatus = shadow.querySelector('#manual-connect-status') as HTMLSpanElement;
 
       const mainControls = shadow.querySelector('#main-controls') as HTMLDivElement;
       const notificationArea = shadow.querySelector('#notification-area') as HTMLDivElement;
 
-      if (Capacitor.getPlatform() !== 'android') {
-        tier3Section.style.display = 'none';
+      const isAndroid = Capacitor.getPlatform() === 'android';
+      if (!isAndroid) {
+        shareSystemBtn.style.display = 'none';
+        startLanBtn.style.display = 'none';
       }
 
-      // State
       let endpoints: Record<string, EndpointFoundEvent> = {};
       let connectedEndpointId: string | null = null;
+      let lanServerRunning = false;
 
       const addLog = (msg: string) => {
         const time = new Date().toLocaleTimeString();
@@ -111,28 +108,21 @@ window.customElements.define(
         }, 4000);
       };
 
-      // UI Toggling based on Strategy
-      strategySelect.addEventListener('change', () => {
-        const strategy = strategySelect.value;
-        if (strategy === 'HTTP_SERVER') {
-          nearbyControls.style.display = 'none';
-          emulatorControls.style.display = 'block';
-          addLog('Switched to Emulator mode (HTTP Server Bridge)');
-        } else {
-          nearbyControls.style.display = 'block';
-          emulatorControls.style.display = 'none';
-          addLog(`Switched to Nearby mode (${strategy})`);
+      const setLanServerState = (running: boolean, url?: string) => {
+        lanServerRunning = running;
+        lanServerControls.style.display = running ? 'block' : 'none';
+        startLanBtn.style.display = running ? 'none' : 'inline-block';
+        stopLanBtn.style.display = running ? 'inline-block' : 'none';
+        if (url) {
+          lanServerUrl.textContent = url;
         }
-      });
-
-      // Permissions
-      const checkPermissions = async () => {
-        const status = await OfflineTransfer.checkPermissions();
-        addLog(`Permissions: nearby=${status.nearby}`);
-        return status;
       };
 
-      checkPermsBtn.addEventListener('click', checkPermissions);
+      checkPermsBtn.addEventListener('click', async () => {
+        const status = await OfflineTransfer.checkPermissions();
+        addLog(`Permissions: nearby=${status.nearby}`);
+      });
+
       requestPermsBtn.addEventListener('click', async () => {
         const status = await OfflineTransfer.requestPermissions();
         addLog(`Request result: nearby=${status.nearby}`);
@@ -146,38 +136,24 @@ window.customElements.define(
         });
       }
 
-      // Plugin Init
       initBtn.addEventListener('click', async () => {
         try {
           initBtn.disabled = true;
           updateStatus(initStatus, 'Initializing...', 'loading');
-          const strategy = strategySelect.value;
-
-          if (strategy === 'HTTP_SERVER') {
-            [serverBtn, manualConnectBtn].forEach((b) => (b.disabled = false));
-          } else {
-            await OfflineTransfer.setStrategy({
-              strategy: strategy as 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT',
-            });
-            [advertiseBtn, discoveryBtn].forEach((b) => (b.disabled = false));
-          }
-
           await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
           setupListeners();
-
           stopBtn.disabled = false;
           mainControls.style.display = 'block';
           updateStatus(initStatus, 'Ready', 'active');
-          addLog(`Initialized with ${strategy}`);
+          addLog('Initialized');
           showNotification('System Initialized', 'success');
-        } catch (e: any) {
+        } catch (e: unknown) {
           initBtn.disabled = false;
           updateStatus(initStatus, 'Failed', 'stopped');
-          showError(`Init Error: ${e.message}`);
+          showError(`Init Error: ${(e as Error).message}`);
         }
       });
 
-      // Discovery & Advertising
       advertiseBtn.addEventListener('click', async () => {
         try {
           advertiseBtn.disabled = true;
@@ -185,10 +161,10 @@ window.customElements.define(
           await OfflineTransfer.startAdvertising({ displayName: 'Device_' + Math.floor(Math.random() * 100) });
           updateStatus(advertiseStatus, 'Advertising', 'active');
           addLog('Advertising started...');
-        } catch (e: any) {
+        } catch (e: unknown) {
           advertiseBtn.disabled = false;
           updateStatus(advertiseStatus, 'Failed', 'stopped');
-          showError(`Advertising Error: ${e.message}`);
+          showError(`Advertising Error: ${(e as Error).message}`);
         }
       });
 
@@ -199,10 +175,10 @@ window.customElements.define(
           await OfflineTransfer.startDiscovery();
           updateStatus(discoveryStatus, 'Discovering', 'active');
           addLog('Discovery started...');
-        } catch (e: any) {
+        } catch (e: unknown) {
           discoveryBtn.disabled = false;
           updateStatus(discoveryStatus, 'Failed', 'stopped');
-          showError(`Discovery Error: ${e.message}`);
+          showError(`Discovery Error: ${(e as Error).message}`);
         }
       });
 
@@ -212,14 +188,12 @@ window.customElements.define(
           if (!url) return;
           manualConnectBtn.disabled = true;
           updateStatus(manualConnectStatus, 'Connecting...', 'loading');
-          addLog(`Manually connecting to ${url}...`);
+          addLog(`Connecting to ${url}...`);
           await OfflineTransfer.connectByAddress({ url });
-          // Note: Do not report 'Connected' here because the native call resolves immediately
-          // while connecting in a background thread. Wait for the 'connectionResult' event instead.
-        } catch (e: any) {
+        } catch (e: unknown) {
           manualConnectBtn.disabled = false;
           updateStatus(manualConnectStatus, 'Failed', 'stopped');
-          showError(`Manual Connect Error: ${e.message}`);
+          showError(`Manual Connect Error: ${(e as Error).message}`);
         }
       });
 
@@ -229,21 +203,21 @@ window.customElements.define(
         await OfflineTransfer.stopDiscovery();
         await OfflineTransfer.stopServer();
         await OfflineTransfer.disconnect();
+        if (lanServerRunning) {
+          await OfflineTransfer.stopLanServer();
+          setLanServerState(false);
+        }
         endpoints = {};
         connectedEndpointId = null;
         updateDevicesUI();
         initBtn.disabled = false;
         mainControls.style.display = 'none';
-        [advertiseBtn, discoveryBtn, serverBtn, manualConnectBtn, sendBtn, sendFileBtn].forEach(
-          (b) => (b.disabled = true),
-        );
-        [advertiseStatus, discoveryStatus, serverStatus, manualConnectStatus].forEach((el) => updateStatus(el, '', ''));
-        if (manualConnectArea) manualConnectArea.style.display = 'block';
+        [advertiseBtn, discoveryBtn, sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
+        [advertiseStatus, discoveryStatus].forEach((el) => updateStatus(el, '', ''));
         updateStatus(initStatus, 'Ready', 'active');
-        addLog('Stopped all P2P and Server activities');
+        addLog('Stopped all activities');
       });
 
-      // Transfer
       sendBtn.addEventListener('click', async () => {
         const val = messageInput.value.trim();
         if (!val || !connectedEndpointId) return;
@@ -251,8 +225,8 @@ window.customElements.define(
           await OfflineTransfer.sendMessage({ endpointId: connectedEndpointId, data: val });
           addLog(`SENT: ${val}`);
           messageInput.value = '';
-        } catch (e: any) {
-          addLog(`Send Error: ${e.message}`);
+        } catch (e: unknown) {
+          addLog(`Send Error: ${(e as Error).message}`);
         }
       });
 
@@ -276,42 +250,62 @@ window.customElements.define(
               fileName: `photo_${Date.now()}.jpg`,
             });
           }
-        } catch (e: any) {
-          addLog(`Camera/File Error: ${e.message}`);
+        } catch (e: unknown) {
+          addLog(`Camera/File Error: ${(e as Error).message}`);
         }
       });
 
-      // Tier 3
-      hotspotBtn.addEventListener('click', async () => {
+      shareSystemBtn.addEventListener('click', async () => {
         try {
-          const info = await OfflineTransfer.startLocalHotspot();
-          addLog(`HOTSPOT: SSID=${info.ssid}, PWD=${info.password}`);
-        } catch (e: any) {
-          addLog(`Hotspot Error: ${e.message}`);
+          const image = await Camera.getPhoto({
+            quality: 90,
+            allowEditing: false,
+            resultType: CameraResultType.Uri,
+          });
+
+          if (image.path) {
+            const canShare = await Share.canShare();
+            if (!canShare.value) {
+              showError('Sharing not available on this device');
+              return;
+            }
+
+            await Share.share({
+              title: 'Share via Bluetooth/Nearby Share',
+              files: [image.path],
+            });
+            addLog('Shared via system share sheet');
+          }
+        } catch (e: unknown) {
+          addLog(`Share Error: ${(e as Error).message}`);
         }
       });
 
-      serverBtn.addEventListener('click', async () => {
+      startLanBtn.addEventListener('click', async () => {
         try {
-          serverBtn.disabled = true;
-          updateStatus(serverStatus, 'Starting...', 'loading');
-          const info = await OfflineTransfer.startServer({ port: 8080 });
-          updateStatus(serverStatus, `Running: ${info.url}`, 'active');
-          addLog(`SERVER: ${info.url}`);
-        } catch (e: any) {
-          serverBtn.disabled = false;
-          updateStatus(serverStatus, 'Failed', 'stopped');
-          showError(`Server Error: ${e.message}`);
+          startLanBtn.disabled = true;
+          updateStatus(manualConnectStatus, 'Starting...', 'loading');
+          const info = await OfflineTransfer.startLanServer({ port: 8080 });
+          setLanServerState(true, info.url);
+          addLog(`LAN Server: ${info.url}`);
+          manualConnectArea.style.display = 'block';
+          manualConnectBtn.disabled = false;
+          manualUrlInput.value = info.url;
+        } catch (e: unknown) {
+          startLanBtn.disabled = false;
+          updateStatus(manualConnectStatus, 'Failed', 'stopped');
+          showError(`LAN Server Error: ${(e as Error).message}`);
         }
       });
 
-      stopT3Btn.addEventListener('click', async () => {
-        await OfflineTransfer.stopLocalHotspot();
-        await OfflineTransfer.stopServer();
-        addLog('Stopped Tier 3 services');
+      stopLanBtn.addEventListener('click', async () => {
+        await OfflineTransfer.stopLanServer();
+        setLanServerState(false);
+        manualConnectArea.style.display = 'none';
+        manualConnectBtn.disabled = true;
+        addLog('LAN Server stopped');
       });
 
-      // Listeners
       const setupListeners = () => {
         OfflineTransfer.addListener('endpointFound', (ev) => {
           endpoints[ev.endpointId] = ev;
@@ -340,18 +334,14 @@ window.customElements.define(
           if (ev.status === 'SUCCESS') {
             connectedEndpointId = ev.endpointId;
             [sendBtn, sendFileBtn].forEach((b) => (b.disabled = false));
-            if (manualConnectArea) manualConnectArea.style.display = 'none';
-            if (strategySelect.value === 'HTTP_SERVER') updateStatus(manualConnectStatus, 'Connected', 'active');
             updateDevicesUI();
             addLog(`Connected to ${ev.endpointId}`);
             showNotification(`Connected to ${ev.endpointId}`, 'success');
           } else {
             addLog(`Connection failed/rejected: ${ev.status}`);
             showError(`Connection failed: ${ev.status}`);
-            if (strategySelect.value === 'HTTP_SERVER') {
-              updateStatus(manualConnectStatus, 'Failed', 'stopped');
-              manualConnectBtn.disabled = false;
-            }
+            updateStatus(manualConnectStatus, 'Failed', 'stopped');
+            manualConnectBtn.disabled = false;
           }
         });
 

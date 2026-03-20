@@ -38,7 +38,7 @@ export interface OfflineTransferPlugin {
   stopAdvertising(): Promise<void>;
 
   /**
-   * starts discovery of nearby peers.
+   * Starts discovery of nearby peers.
    */
   startDiscovery(): Promise<void>;
 
@@ -53,8 +53,8 @@ export interface OfflineTransferPlugin {
   connect(options: { endpointId: string; displayName: string }): Promise<void>;
 
   /**
-   * Android Only: Manually connects to a device using its IP/URL.
-   * Useful for emulators and Tier 3 manual connections.
+   * Android Only (Dev Tooling): Manually connects to a device using its IP/URL.
+   * Intended for emulator testing. Production use nearby P2P discovery instead.
    */
   connectByAddress(options: { url: string; displayName?: string }): Promise<void>;
 
@@ -91,27 +91,17 @@ export interface OfflineTransferPlugin {
   sendFile(options: { endpointId: string; filePath: string; fileName: string }): Promise<void>;
 
   /**
-   * Android Only: Starts a Local-Only Hotspot.
-   * Returns the SSID and Password for manual connection (QR code).
-   */
-  startLocalHotspot(): Promise<HotspotInfo>;
-
-  /**
-   * Android Only: Stops the Local-Only Hotspot.
-   */
-  stopLocalHotspot(): Promise<void>;
-
-  /**
-   * Android Only: Starts a lightweight, embedded HTTP server to serve files via HTTP.
-   * Used for Tier 3 fallback (uninstalled devices).
+   * Android Only (Dev Tooling): Starts a LAN HTTP server for emulator testing.
+   * Use this to test file transfers between emulators on the same development machine.
+   * Not for production use.
    * @param options.port The port to bind to (0 for dynamic selection).
    */
-  startServer(options: { port?: number }): Promise<{ port: number; url: string }>;
+  startLanServer(options: { port?: number }): Promise<{ port: number; url: string }>;
 
   /**
-   * Stops the embedded HTTP server.
+   * Android Only (Dev Tooling): Stops the LAN HTTP server.
    */
-  stopServer(): Promise<void>;
+  stopLanServer(): Promise<void>;
 
   /**
    * Sets the logging level.
@@ -157,9 +147,12 @@ export interface OfflineTransferPlugin {
     listenerFunc: (event: FileReceivedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
+  /**
+   * Android Only (Dev Tooling): Fired when an emulator or HTTP client connects to the LAN server.
+   */
   addListener(
     eventName: 'emulatorClientConnected',
-    listenerFunc: (event: emulatorClientConnectedEvent) => void,
+    listenerFunc: (event: EmulatorClientConnectedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -178,16 +171,6 @@ export interface OfflineTransferPlugin {
   removeAllListeners(): Promise<void>;
 }
 
-export interface HotspotInfo {
-  ssid: string;
-  password: string;
-}
-
-export interface emulatorClientConnectedEvent {
-  endpointId: string;
-  endpointName: string;
-}
-
 export interface ConnectionRequestEvent {
   endpointId: string;
   endpointName: string;
@@ -204,7 +187,7 @@ export interface EndpointFoundEvent {
   endpointId: string;
   endpointName: string;
   serviceId: string;
-  url?: string; // Optional: The URL if this is a manual/Tier 3 endpoint
+  url?: string;
 }
 
 export interface EndpointLostEvent {
@@ -228,5 +211,10 @@ export interface FileReceivedEvent {
   endpointId: string;
   payloadId: string;
   fileName: string;
-  path: string; // The absolute path where the file was saved (Context.getFilesDir() on Android)
+  path: string;
+}
+
+export interface EmulatorClientConnectedEvent {
+  endpointId: string;
+  endpointName: string;
 }

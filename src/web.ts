@@ -1,18 +1,18 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { OfflineTransferPlugin, HotspotInfo, PermissionStatus } from './definitions';
+import type { OfflineTransferPlugin, PermissionStatus } from './definitions';
 
 export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlugin {
-  async initialize(options: { serviceId: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async initialize(_options: { serviceId: string }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async setStrategy(options: { strategy: 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT' }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async setStrategy(_options: { strategy: 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT' }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async startAdvertising(options: { displayName: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async startAdvertising(_options: { displayName: string }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
   }
 
   async stopAdvertising(): Promise<void> {
@@ -27,61 +27,52 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async connect(options: { endpointId: string; displayName: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async connect(_options: { endpointId: string; displayName: string }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async connectByAddress(options: { url: string; displayName?: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async connectByAddress(_options: { url: string; displayName?: string }): Promise<void> {
+    console.warn('OfflineTransfer: connectByAddress is not available on web');
   }
 
-  async acceptConnection(options: { endpointId: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async acceptConnection(_options: { endpointId: string }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async rejectConnection(options: { endpointId: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async rejectConnection(_options: { endpointId: string }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async disconnectFromEndpoint(options: { endpointId: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async disconnectFromEndpoint(_options: { endpointId: string }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
   }
 
   async disconnect(): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async sendMessage(options: { endpointId: string; data: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
-  }
-
-  async sendFile(options: { endpointId: string; filePath: string; fileName: string }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
-  }
-
-  async startLocalHotspot(): Promise<HotspotInfo> {
-    console.warn('OfflineTransfer: Web implementation not available');
-    return Promise.reject('Local Hotspot not available on web');
-  }
-
-  async stopLocalHotspot(): Promise<void> {
+  async sendMessage(_options: { endpointId: string; data: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async startServer(options: { port?: number }): Promise<{ port: number; url: string }> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
-    return Promise.reject('Embedded server not available on web');
-  }
-
-  async stopServer(): Promise<void> {
+  async sendFile(_options: { endpointId: string; filePath: string; fileName: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async setLogLevel(options: { logLevel: number }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available', options);
+  async startLanServer(_options: { port?: number }): Promise<{ port: number; url: string }> {
+    console.warn('OfflineTransfer: LAN server is not available on web');
+    return Promise.reject('LAN server is not available on web');
   }
 
-  addListener(eventName: string, listenerFunc: (event: any) => any): any {
+  async stopLanServer(): Promise<void> {
+    console.warn('OfflineTransfer: LAN server is not available on web');
+  }
+
+  async setLogLevel(_options: { logLevel: number }): Promise<void> {
+    console.warn('OfflineTransfer: Web implementation not available');
+  }
+
+  addListener(eventName: string, listenerFunc: (...args: any[]) => any): any {
     console.warn(`OfflineTransfer: addListener(${eventName}) not supported on web`);
     return super.addListener(eventName, listenerFunc);
   }

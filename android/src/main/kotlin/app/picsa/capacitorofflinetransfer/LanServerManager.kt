@@ -14,25 +14,21 @@ import java.net.URLDecoder
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-/**
- * Embedded HTTP server for serving files over local network.
- * Zero-dependency implementation using ServerSocket.
- */
-open class ServerManager(private val context: Context, private val plugin: CapacitorOfflineTransferPlugin) {
+class LanServerManager(private val context: Context, private val plugin: CapacitorOfflineTransferPlugin) {
 
     private var serverThread: Thread? = null
     private var serverSocket: ServerSocket? = null
     private val executor: ExecutorService = Executors.newCachedThreadPool()
 
     companion object {
-        private const val TAG = "ServerManager"
+        private const val TAG = "LanServerManager"
     }
 
     fun start(port: Int, call: PluginCall) {
         try {
             serverSocket = ServerSocket(port)
             val actualPort = serverSocket?.localPort ?: port
-            
+
             serverThread = Thread {
                 while (!Thread.currentThread().isInterrupted) {
                     try {
@@ -81,8 +77,7 @@ open class ServerManager(private val context: Context, private val plugin: Capac
         try {
             val reader = BufferedReader(InputStreamReader(client.getInputStream()))
             val firstLine = reader.readLine() ?: return
-            
-            // Basic HTTP request parsing: METHOD /path HTTP/1.1
+
             val parts = firstLine.split(" ")
             if (parts.size < 2) {
                 sendErrorResponse(client, 400, "Bad Request")
@@ -92,19 +87,23 @@ open class ServerManager(private val context: Context, private val plugin: Capac
             val method = parts[0]
             val rawUri = parts[1]
 
-            if (method == "POST" && rawUri == "/message") {
-                handlePostMessage(client, reader)
-                return
-            }
-
-            if (method == "POST" && rawUri == "/connect") {
-                handlePostConnect(client, reader)
-                return
-            }
-
-            if (method != "GET") {
-                sendErrorResponse(client, 400, "Bad Request")
-                return
+            when {
+                method == "POST" && rawUri == "/message" -> {
+                    handlePostMessage(client, reader)
+                    return
+                }
+                method == "POST" && rawUri == "/connect" -> {
+                    handlePostConnect(client, reader)
+                    return
+                }
+                method == "POST" && rawUri == "/upload" -> {
+                    handlePostUpload(client, reader)
+                    return
+                }
+                method != "GET" -> {
+                    sendErrorResponse(client, 400, "Bad Request")
+                    return
+                }
             }
 
             val fileName = File(URLDecoder.decode(rawUri, "UTF-8")).name
@@ -162,60 +161,131 @@ open class ServerManager(private val context: Context, private val plugin: Capac
     }
 
     private fun handlePostConnect(client: Socket, reader: BufferedReader) {
-    try {
-        var contentLength = 0
-        var line: String? = reader.readLine()
-        while (line != null && line.isNotEmpty()) {
-            if (line.startsWith("Content-Length:", ignoreCase = true)) {
-                contentLength = line.substring(15).trim().toInt()
+        try {
+            var contentLength = 0
+            var line: String? = reader.readLine()
+            while (line != null && line.isNotEmpty()) {
+                if (line.startsWith("Content-Length:", ignoreCase = true)) {
+                    contentLength = line.substring(15).trim().toInt()
+                }
+                line = reader.readLine()
             }
-            line = reader.readLine()
-        }
 
-        val json = if (contentLength > 0) {
             val body = CharArray(contentLength)
-            reader.read(body, 0, contentLength)
-            JSObject(String(body))
-        } else {
-            JSObject()
+            if (contentLength > 0) {
+                reader.read(body, 0, contentLength)
+            }
+            val json = JSObject(String(body))
+            val displayName = json.optString("displayName", "Unknown")
+            val clientIp = client.inetAddress.hostAddress ?: "unknown"
+
+            Log.d(TAG, "Client connected: $displayName ($clientIp)")
+
+            val event = JSObject().apply {
+                put("endpointId", clientIp)
+                put("endpointName", displayName)
+            }
+            plugin.emit("emulatorClientConnected", event)
+
+            val out = client.getOutputStream()
+            val header = "HTTP/1.1 200 OK\r\n" +
+                    "Content-Type: application/json\r\n" +
+                    "Connection: close\r\n\r\n" +
+                    """{"status":"ok"}"""
+            out.write(header.toByteArray())
+            out.flush()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling POST connect", e)
+            sendErrorResponse(client, 500, "Internal Server Error")
         }
-        val displayName = json.optString("displayName", "Unknown")
-        val clientIp = client.inetAddress.hostAddress ?: "unknown"
-
-        Log.d(TAG, "Client connected: $displayName ($clientIp)")
-
-        val event = JSObject().apply {
-            put("endpointId", clientIp)
-            put("endpointName", displayName)
-        }
-        plugin.emit("emulatorClientConnected", event)
-
-        val out = client.getOutputStream()
-        val header = "HTTP/1.1 200 OK\r\n" +
-                "Content-Type: application/json\r\n" +
-                "Connection: close\r\n\r\n" +
-                """{"status":"ok"}"""
-        out.write(header.toByteArray())
-        out.flush()
-    } catch (e: Exception) {
-        Log.e(TAG, "Error handling POST connect", e)
-        sendErrorResponse(client, 500, "Internal Server Error")
     }
-}
+
+    private fun handlePostUpload(client: Socket, reader: BufferedReader) {
+        try {
+            var contentLength = 0
+            var line: String? = reader.readLine()
+            val headers = mutableMapOf<String, String>()
+
+            while (line != null && line.isNotEmpty()) {
+                val colonIdx = line.indexOf(':')
+                if (colonIdx > 0) {
+                    val key = line.substring(0, colonIdx).trim().lowercase()
+                    val value = line.substring(colonIdx + 1).trim()
+                    headers[key] = value
+                }
+                if (line.startsWith("Content-Length:", ignoreCase = true)) {
+                    contentLength = line.substring(15).trim().toInt()
+                }
+                line = reader.readLine()
+            }
+
+            val fileName = headers["x-filename"]
+                ?: headers["content-disposition"]?.let { extractFilenameFromDisposition(it) }
+                ?: "upload_${System.currentTimeMillis()}"
+
+            val body = ByteArray(contentLength)
+            var offset = 0
+            val inputStream = client.getInputStream()
+            while (offset < contentLength) {
+                val read = inputStream.read(body, offset, contentLength - offset)
+                if (read == -1) break
+                offset += read
+            }
+
+            val targetFile = File(context.filesDir, fileName)
+            FileOutputStream(targetFile).use { it.write(body) }
+
+            val event = JSObject().apply {
+                put("endpointId", client.inetAddress.hostAddress)
+                put("payloadId", fileName)
+                put("fileName", fileName)
+                put("path", targetFile.absolutePath)
+            }
+            plugin.emit("fileReceived", event)
+
+            val progressEvent = JSObject().apply {
+                put("endpointId", client.inetAddress.hostAddress)
+                put("payloadId", fileName)
+                put("bytesTransferred", contentLength.toLong())
+                put("totalBytes", contentLength.toLong())
+                put("status", "SUCCESS")
+            }
+            plugin.emit("transferProgress", progressEvent)
+
+            val out = client.getOutputStream()
+            val responseBody = """{"status":"ok","fileName":"$fileName"}"""
+            val header = "HTTP/1.1 200 OK\r\n" +
+                    "Content-Type: application/json\r\n" +
+                    "Content-Length: ${responseBody.length}\r\n" +
+                    "Connection: close\r\n\r\n"
+            out.write(header.toByteArray())
+            out.write(responseBody.toByteArray())
+            out.flush()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling POST upload", e)
+            sendErrorResponse(client, 500, "Internal Server Error")
+        }
+    }
+
+    private fun extractFilenameFromDisposition(disposition: String): String? {
+        val regex = Regex("""filename[^;=\n]*=(?:(?:["'])([^"']*?)["']|([^\s;]*))""")
+        val match = regex.find(disposition)
+        return match?.groupValues?.getOrNull(1)?.takeIf { it.isNotEmpty() }
+            ?: match?.groupValues?.getOrNull(2)?.takeIf { it.isNotEmpty() }
+    }
 
     private fun sendFileResponse(client: Socket, file: File) {
         try {
             val out = client.getOutputStream()
             val mimeType = getMimeType(file.name)
-            
+
             val header = "HTTP/1.1 200 OK\r\n" +
                     "Content-Type: $mimeType\r\n" +
                     "Content-Length: ${file.length()}\r\n" +
                     "Connection: close\r\n\r\n"
-            
+
             out.write(header.toByteArray())
-            
-            FileInputStream(file).use { it.copyTo(out) }
+            FileInputStream(file).use { it.transferTo(out) }
             out.flush()
         } catch (e: Exception) {
             Log.e(TAG, "Error sending file response", e)
@@ -245,7 +315,7 @@ open class ServerManager(private val context: Context, private val plugin: Capac
         }
     }
 
-    internal open fun getLocalIpAddress(): String? {
+    internal fun getLocalIpAddress(): String? {
         try {
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
             while (interfaces.hasMoreElements()) {
@@ -286,4 +356,3 @@ open class ServerManager(private val context: Context, private val plugin: Capac
         }
     }
 }
-

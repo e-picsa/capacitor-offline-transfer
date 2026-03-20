@@ -1,7 +1,6 @@
 package app.picsa.capacitorofflinetransfer
 
 import android.Manifest
-import android.content.ContentResolver
 import android.net.Uri
 import android.os.Build
 import com.getcapacitor.JSObject
@@ -36,9 +35,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     private val implementation = CapacitorOfflineTransfer()
     private var pendingPermissionCall: PluginCall? = null
 
-    // Nearby Connections requires different Bluetooth permissions based on API level:
-    // - API 31+ (Android 12+): BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, NEARBY_WIFI_DEVICES
-    // - API 30 and below: legacy BLUETOOTH and BLUETOOTH_ADMIN permissions
     @Suppress("DEPRECATION")
     override fun requestPermissions(call: PluginCall?) {
         if (call == null) return
@@ -249,7 +245,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     fun sendFile(call: PluginCall) {
         val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
         val filePath = call.getString("filePath") ?: return call.reject("filePath is required")
-        
+
         var fileName = call.getString("fileName")
         if (fileName.isNullOrBlank()) {
             val timestamp = System.currentTimeMillis()
@@ -257,37 +253,25 @@ class CapacitorOfflineTransferPlugin : Plugin() {
             val extension = getFileExtension(filePath)
             fileName = if (extension.isNotEmpty()) "file_${timestamp}_${uuid}.$extension" else "file_${timestamp}_${uuid}"
         }
-        
+
         implementation.sendFile(endpointId, filePath, fileName)
         call.resolve()
     }
 
     @PluginMethod
-    fun startLocalHotspot(call: PluginCall) {
-        implementation.startLocalHotspot(call)
-    }
-
-    @PluginMethod
-    fun stopLocalHotspot(call: PluginCall) {
-        implementation.stopLocalHotspot()
-        call.resolve()
-    }
-
-    @PluginMethod
-    fun startServer(call: PluginCall) {
+    fun startLanServer(call: PluginCall) {
         val port = call.getInt("port") ?: 0
-        implementation.startServer(port, call)
+        implementation.startLanServer(port, call)
     }
 
     @PluginMethod
-    fun stopServer(call: PluginCall) {
-        implementation.stopServer()
+    fun stopLanServer(call: PluginCall) {
+        implementation.stopLanServer()
         call.resolve()
     }
 
     @PluginMethod
     fun setLogLevel(call: PluginCall) {
-        // Implementation for log level if needed
         call.resolve()
     }
 }
