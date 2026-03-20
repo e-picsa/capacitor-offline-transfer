@@ -17,16 +17,27 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
     fun connect(url: String, displayName: String?) {
         executor.execute {
             try {
-                // Verify reachability before simulating connection
-                val connection = openConnection(url)
+                val connectUrl = if (url.endsWith("/")) "${url}connect" else "$url/connect"
+                val connection = openConnection(connectUrl)
+                connection.requestMethod = "POST"
+                connection.doOutput = true
                 connection.connectTimeout = 5000
                 connection.readTimeout = 5000
-                connection.connect()
-                // We don't strictly care about the response code, just that we could connect to the socket
+                connection.setRequestProperty("Content-Type", "application/json")
+
+                val payload = JSObject().apply {
+                    put("displayName", displayName ?: "Manual Endpoint")
+                }
+                connection.outputStream.use { it.write(payload.toString().toByteArray()) }
+
                 val responseCode = connection.responseCode
                 connection.disconnect()
 
-                val endpointId = url 
+                if (responseCode != 200) {
+                    throw Exception("Server rejected connection: $responseCode")
+                }
+
+                val endpointId = url
                 val foundEvent = JSObject().apply {
                     put("endpointId", endpointId)
                     put("endpointName", displayName ?: "Manual Endpoint")

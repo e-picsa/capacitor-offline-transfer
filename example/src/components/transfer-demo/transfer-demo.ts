@@ -212,7 +212,8 @@ window.customElements.define(
           updateStatus(manualConnectStatus, 'Connecting...', 'loading');
           addLog(`Manually connecting to ${url}...`);
           await OfflineTransfer.connectByAddress({ url });
-          updateStatus(manualConnectStatus, 'Connected', 'active');
+          // Note: Do not report 'Connected' here because the native call resolves immediately
+          // while connecting in a background thread. Wait for the 'connectionResult' event instead.
         } catch (e: any) {
           manualConnectBtn.disabled = false;
           updateStatus(manualConnectStatus, 'Failed', 'stopped');
@@ -338,12 +339,17 @@ window.customElements.define(
             connectedEndpointId = ev.endpointId;
             [sendBtn, sendFileBtn].forEach((b) => (b.disabled = false));
             if (manualConnectArea) manualConnectArea.style.display = 'none';
+            if (strategySelect.value === 'HTTP_SERVER') updateStatus(manualConnectStatus, 'Connected', 'active');
             updateDevicesUI();
             addLog(`Connected to ${ev.endpointId}`);
             showNotification(`Connected to ${ev.endpointId}`, 'success');
           } else {
             addLog(`Connection failed/rejected: ${ev.status}`);
             showError(`Connection failed: ${ev.status}`);
+            if (strategySelect.value === 'HTTP_SERVER') {
+              updateStatus(manualConnectStatus, 'Failed', 'stopped');
+              manualConnectBtn.disabled = false;
+            }
           }
         });
 
@@ -367,6 +373,10 @@ window.customElements.define(
               progressContainer.style.display = 'none';
             }, 2000);
           }
+        });
+
+        OfflineTransfer.addListener('clientConnected', (event) => {
+          console.log(`Client connected: ${event.endpointName} (${event.endpointId})`);
         });
       };
 

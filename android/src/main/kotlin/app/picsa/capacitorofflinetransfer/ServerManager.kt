@@ -97,6 +97,11 @@ open class ServerManager(private val context: Context, private val plugin: Capac
                 return
             }
 
+            if (method == "POST" && rawUri == "/connect") {
+                handlePostConnect(client, reader)
+                return
+            }
+
             if (method != "GET") {
                 sendErrorResponse(client, 400, "Bad Request")
                 return
@@ -155,6 +160,46 @@ open class ServerManager(private val context: Context, private val plugin: Capac
             sendErrorResponse(client, 500, "Internal Server Error")
         }
     }
+
+    private fun handlePostConnect(client: Socket, reader: BufferedReader) {
+    try {
+        var contentLength = 0
+        var line: String? = reader.readLine()
+        while (line != null && line.isNotEmpty()) {
+            if (line.startsWith("Content-Length:", ignoreCase = true)) {
+                contentLength = line.substring(15).trim().toInt()
+            }
+            line = reader.readLine()
+        }
+
+        val body = CharArray(contentLength)
+        if (contentLength > 0) {
+            reader.read(body, 0, contentLength)
+        }
+        val json = JSObject(String(body))
+        val displayName = json.optString("displayName", "Unknown")
+        val clientIp = client.inetAddress.hostAddress ?: "unknown"
+
+        Log.d(TAG, "Client connected: $displayName ($clientIp)")
+
+        val event = JSObject().apply {
+            put("endpointId", clientIp)
+            put("endpointName", displayName)
+        }
+        plugin.emit("clientConnected", event)
+
+        val out = client.getOutputStream()
+        val header = "HTTP/1.1 200 OK\r\n" +
+                "Content-Type: application/json\r\n" +
+                "Connection: close\r\n\r\n" +
+                """{"status":"ok"}"""
+        out.write(header.toByteArray())
+        out.flush()
+    } catch (e: Exception) {
+        Log.e(TAG, "Error handling POST connect", e)
+        sendErrorResponse(client, 500, "Internal Server Error")
+    }
+}
 
     private fun sendFileResponse(client: Socket, file: File) {
         try {

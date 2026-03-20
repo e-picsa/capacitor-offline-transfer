@@ -237,6 +237,7 @@ Add these to your `Info.plist`:
 * [`addListener('messageReceived', ...)`](#addlistenermessagereceived-)
 * [`addListener('transferProgress', ...)`](#addlistenertransferprogress-)
 * [`addListener('fileReceived', ...)`](#addlistenerfilereceived-)
+* [`addListener('clientConnected', ...)`](#addlistenerclientconnected-)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
@@ -631,6 +632,22 @@ addListener(eventName: 'fileReceived', listenerFunc: (event: FileReceivedEvent) 
 --------------------
 
 
+### addListener('clientConnected', ...)
+
+```typescript
+addListener(eventName: 'clientConnected', listenerFunc: (event: ClientConnectedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+```
+
+| Param              | Type                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'clientConnected'</code>                                                            |
+| **`listenerFunc`** | <code>(event: <a href="#clientconnectedevent">ClientConnectedEvent</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+
+--------------------
+
+
 ### checkPermissions()
 
 ```typescript
@@ -748,6 +765,14 @@ Removes all listeners added by the plugin
 | **`payloadId`**  | <code>string</code> |
 | **`fileName`**   | <code>string</code> |
 | **`path`**       | <code>string</code> |
+
+
+#### ClientConnectedEvent
+
+| Prop               | Type                |
+| ------------------ | ------------------- |
+| **`endpointId`**   | <code>string</code> |
+| **`endpointName`** | <code>string</code> |
 
 
 #### PermissionStatus
