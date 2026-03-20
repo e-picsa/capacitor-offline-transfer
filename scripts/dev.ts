@@ -208,22 +208,18 @@ async function startEmulators(avdNames: string[]): Promise<void> {
   console.log(`\n✅ ${avdNames.length} emulator(s) started`);
 }
 
-function startViteServer(ip: string, port: string): void {
+function startViteServer(): void {
   if (viteProc) {
     viteProc.kill();
     viteProc = null;
   }
 
-  console.log(`\n🚀 Starting Vite dev server on http://${ip}:${port}`);
+  console.log(`\n🚀 Starting Vite dev server`);
   viteProc = Bun.spawn(['bun', 'run', 'start'], {
     cwd: PATHS.EXAMPLE_APP,
     stdout: 'inherit',
     stderr: 'inherit',
-    env: {
-      ...process.env,
-      CAPACITOR_SERVER_IP: ip,
-      CAPACITOR_SERVER_PORT: port,
-    },
+    env: process.env,
   });
 }
 
@@ -362,7 +358,7 @@ async function main(): Promise<void> {
   }
 
   await ensurePortFree(port);
-  startViteServer('localhost', port);
+  startViteServer();
 
   await deployToAllEmulators(port);
 
