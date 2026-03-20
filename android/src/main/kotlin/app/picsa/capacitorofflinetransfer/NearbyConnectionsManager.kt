@@ -10,7 +10,6 @@ import com.getcapacitor.Plugin
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import java.io.File
-import java.io.FileNotFoundException
 
 class NearbyConnectionsManager(private val context: Context, private val plugin: CapacitorOfflineTransferPlugin) {
 
@@ -19,8 +18,6 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
     private var strategy: Strategy = Strategy.P2P_CLUSTER
 
     private val incomingPayloads = SimpleArrayMap<Long, Payload>()
-    private val outgoingPayloads = SimpleArrayMap<Long, Payload>()
-    private val fileNames = SimpleArrayMap<Long, String>()
     private val incomingFileMetadata = SimpleArrayMap<Long, String>()
 
     fun initialize(serviceId: String) {
@@ -98,7 +95,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                         return
                     }
                 } catch (e: org.json.JSONException) {
-                    // Not a metadata JSON, so ignore and proceed to treat as a regular message.
+                    // Not a metadata JSON, treat as regular message.
                 }
                 val event = JSObject().apply {
                     put("endpointId", endpointId)
@@ -129,17 +126,15 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
 
             if (update.status == PayloadTransferUpdate.Status.SUCCESS) {
                 val payload = incomingPayloads.remove(update.payloadId)
-                val payloadFile = payload?.asFile()
-                if (payloadFile != null) {
-                    val targetFile = File(context.filesDir, incomingFileMetadata.remove(update.payloadId) ?: "received_${update.payloadId}")
-                    
-                    @Suppress("DEPRECATION")
-                    val sourceFile = payloadFile.asJavaFile()
-                    val success = if (sourceFile != null) {
-                        sourceFile.renameTo(targetFile)
-                    } else {
-                        copyPayloadToTarget(payloadFile, targetFile)
+                if (payload != null) {
+                    val payloadFile = payload.asFile() ?: run {
+                        Log.e(TAG, "Payload file is null for payload ${update.payloadId}")
+                        return
                     }
+                    val savedName = incomingFileMetadata.remove(update.payloadId)
+                    val targetFile = File(context.filesDir, savedName ?: "received_${update.payloadId}")
+
+                    val success = copyPayloadToFile(payloadFile, targetFile)
 
                     if (success) {
                         val receivedEvent = JSObject().apply {
@@ -150,9 +145,11 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                         }
                         plugin.emit("fileReceived", receivedEvent)
                     } else {
-                        Log.e(TAG, "Failed to move/copy received file to ${targetFile.absolutePath}")
+                        Log.e(TAG, "Failed to copy received file to ${targetFile.absolutePath}")
                     }
                 }
+            } else if (update.status == PayloadTransferUpdate.Status.FAILURE || update.status == PayloadTransferUpdate.Status.CANCELED) {
+                incomingPayloads.remove(update.payloadId)
             }
         }
     }
@@ -161,7 +158,14 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         val options = AdvertisingOptions.Builder().setStrategy(strategy).build()
         Nearby.getConnectionsClient(context)
             .startAdvertising(displayName, serviceId, connectionLifecycleCallback, options)
-            .addOnFailureListener { e -> Log.e(TAG, "Advertising failed", e) }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Advertising failed", e)
+                plugin.emit("connectionResult", JSObject().apply {
+                    put("endpointId", "local")
+                    put("status", "FAILURE")
+                    put("message", "Advertising failed: ${e.message}")
+                })
+            }
     }
 
     fun stopAdvertising() {
@@ -172,7 +176,13 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         val options = DiscoveryOptions.Builder().setStrategy(strategy).build()
         Nearby.getConnectionsClient(context)
             .startDiscovery(serviceId, endpointDiscoveryCallback, options)
-            .addOnFailureListener { e -> Log.e(TAG, "Discovery failed", e) }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Discovery failed", e)
+                plugin.emit("endpointLost", JSObject().apply {
+                    put("endpointId", "local")
+                    put("message", "Discovery failed: ${e.message}")
+                })
+            }
     }
 
     fun stopDiscovery() {
@@ -182,7 +192,14 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
     fun connect(endpointId: String, displayName: String) {
         Nearby.getConnectionsClient(context)
             .requestConnection(displayName, endpointId, connectionLifecycleCallback)
-            .addOnFailureListener { e -> Log.e(TAG, "Connection request failed", e) }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Connection request failed", e)
+                plugin.emit("connectionResult", JSObject().apply {
+                    put("endpointId", endpointId)
+                    put("status", "FAILURE")
+                    put("message", "Connection failed: ${e.message}")
+                })
+            }
     }
 
     fun acceptConnection(endpointId: String) {
@@ -211,7 +228,6 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
             val uri = Uri.parse(filePath)
             context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
                 val filePayload = Payload.fromFile(pfd)
-                fileNames.put(filePayload.id, fileName)
                 val metadata = JSObject().apply {
                     put("filePayloadId", filePayload.id)
                     put("fileName", fileName)
@@ -222,22 +238,27 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send file", e)
+            plugin.emit("transferProgress", JSObject().apply {
+                put("endpointId", endpointId)
+                put("payloadId", fileName)
+                put("bytesTransferred", 0L)
+                put("totalBytes", 0L)
+                put("status", "FAILURE")
+            })
         }
     }
 
-    private fun copyPayloadToTarget(payloadFile: Payload.File, targetFile: File): Boolean {
+    private fun copyPayloadToFile(payloadFile: Payload.File, targetFile: File): Boolean {
         return try {
             val uri = payloadFile.asUri() ?: return false
-
             context.contentResolver.openInputStream(uri)?.use { input ->
                 targetFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
-            } ?: return false // Return false if the input stream is null
-
+            } ?: return false
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to copy payload to target", e)
+            Log.e(TAG, "Failed to copy payload to file", e)
             false
         }
     }

@@ -16,12 +16,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/core": "^8.0.0",
+    "@capacitor/android": "^8.0.0",
     "@capacitor/camera": "^8.0.0",
-    "@capacitor/splash-screen": "^8.0.0",
-    "@picsa/capacitor-offline-transfer": "file:..",
+    "@capacitor/core": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
-    "@capacitor/android": "^8.0.0"
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@picsa/capacitor-offline-transfer": "file:.."
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",

@@ -2,22 +2,19 @@
 
 A bespoke Capacitor plugin designed for **completely offline, cross-device large file sharing** (50MB+ videos and Universal APKs). Engineered specifically for rural environments with zero internet connectivity, this plugin operates as a multi-tier transfer engine to ensure maximum compatibility across device types.
 
-## 🚀 The Three-Tier Architecture
+## Architecture
 
-To survive the constraints of offline field work, the plugin utilizes three distinct communication tiers:
+The plugin provides two P2P transfer tiers for devices with the app installed, plus native OS sharing for uninstalled devices:
 
 ```mermaid
 graph TD
-    A[Start Transfer] --> B{Same OS?}
+    A[Start Transfer] --> B{Has the app installed?}
     B -- Yes (Android) --> C[Tier 1: Google Nearby Connections]
     B -- Yes (iOS) --> D[Tier 2: Apple Multipeer Connectivity]
-    B -- No / Cross-Platform --> E[Tier 3: Local Hotspot Fallback]
+    B -- No --> E[Use @capacitor/share<br/>Native Share Sheet<br/>Bluetooth / Nearby Share]
 
     C --> F[P2P Mesh - High Speed]
     D --> G[P2P Infrastructure - High Speed]
-    E --> H[Android startLocalOnlyHotspot]
-    H --> I[Lightweight Embedded Web Server]
-    I --> J[Standard HTTP Download]
 ```
 
 ### Documentation
@@ -33,13 +30,23 @@ Utilizes the **Google Nearby Connections API** (Strategy: `P2P_CLUSTER`). This p
 
 Utilizes **Apple's Multipeer Connectivity** framework. Handles discovery and session management natively for seamless Apple-to-Apple transfers.
 
-### Tier 3: Cross-Platform / Uninstalled Devices (The Fallback)
+### Sharing to Uninstalled Devices
 
-When cross-platform communication is required, or the receiving device doesn't have the app:
+For devices that don't have the app installed, use the native share sheet via **[@capacitor/share](https://capacitorjs.com/docs/apis/share)**. This opens the system share dialog, allowing the user to send the APK via Bluetooth, Nearby Share, or any other registered app — without any code in this plugin.
 
-1. The Android device spins up a **Local Only Hotspot** (`startLocalOnlyHotspot`).
-2. A lightweight, zero-dependency **Embedded Web Server** starts, serving files (including the Universal APK) via standard HTTP.
-3. The receiver connects to the WiFi and downloads the file via a standard browser or QR code.
+```typescript
+import { Share } from '@capacitor/share';
+
+const canShare = await Share.canShare();
+if (!canShare.value) return;
+
+await Share.share({
+  title: 'Install Picsa App',
+  files: ['file:///path/to/app.apk'],
+});
+```
+
+Android will present Bluetooth, Nearby Share, Wi-Fi Direct, and any other sharing apps registered on the device. The transfer is handled entirely by the OS.
 
 ---
 
@@ -49,7 +56,7 @@ This plugin is optimized for low-end devices in rural environments:
 
 - **No In-Memory Buffering**: We never use byte arrays for large files. All transfers use `Payload.Type.FILE` with `ParcelFileDescriptor` (Android) and `sendResource` (iOS) to prevent **Out of Memory (OOM)** crashes.
 - **Scoped Storage (Android 11+)**: Respects modern Android security. Downloaded files are saved directly to the app's private `Context.getFilesDir()`, accessible via `Capacitor.convertFileSrc()`.
-- **Universal APK Sharing**: Built-in support for sharing the app itself via the Tier 3 web server.
+- **Universal APK Sharing**: Use `@capacitor/share` to send the APK via the native share sheet (Bluetooth, Nearby Share, etc.).
 
 ---
 
@@ -82,17 +89,6 @@ await OfflineTransfer.sendFile({
   filePath: 'path/to/video.mp4', // Local file URL
   fileName: 'training_video.mp4',
 });
-```
-
-### 3. Tier 3 Fallback (Hotspot & Server)
-
-```typescript
-// On the Host (Android)
-const hotspot = await OfflineTransfer.startLocalHotspot();
-// hotspot returns { ssid: '...', password: '...' }
-
-const server = await OfflineTransfer.startServer({ port: 8080 });
-// server returns { port: 8080, url: 'http://192.168.43.1:8080/app.apk' }
 ```
 
 ## Event Handling
@@ -187,23 +183,22 @@ Add these to your `Info.plist`:
 | `startDiscovery`         | ✅      | ✅  | -   |
 | `stopDiscovery`          | ✅      | ✅  | -   |
 | `connect`                | ✅      | ✅  | -   |
+| `connectByAddress`       | ✅      | ❌  | -   |
 | `acceptConnection`       | ✅      | ✅  | -   |
 | `rejectConnection`       | ✅      | ✅  | -   |
 | `disconnectFromEndpoint` | ✅      | ✅  | -   |
 | `disconnect`             | ✅      | ✅  | -   |
 | `sendMessage`            | ✅      | ✅  | -   |
 | `sendFile`               | ✅      | ✅  | -   |
-| `startLocalHotspot`      | ✅      | ❌  | -   |
-| `stopLocalHotspot`       | ✅      | ❌  | -   |
-| `startServer`            | ✅      | ❌  | -   |
-| `stopServer`             | ✅      | ❌  | -   |
+| `startLanServer`         | ✅      | ❌  | -   |
+| `stopLanServer`          | ✅      | ❌  | -   |
 | `setLogLevel`            | ✅      | ✅  | -   |
 
 - **✅** = Supported
 - **❌** = Not available (rejects with error)
 - **-** = Not applicable (Web is not a target platform for this offline plugin)
 
-**Tier 3 methods** (`startLocalHotspot`, `stopLocalHotspot`, `startServer`, `stopServer`) are Android-only and will reject if called on iOS.
+**LAN Server methods** (`startLanServer`, `stopLanServer`, `connectByAddress`) are Android-only dev tooling and will reject on iOS. For uninstalled devices, use [@capacitor/share](https://capacitorjs.com/docs/apis/share).
 
 ---
 
@@ -225,10 +220,8 @@ Add these to your `Info.plist`:
 * [`disconnect()`](#disconnect)
 * [`sendMessage(...)`](#sendmessage)
 * [`sendFile(...)`](#sendfile)
-* [`startLocalHotspot()`](#startlocalhotspot)
-* [`stopLocalHotspot()`](#stoplocalhotspot)
-* [`startServer(...)`](#startserver)
-* [`stopServer()`](#stopserver)
+* [`startLanServer(...)`](#startlanserver)
+* [`stopLanServer()`](#stoplanserver)
 * [`setLogLevel(...)`](#setloglevel)
 * [`addListener('connectionRequested', ...)`](#addlistenerconnectionrequested-)
 * [`addListener('connectionResult', ...)`](#addlistenerconnectionresult-)
@@ -315,7 +308,7 @@ Stops advertising.
 startDiscovery() => Promise<void>
 ```
 
-starts discovery of nearby peers.
+Starts discovery of nearby peers.
 
 --------------------
 
@@ -352,8 +345,8 @@ Requests a connection to a discovered endpoint.
 connectByAddress(options: { url: string; displayName?: string; }) => Promise<void>
 ```
 
-Android Only: Manually connects to a device using its IP/URL.
-Useful for emulators and Tier 3 manual connections.
+Android Only (Dev Tooling): Manually connects to a device using its IP/URL.
+Intended for emulator testing. Production use nearby P2P discovery instead.
 
 | Param         | Type                                                |
 | ------------- | --------------------------------------------------- |
@@ -449,39 +442,15 @@ Uses Payload.Type.FILE (Android) or Resource URLs (iOS) to avoid OOM.
 --------------------
 
 
-### startLocalHotspot()
+### startLanServer(...)
 
 ```typescript
-startLocalHotspot() => Promise<HotspotInfo>
+startLanServer(options: { port?: number; }) => Promise<{ port: number; url: string; }>
 ```
 
-Android Only: Starts a Local-Only Hotspot.
-Returns the SSID and Password for manual connection (QR code).
-
-**Returns:** <code>Promise&lt;<a href="#hotspotinfo">HotspotInfo</a>&gt;</code>
-
---------------------
-
-
-### stopLocalHotspot()
-
-```typescript
-stopLocalHotspot() => Promise<void>
-```
-
-Android Only: Stops the Local-Only Hotspot.
-
---------------------
-
-
-### startServer(...)
-
-```typescript
-startServer(options: { port?: number; }) => Promise<{ port: number; url: string; }>
-```
-
-Android Only: Starts a lightweight, embedded HTTP server to serve files via HTTP.
-Used for Tier 3 fallback (uninstalled devices).
+Android Only (Dev Tooling): Starts a LAN HTTP server for emulator testing.
+Use this to test file transfers between emulators on the same development machine.
+Not for production use.
 
 | Param         | Type                            |
 | ------------- | ------------------------------- |
@@ -492,13 +461,13 @@ Used for Tier 3 fallback (uninstalled devices).
 --------------------
 
 
-### stopServer()
+### stopLanServer()
 
 ```typescript
-stopServer() => Promise<void>
+stopLanServer() => Promise<void>
 ```
 
-Stops the embedded HTTP server.
+Android Only (Dev Tooling): Stops the LAN HTTP server.
 
 --------------------
 
@@ -635,13 +604,15 @@ addListener(eventName: 'fileReceived', listenerFunc: (event: FileReceivedEvent) 
 ### addListener('emulatorClientConnected', ...)
 
 ```typescript
-addListener(eventName: 'emulatorClientConnected', listenerFunc: (event: emulatorClientConnectedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+addListener(eventName: 'emulatorClientConnected', listenerFunc: (event: EmulatorClientConnectedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
 ```
+
+Android Only (Dev Tooling): Fired when an emulator or HTTP client connects to the LAN server.
 
 | Param              | Type                                                                                                      |
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
 | **`eventName`**    | <code>'emulatorClientConnected'</code>                                                                    |
-| **`listenerFunc`** | <code>(event: <a href="#emulatorclientconnectedevent">emulatorClientConnectedEvent</a>) =&gt; void</code> |
+| **`listenerFunc`** | <code>(event: <a href="#emulatorclientconnectedevent">EmulatorClientConnectedEvent</a>) =&gt; void</code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
@@ -686,14 +657,6 @@ Removes all listeners added by the plugin
 
 
 ### Interfaces
-
-
-#### HotspotInfo
-
-| Prop           | Type                |
-| -------------- | ------------------- |
-| **`ssid`**     | <code>string</code> |
-| **`password`** | <code>string</code> |
 
 
 #### PluginListenerHandle
@@ -767,7 +730,7 @@ Removes all listeners added by the plugin
 | **`path`**       | <code>string</code> |
 
 
-#### emulatorClientConnectedEvent
+#### EmulatorClientConnectedEvent
 
 | Prop               | Type                |
 | ------------------ | ------------------- |

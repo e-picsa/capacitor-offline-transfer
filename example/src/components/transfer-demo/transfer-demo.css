@@ -168,6 +168,13 @@ select {
   }
 }
 
+.dev-tools-note {
+  font-size: 0.75em;
+  color: #8e8e93;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
 .status-badge {
   display: inline-block;
   font-size: 0.7em;
