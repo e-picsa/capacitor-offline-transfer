@@ -1,7 +1,7 @@
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
-import type { EndpointFoundEvent} from '@picsa/capacitor-offline-transfer';
+import type { EndpointFoundEvent } from '@picsa/capacitor-offline-transfer';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 
 import template from './capacitor-welcome.html?raw';
