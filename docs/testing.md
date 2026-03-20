@@ -31,8 +31,6 @@ adb devices
 ```
 
 Expected output:
-`emulator-5554   device`
-`emulator-5556   device`
 
 2. Setup TCP Bridge
 
