@@ -98,12 +98,17 @@ open class ServerManager(private val context: Context, private val plugin: Capac
             }
 
             if (method != "GET") {
-                sendErrorResponse(client, 405, "Method Not Allowed")
+                sendErrorResponse(client, 400, "Bad Request")
                 return
             }
 
             val fileName = File(URLDecoder.decode(rawUri, "UTF-8")).name
             val file = File(context.filesDir, fileName)
+
+            if (!file.canonicalPath.startsWith(context.filesDir.canonicalPath)) {
+                sendErrorResponse(client, 403, "Forbidden")
+                return
+            }
 
             if (file.exists() && file.isFile) {
                 sendFileResponse(client, file)
