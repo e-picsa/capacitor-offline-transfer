@@ -9,7 +9,10 @@
   ],
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "bun run sync:plugin && bun run build:web && bun run sync:native",
+    "build:web": "vite build",
+    "sync:plugin": "bun install",
+    "sync:native": "bunx cap sync",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -22,7 +25,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
-    "vite": "^5.4.2"
+    "vite": "^8.0.1"
   },
   "author": "",
   "license": "ISC"
