@@ -1,5 +1,4 @@
-import { html } from 'htm/preact';
-import type { FunctionComponent } from 'preact';
+import type { ComponentChildren } from 'preact';
 
 type BadgeVariant = 'active' | 'loading' | 'stopped' | '';
 
@@ -10,6 +9,6 @@ const variantClass: Record<BadgeVariant, string> = {
   '': 'bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded',
 };
 
-export const Badge: FunctionComponent<{ text: string; variant?: BadgeVariant }> = ({ text, variant = '' }) => {
-  return html`<span class=${variantClass[variant]}>${text}</span>`;
+export const Badge = ({ text, variant = '' }: { text: ComponentChildren; variant?: BadgeVariant }) => {
+  return <span class={variantClass[variant]}>{text}</span>;
 };
