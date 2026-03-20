@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { PATHS } from './paths';
+import { PATHS } from '../paths';
 
 const ENV_FILE = resolve(PATHS.EXAMPLE_APP, '.env');
 
