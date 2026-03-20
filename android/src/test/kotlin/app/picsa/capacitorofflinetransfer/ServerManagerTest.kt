@@ -18,14 +18,14 @@ import java.util.*
 
 class ServerManagerTest : BaseTest() {
     private lateinit var context: Context
-    private lateinit var plugin: Plugin
+    private lateinit var plugin: CapacitorOfflineTransferPlugin
     private lateinit var serverManager: ServerManager
     private lateinit var tempDir: File
 
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
-        plugin = mockk(relaxed = true)
+        plugin = mockk<CapacitorOfflineTransferPlugin>(relaxed = true)
         
         // Need to override the default text/plain for some tests
         mockMimeType("txt", "text/plain")
@@ -103,16 +103,9 @@ class ServerManagerTest : BaseTest() {
         
         verify { call.resolve(capture(portSlot)) }
         val urlString = portSlot.captured.getString("url")
+        val port = portSlot.captured.getInteger("port")
         
         val testMessage = "Test message body"
-        
-        // Emulate plugin casting
-        val realPlugin = mockk<CapacitorOfflineTransferPlugin>(relaxed = true)
-        serverManager = spyk(ServerManager(context, realPlugin))
-        every { serverManager.getLocalIpAddress() } returns "127.0.0.1"
-        
-        // Need to restart server to use new plugin mock
-        serverManager.start(portSlot.captured.getInteger("port") ?: 0, call)
         
         val url = URL("${urlString}message")
         val connection = url.openConnection() as HttpURLConnection
@@ -127,7 +120,7 @@ class ServerManagerTest : BaseTest() {
             
             // Verify event emission
             val eventSlot = slot<JSObject>()
-            verify { realPlugin.emit("messageReceived", capture(eventSlot)) }
+            verify { plugin.emit("messageReceived", capture(eventSlot)) }
             
             assert(eventSlot.captured.getString("data") == testMessage)
             assert(eventSlot.captured.getString("endpointId") != null)

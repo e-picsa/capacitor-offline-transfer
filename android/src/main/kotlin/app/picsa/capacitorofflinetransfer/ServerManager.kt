@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
  * Embedded HTTP server for serving files over local network.
  * Zero-dependency implementation using ServerSocket.
  */
-open class ServerManager(private val context: Context, private val plugin: Plugin) {
+open class ServerManager(private val context: Context, private val plugin: CapacitorOfflineTransferPlugin) {
 
     private var serverThread: Thread? = null
     private var serverSocket: ServerSocket? = null
@@ -136,7 +136,7 @@ open class ServerManager(private val context: Context, private val plugin: Plugi
                 put("endpointId", client.inetAddress.hostAddress)
                 put("data", message)
             }
-            (plugin as CapacitorOfflineTransferPlugin).emit("messageReceived", event)
+            plugin.emit("messageReceived", event)
 
             val out = client.getOutputStream()
             val header = "HTTP/1.1 200 OK\r\n" +
