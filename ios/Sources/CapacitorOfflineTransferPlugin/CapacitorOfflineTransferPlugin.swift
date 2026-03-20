@@ -1,10 +1,6 @@
 import Foundation
 import Capacitor
 
-/**
- * Please read the Capacitor iOS Plugin Development Guide
- * here: https://capacitorjs.com/docs/plugins/ios
- */
 @objc(OfflineTransferPlugin)
 public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, CapacitorOfflineTransferDelegate {
     public let identifier = "CapacitorOfflineTransferPlugin"
@@ -17,25 +13,24 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         CAPPluginMethod(name: "startDiscovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopDiscovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "connect", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "connectByAddress", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "acceptConnection", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "rejectConnection", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "disconnectFromEndpoint", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "disconnect", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendMessage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendFile", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "startLocalHotspot", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "stopLocalHotspot", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "startServer", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "stopServer", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "startLanServer", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stopLanServer", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setLogLevel", returnType: CAPPluginReturnPromise)
     ]
-    
+
     private let implementation = CapacitorOfflineTransfer()
 
     public override func load() {
         implementation.delegate = self
     }
-    
+
     @objc func initialize(_ call: CAPPluginCall) {
         guard let serviceId = call.getString("serviceId") else {
             call.reject("serviceId is required")
@@ -44,13 +39,11 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.initialize(serviceId: serviceId)
         call.resolve()
     }
-    
+
     @objc func setStrategy(_ call: CAPPluginCall) {
-        // iOS doesn't use explicit strategies like Android's Nearby Connections,
-        // but we'll maintain the method for API parity.
         call.resolve()
     }
-    
+
     @objc func startAdvertising(_ call: CAPPluginCall) {
         guard let displayName = call.getString("displayName") else {
             call.reject("displayName is required")
@@ -59,22 +52,22 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.startAdvertising(displayName: displayName)
         call.resolve()
     }
-    
+
     @objc func stopAdvertising(_ call: CAPPluginCall) {
         implementation.stopAdvertising()
         call.resolve()
     }
-    
+
     @objc func startDiscovery(_ call: CAPPluginCall) {
         implementation.startDiscovery()
         call.resolve()
     }
-    
+
     @objc func stopDiscovery(_ call: CAPPluginCall) {
         implementation.stopDiscovery()
         call.resolve()
     }
-    
+
     @objc func connect(_ call: CAPPluginCall) {
         guard let endpointId = call.getString("endpointId") else {
             call.reject("endpointId is required")
@@ -83,7 +76,11 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.connect(endpointId: endpointId)
         call.resolve()
     }
-    
+
+    @objc func connectByAddress(_ call: CAPPluginCall) {
+        call.reject("connectByAddress is only available on Android (dev tooling)")
+    }
+
     @objc func acceptConnection(_ call: CAPPluginCall) {
         guard let endpointId = call.getString("endpointId") else {
             call.reject("endpointId is required")
@@ -92,7 +89,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.acceptConnection(endpointId: endpointId)
         call.resolve()
     }
-    
+
     @objc func rejectConnection(_ call: CAPPluginCall) {
         guard let endpointId = call.getString("endpointId") else {
             call.reject("endpointId is required")
@@ -101,7 +98,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.rejectConnection(endpointId: endpointId)
         call.resolve()
     }
-    
+
     @objc func disconnectFromEndpoint(_ call: CAPPluginCall) {
         guard let endpointId = call.getString("endpointId") else {
             call.reject("endpointId is required")
@@ -110,12 +107,12 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.disconnectFromEndpoint(endpointId: endpointId)
         call.resolve()
     }
-    
+
     @objc func disconnect(_ call: CAPPluginCall) {
         implementation.disconnect()
         call.resolve()
     }
-    
+
     @objc func sendMessage(_ call: CAPPluginCall) {
         guard let endpointId = call.getString("endpointId"),
               let data = call.getString("data") else {
@@ -125,7 +122,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.sendMessage(endpointId: endpointId, data: data)
         call.resolve()
     }
-    
+
     @objc func sendFile(_ call: CAPPluginCall) {
         guard let endpointId = call.getString("endpointId"),
               let filePath = call.getString("filePath"),
@@ -136,30 +133,20 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         implementation.sendFile(endpointId: endpointId, filePath: filePath, fileName: fileName)
         call.resolve()
     }
-    
+
+    @objc func startLanServer(_ call: CAPPluginCall) {
+        call.reject("LAN server is only available on Android (dev tooling)")
+    }
+
+    @objc func stopLanServer(_ call: CAPPluginCall) {
+        call.reject("LAN server is only available on Android (dev tooling)")
+    }
+
     @objc func setLogLevel(_ call: CAPPluginCall) {
         call.resolve()
     }
-    
-    @objc func startLocalHotspot(_ call: CAPPluginCall) {
-        call.reject("Local Hotspot feature is not available on iOS.")
-    }
-    
-    @objc func stopLocalHotspot(_ call: CAPPluginCall) {
-        call.reject("Local Hotspot feature is not available on iOS.")
-    }
-    
-    @objc func startServer(_ call: CAPPluginCall) {
-        call.reject("Embedded HTTP server is not available on iOS.")
-    }
-    
-    @objc func stopServer(_ call: CAPPluginCall) {
-        call.reject("Embedded HTTP server is not available on iOS.")
-    }
-    
-    // MARK: - CapacitorOfflineTransferDelegate
-    
-    func onConnectionRequested(endpointId: String, endpointName: String, authToken: String) {
+
+    public func onConnectionRequested(endpointId: String, endpointName: String, authToken: String) {
         notifyListeners("connectionRequested", data: [
             "endpointId": endpointId,
             "endpointName": endpointName,
@@ -167,36 +154,36 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
             "isIncomingConnection": true
         ])
     }
-    
-    func onConnectionResult(endpointId: String, status: String) {
+
+    public func onConnectionResult(endpointId: String, status: String) {
         notifyListeners("connectionResult", data: [
             "endpointId": endpointId,
             "status": status
         ])
     }
-    
-    func onEndpointFound(endpointId: String, endpointName: String, serviceId: String) {
+
+    public func onEndpointFound(endpointId: String, endpointName: String, serviceId: String) {
         notifyListeners("endpointFound", data: [
             "endpointId": endpointId,
             "endpointName": endpointName,
             "serviceId": serviceId
         ])
     }
-    
-    func onEndpointLost(endpointId: String) {
+
+    public func onEndpointLost(endpointId: String) {
         notifyListeners("endpointLost", data: [
             "endpointId": endpointId
         ])
     }
-    
-    func onMessageReceived(endpointId: String, data: String) {
+
+    public func onMessageReceived(endpointId: String, data: String) {
         notifyListeners("messageReceived", data: [
             "endpointId": endpointId,
             "data": data
         ])
     }
-    
-    func onTransferProgress(endpointId: String, payloadId: String, bytesTransferred: Int64, totalBytes: Int64, status: String) {
+
+    public func onTransferProgress(endpointId: String, payloadId: String, bytesTransferred: Int64, totalBytes: Int64, status: String) {
         notifyListeners("transferProgress", data: [
             "endpointId": endpointId,
             "payloadId": payloadId,
@@ -205,8 +192,8 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
             "status": status
         ])
     }
-    
-    func onFileReceived(endpointId: String, payloadId: String, fileName: String, path: String) {
+
+    public func onFileReceived(endpointId: String, payloadId: String, fileName: String, path: String) {
         notifyListeners("fileReceived", data: [
             "endpointId": endpointId,
             "payloadId": payloadId,
