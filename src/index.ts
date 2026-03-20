@@ -7,4 +7,5 @@ const OfflineTransfer = registerPlugin<OfflineTransferPlugin>('OfflineTransfer',
 });
 
 export * from './definitions';
+export * from './reactive-state';
 export { OfflineTransfer };

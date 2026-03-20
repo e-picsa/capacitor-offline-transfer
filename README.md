@@ -234,6 +234,7 @@ Add these to your `Info.plist`:
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
+* [`getState()`](#getstate)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -656,6 +657,20 @@ Removes all listeners added by the plugin
 --------------------
 
 
+### getState()
+
+```typescript
+getState() => TransferState
+```
+
+Returns the shared reactive state instance for the plugin.
+Subscribe to state keys to receive updates on connection, transfer, and discovery events.
+
+**Returns:** <code>TransferState</code>
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -717,7 +732,7 @@ Removes all listeners added by the plugin
 | **`payloadId`**        | <code>string</code>                                                 |
 | **`bytesTransferred`** | <code>number</code>                                                 |
 | **`totalBytes`**       | <code>number</code>                                                 |
-| **`status`**           | <code>'SUCCESS' \| 'FAILURE' \| 'IN_PROGRESS' \| 'CANCELLED'</code> |
+| **`status`**           | <code>'SUCCESS' \| 'FAILURE' \| 'CANCELLED' \| 'IN_PROGRESS'</code> |
 
 
 #### FileReceivedEvent
