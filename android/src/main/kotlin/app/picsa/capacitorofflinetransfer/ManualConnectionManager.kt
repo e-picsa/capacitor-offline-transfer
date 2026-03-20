@@ -1,7 +1,6 @@
 package app.picsa.capacitorofflinetransfer
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import com.getcapacitor.JSObject
 import java.io.File
@@ -61,7 +60,7 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
         executor.execute {
             var connection: HttpURLConnection? = null
             try {
-                val postUrl = android.net.Uri.parse(url).buildUpon().appendPath("message").build().toString()
+                val postUrl = if (url.endsWith("/")) "${url}message" else "$url/message"
                 connection = openConnection(postUrl)
                 connection.requestMethod = "POST"
                 connection.doOutput = true
