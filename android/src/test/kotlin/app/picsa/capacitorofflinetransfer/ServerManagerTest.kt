@@ -101,4 +101,45 @@ class ServerManagerTest : BaseTest() {
             connection.disconnect()
         }
     }
+
+    @Test
+    fun `server handles POST message and emits event`() {
+        val call = mockk<PluginCall>(relaxed = true)
+        val portSlot = slot<JSObject>()
+        
+        serverManager.start(0, call)
+        
+        verify { call.resolve(capture(portSlot)) }
+        val urlString = portSlot.captured.getString("url")
+        
+        val testMessage = "Test message body"
+        
+        // Emulate plugin casting
+        val realPlugin = mockk<CapacitorOfflineTransferPlugin>(relaxed = true)
+        serverManager = ServerManager(context, realPlugin)
+        
+        // Need to restart server to use new plugin mock
+        serverManager.start(portSlot.captured.getInteger("port") ?: 0, call)
+        
+        val url = URL("${urlString}message")
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.doOutput = true
+        connection.setRequestProperty("Content-Length", testMessage.length.toString())
+        
+        try {
+            connection.outputStream.use { it.write(testMessage.toByteArray()) }
+            
+            assert(connection.responseCode == 200)
+            
+            // Verify event emission
+            val eventSlot = slot<JSObject>()
+            verify { realPlugin.emit("messageReceived", capture(eventSlot)) }
+            
+            assert(eventSlot.captured.getString("data") == testMessage)
+            assert(eventSlot.captured.getString("endpointId") != null)
+        } finally {
+            connection.disconnect()
+        }
+    }
 }
