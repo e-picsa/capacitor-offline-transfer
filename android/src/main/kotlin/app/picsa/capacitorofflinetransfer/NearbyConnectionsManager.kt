@@ -227,14 +227,14 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
 
     private fun copyPayloadToTarget(payloadFile: Payload.File, targetFile: File): Boolean {
         return try {
-            val uri = payloadFile.asUri()
-            if (uri == null) return false
-            
+            val uri = payloadFile.asUri() ?: return false
+
             context.contentResolver.openInputStream(uri)?.use { input ->
                 targetFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
-            }
+            } ?: return false // Return false if the input stream is null
+
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to copy payload to target", e)
