@@ -27,8 +27,12 @@ export async function getAvailableAVDs(): Promise<string[]> {
 }
 
 export async function startEmulators(avdNames: string[]): Promise<void> {
+  if (avdNames.length === 0) {
+    return;
+  }
+
   console.log('\n🚀 Starting emulators...');
-  const promises: Promise<void>[] = [];
+  const runningBefore = new Set((await getRunningEmulators()).map((e) => e.id));
 
   for (const name of avdNames) {
     console.log(`  Starting ${name}...`);
@@ -37,24 +41,21 @@ export async function startEmulators(avdNames: string[]): Promise<void> {
       stdio: 'ignore',
       shell: true,
     }).unref();
-
-    const p = (async () => {
-      let booted = false;
-      for (let i = 0; i < 60; i++) {
-        await new Promise<void>((r) => setTimeout(r, 1000));
-        const ems = await getRunningEmulators();
-        if (ems.some((e) => e.state === 'device')) {
-          booted = true;
-          break;
-        }
-      }
-      if (!booted) {
-        console.log(`  ⚠️  ${name} may not have booted cleanly`);
-      }
-    })();
-    promises.push(p);
   }
 
-  await Promise.all(promises);
-  console.log(`\n✅ ${avdNames.length} emulator(s) started`);
+  console.log(`\n⏳ Waiting for ${avdNames.length} new emulator(s) to boot...`);
+  const bootTimeoutSeconds = 120;
+  for (let i = 0; i < bootTimeoutSeconds; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const newlyBooted = (await getRunningEmulators()).filter((e) => !runningBefore.has(e.id) && e.state === 'device');
+
+    if (newlyBooted.length >= avdNames.length) {
+      console.log(`\n✅ All ${avdNames.length} new emulator(s) have booted.`);
+      return;
+    }
+  }
+
+  console.log(
+    `\n⚠️ Timed out after ${bootTimeoutSeconds}s waiting for all emulators to boot. Please check their status manually.`,
+  );
 }
