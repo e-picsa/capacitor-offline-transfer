@@ -28,47 +28,47 @@ This guide provides instructions for contributing to this Capacitor plugin.
 
 ### Recommended Local Workflow
 
-To test the plugin locally while making changes, use the provided `example` app.
+The easiest way to develop this plugin is to use the automated development script, which handles the synchronization between the plugin and the example app.
 
-1. **Start the Plugin Watcher**: In the root of the plugin repository, run:
-
-```shell
-bun run watch
-```
-
-This will automatically recompile your TypeScript changes as you work.
-
-2. **Run the Example App**: In a new terminal, navigate to the `example/` directory and install its dependencies (if not already done):
+1.  **Start the Dev Script**: In the root of the plugin repository, run:
 
 ```shell
-cd example
-bun install
-# Start the web app with HMR (Hot Module Replacement)
 bun run start
 ```
 
+This script watches for changes in:
+
+- Plugin native code (`android/src` and `ios/Sources`)
+- Example app source (`example/src`)
+
+When changes are detected, it automatically runs `bun install` (to sync the plugin in the example app), `vite build` (for the web bundle), and `cap sync` (to update the native projects).
+
 ### Testing on Native Emulators with Live Reload
 
-If you need to test native platform features (Android or iOS) with live reload enabled so changes propagate automatically:
+For the best experience, use Capacitor's Live Reload feature. This allows you to see web-side changes immediately without waiting for a full `cap sync` loop.
 
-1. Ensure your plugin watcher (`bun run watch`) and your example app's server (`cd example && bun run start`) are both running.
-2. In a third terminal within the `example/` directory, run the Capacitor CLI with the live reload flag:
+1. Ensure `bun run start` (or your manual builds) is running.
+2. In another terminal, navigate to the `example/` directory and run:
 
-   **For iOS:**
+**For iOS:**
 
 ```shell
-   npx cap run ios --live-reload
+npx cap run ios --live-reload
 ```
 
 **For Android:**
 
 ```shell
-   npx cap run android --live-reload
+npx cap run android --live-reload
 ```
 
-_Note: When prompted, select the local network IP address that your emulator/device can resolve._
+_Note: When prompted, select your local network IP address (usually the one starting with 192.168.x.x or 10.x.x.x) so your device/emulator can connect to the dev server._
 
 ### Scripts
+
+#### `bun run start`
+
+Runs a custom development script ([`scripts/dev.ts`](./scripts/dev.ts)) that automates the "Plugin $\rightarrow$ Example App" synchronization loop. It watches for native and example source changes and performs necessary builds and `cap sync` operations.
 
 #### `bun run build`
 
