@@ -3,18 +3,34 @@ export {};
 import { watch, readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { networkInterfaces } from 'os';
+import { spawn } from 'child_process';
 import { getEnv, saveEnv } from './env.utils';
 import { PATHS } from './paths';
 
 const DEFAULT_PORT = '5173';
 
+interface Emulator {
+  id: string;
+  state: string;
+}
+
+function execCmd(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
+  return new Promise((resolve) => {
+    const proc = spawn(cmd, args, { shell: true });
+    let stdout = '';
+    let stderr = '';
+    proc.stdout?.on('data', (d) => (stdout += d.toString()));
+    proc.stderr?.on('data', (d) => (stderr += d.toString()));
+    proc.on('close', (code) => resolve({ stdout, stderr, code: code ?? 0 }));
+  });
+}
+
 function detectLocalIP(): string | null {
   const interfaces = networkInterfaces();
-  for (const [name, addrs] of Object.entries(interfaces)) {
+  for (const [, addrs] of Object.entries(interfaces)) {
     if (!addrs) continue;
     for (const addr of addrs) {
       if (addr.family === 'IPv4' && !addr.internal) {
-        console.log(`  Found IP ${addr.address} on interface '${name}'`);
         return addr.address;
       }
     }
@@ -22,33 +38,80 @@ function detectLocalIP(): string | null {
   return null;
 }
 
-async function selectPlatform(current?: string): Promise<'android' | 'ios'> {
-  if (current === 'android' || current === 'ios') {
-    return current;
+async function getRunningEmulators(): Promise<Emulator[]> {
+  const { stdout } = await execCmd('adb', ['devices']);
+  const emulators: Emulator[] = [];
+  for (const line of stdout.split('\n')) {
+    const match = line.match(/^(emulator-\d+)\s+(\S+)/);
+    if (match) {
+      emulators.push({ id: match[1], state: match[2] });
+    }
   }
+  return emulators;
+}
+
+async function getAvailableAVDs(): Promise<string[]> {
+  const { stdout } = await execCmd('emulator', ['-list-avds']);
+  return stdout
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+}
+
+async function prompt(question: string): Promise<string> {
   const readline = await import('readline');
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => {
-    rl.question('Select platform (android/ios) [android]: ', (answer) => {
+    rl.question(question, (ans) => {
       rl.close();
-      const normalized = answer.trim().toLowerCase();
-      if (normalized === 'ios') {
-        resolve('ios');
-      } else {
-        resolve('android');
-      }
+      resolve(ans);
     });
   });
 }
 
+function parseMultiSelect(input: string): string[] {
+  const parts = input
+    .split(/[,\s]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return [];
+  if (parts.length === 1 && (parts[0].toLowerCase() === 'all' || parts[0] === '*')) {
+    return ['*'];
+  }
+  return parts;
+}
+
+async function selectPlatform(current?: string): Promise<'android' | 'ios'> {
+  if (current === 'android' || current === 'ios') return current;
+  const ans = (await prompt('Select platform (android/ios) [android]: ')).trim().toLowerCase();
+  return ans === 'ios' ? 'ios' : 'android';
+}
+
+async function promptEmulatorSelection(avds: string[]): Promise<string[]> {
+  console.log('\n🖥️  Available AVDs:');
+  avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
+  console.log('\n⚡ Select emulators to start (e.g. "1,3" or "1 3" or "all"):');
+
+  const input = (await prompt('  > ')).trim();
+  const selection = parseMultiSelect(input);
+
+  if (selection.length === 0) {
+    console.log('No selection — exiting.');
+    process.exit(0);
+  }
+
+  if (selection[0] === '*') {
+    return avds;
+  }
+
+  const indices = selection.map((s) => parseInt(s, 10) - 1).filter((i) => i >= 0 && i < avds.length);
+  return indices.map((i) => avds[i]);
+}
+
 let viteProc: ReturnType<typeof Bun.spawn> | null = null;
-let syncTimeout: ReturnType<typeof setTimeout> | null = null;
-let syncing = false;
 let serverPort = DEFAULT_PORT;
 let serverIp: string | null = null;
+let runningEmulators: Emulator[] = [];
 
 async function runInExample(cmd: string[], label: string): Promise<boolean> {
   console.log(`\n⏳ ${label}...`);
@@ -72,59 +135,145 @@ async function syncPluginAndNative(): Promise<boolean> {
   return await runInExample(['bun', 'run', 'sync:native'], 'cap sync');
 }
 
-function updateCapacitorConfig(ip: string, port: string): void {
-  const configPath = resolve(PATHS.EXAMPLE_APP, 'capacitor.config.ts');
-  if (existsSync(configPath)) {
-    let content = readFileSync(configPath, 'utf-8');
-    const urlMatch = content.match(/url:\s*`http:\/\/[^`]+`/);
-    if (urlMatch) {
-      content = content.replace(urlMatch[0], `url: \`http://${ip}:${port}\``);
-    } else {
-      const insertPoint = content.lastIndexOf('server:');
-      if (insertPoint !== -1) {
-        const endBrace = content.indexOf('}', insertPoint);
-        if (endBrace !== -1) {
-          content = content.slice(0, endBrace) + `\n    url: \`http://${ip}:${port}\`,` + content.slice(endBrace);
-        }
-      }
-    }
-    writeFileSync(configPath, content, 'utf-8');
+async function killPort(port: string): Promise<void> {
+  const { code } = await execCmd('cmd', [
+    '/c',
+    `for /f "tokens=5" %a in ('netstat -ano ^| findstr :${port}') do taskkill /F /PID %a`,
+  ]);
+  if (code === 0) {
+    console.log(`  Killed process on port ${port}`);
   }
+  await new Promise<void>((r) => setTimeout(r, 500));
 }
 
-function startViteServer(): void {
+function getApkPath(): string {
+  return resolve(PATHS.EXAMPLE_APP, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+}
+
+async function adbReverse(emulatorId: string, port: string): Promise<void> {
+  await execCmd('adb', ['-s', emulatorId, 'reverse', `tcp:${port}`, `tcp:${port}`]);
+}
+
+async function adbInstall(emulatorId: string): Promise<boolean> {
+  const apkPath = getApkPath();
+  if (!existsSync(apkPath)) {
+    return false;
+  }
+  const { code } = await execCmd('adb', ['-s', emulatorId, 'install', '-r', apkPath]);
+  return code === 0;
+}
+
+function getAppId(): string {
+  const configPath = resolve(PATHS.EXAMPLE_APP, 'capacitor.config.ts');
+  if (!existsSync(configPath)) return 'com.example.plugin';
+  const content = readFileSync(configPath, 'utf-8');
+  const match = content.match(/appId:\s*['"]([^'"]+)['"]/);
+  return match ? match[1] : 'com.example.plugin';
+}
+
+async function adbLaunch(emulatorId: string, appId: string): Promise<void> {
+  await execCmd('adb', ['-s', emulatorId, 'shell', 'am', 'start', '-n', `${appId}/.MainActivity`]);
+}
+
+async function startEmulators(avdNames: string[]): Promise<void> {
+  console.log('\n🚀 Starting emulators...');
+  const promises: Promise<void>[] = [];
+
+  for (const name of avdNames) {
+    console.log(`  Starting ${name}...`);
+    spawn('emulator', ['-avd', name, '-no-snapshot-load', '-no-audio', '-gpu', 'swiftshader_indirect'], {
+      detached: true,
+      stdio: 'ignore',
+      shell: true,
+    }).unref();
+
+    const p = (async () => {
+      let booted = false;
+      for (let i = 0; i < 60; i++) {
+        await new Promise<void>((r) => setTimeout(r, 1000));
+        const ems = await getRunningEmulators();
+        if (ems.some((e) => e.state === 'device')) {
+          booted = true;
+          break;
+        }
+      }
+      if (!booted) {
+        console.log(`  ⚠️  ${name} may not have booted cleanly`);
+      }
+    })();
+    promises.push(p);
+  }
+
+  await Promise.all(promises);
+  console.log(`\n✅ ${avdNames.length} emulator(s) started`);
+}
+
+function startViteServer(ip: string, port: string): void {
   if (viteProc) {
     viteProc.kill();
     viteProc = null;
   }
 
-  console.log(`\n🚀 Starting Vite dev server on http://${serverIp}:${serverPort}`);
+  console.log(`\n🚀 Starting Vite dev server on http://${ip}:${port}`);
   viteProc = Bun.spawn(['bun', 'run', 'start'], {
     cwd: PATHS.EXAMPLE_APP,
     stdout: 'inherit',
     stderr: 'inherit',
     env: {
       ...process.env,
-      CAPACITOR_SERVER_IP: serverIp!,
-      CAPACITOR_SERVER_PORT: serverPort,
+      CAPACITOR_SERVER_IP: ip,
+      CAPACITOR_SERVER_PORT: port,
     },
   });
 }
 
-function debouncedSync(): void {
-  if (syncTimeout) clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(async () => {
-    if (syncing) return;
-    syncing = true;
-    try {
-      console.log(`\n📦 Native changes detected, rebuilding...`);
-      await syncPluginAndNative();
-      console.log(`\n✅ Native rebuilt. Re-run the app on emulator to load changes.`);
-      console.log(`   (Web changes are auto-loaded via live-reload)`);
-    } finally {
-      syncing = false;
+async function ensurePortFree(port: string): Promise<void> {
+  const { stdout } = await execCmd('cmd', ['/c', `netstat -ano | findstr :${port}`]);
+  for (const line of stdout.split('\n')) {
+    const m = line.trim().match(/(\d+)\s*$/);
+    if (m) {
+      console.log(`  Killing process ${m[1]} on port ${port}...`);
+      await execCmd('cmd', ['/c', `taskkill /F /PID ${m[1]}`]);
+      await new Promise<void>((r) => setTimeout(r, 500));
+      break;
     }
-  }, 500);
+  }
+}
+
+async function deployToAllEmulators(port: string): Promise<void> {
+  runningEmulators = await getRunningEmulators();
+  if (runningEmulators.length === 0) {
+    console.log('\n⚠️  No running emulators found. Skipping deploy.');
+    return;
+  }
+
+  console.log('\n📦 Deploying to emulators...');
+
+  for (const em of runningEmulators) {
+    process.stdout.write(`  [${em.id}] adb reverse... `);
+    await adbReverse(em.id, port);
+    console.log('✅');
+  }
+
+  for (const em of runningEmulators) {
+    process.stdout.write(`  [${em.id}] install APK... `);
+    const ok = await adbInstall(em.id);
+    console.log(ok ? '✅' : '❌');
+    if (!ok) continue;
+    process.stdout.write(`  [${em.id}] launch app... `);
+    await adbLaunch(em.id, getAppId());
+    console.log('✅');
+  }
+}
+
+async function redeployAll(port: string): Promise<void> {
+  console.log('\n📦 Rebuilding and redeploying...');
+  const ok = await syncPluginAndNative();
+  if (!ok) {
+    console.error('❌ Sync failed, skipping redeploy');
+    return;
+  }
+  await deployToAllEmulators(port);
 }
 
 async function main(): Promise<void> {
@@ -138,15 +287,11 @@ async function main(): Promise<void> {
     if (detected) {
       serverIp = detected;
       env.CAPACITOR_SERVER_IP = serverIp;
-      console.log(`  Using detected IP: ${serverIp}`);
     } else {
       serverIp = '127.0.0.1';
       env.CAPACITOR_SERVER_IP = serverIp;
       console.log(`  ⚠️  Could not detect LAN IP, falling back to ${serverIp}`);
-      console.log(`  Note: Live-reload may not work on physical devices without a valid LAN IP.`);
     }
-  } else {
-    console.log(`  Using saved IP from .env: ${serverIp}`);
   }
   env.CAPACITOR_SERVER_PORT = serverPort;
   saveEnv(env);
@@ -155,67 +300,132 @@ async function main(): Promise<void> {
   const platform = await selectPlatform(env.CAPACITOR_PLATFORM);
   env.CAPACITOR_PLATFORM = platform;
   saveEnv(env);
-  console.log(`  Selected: ${platform}`);
 
-  console.log('\n🔨 Initial build and sync...');
-  updateCapacitorConfig(serverIp, serverPort);
+  console.log('\n🔍 Detecting emulators...');
+  runningEmulators = await getRunningEmulators();
+
+  if (runningEmulators.length > 0) {
+    console.log(`  Found ${runningEmulators.length} running emulator(s):`);
+    runningEmulators.forEach((em) => console.log(`    ✓ ${em.id} (${em.state})`));
+  } else {
+    console.log('  No emulators running.');
+
+    const avds = await getAvailableAVDs();
+    if (avds.length === 0) {
+      console.log('  No AVDs found. Please create one via Android Studio or `avdmanager`.');
+      process.exit(1);
+    }
+
+    console.log(`  Found ${avds.length} available AVD(s).`);
+
+    const fromEnv = env.EMULATOR_AVDS;
+    let toStart: string[];
+
+    if (fromEnv) {
+      const envAvds = fromEnv
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      toStart = envAvds
+        .map((name) => {
+          const found = avds.find((a) => a === name);
+          if (!found) console.log(`  ⚠️  AVD "${name}" not found in available list`);
+          return found;
+        })
+        .filter(Boolean) as string[];
+      if (toStart.length === 0) {
+        console.log('  No valid AVDs from EMULATOR_AVDS env var. Showing prompt...');
+        toStart = await promptEmulatorSelection(avds);
+      }
+    } else {
+      toStart = await promptEmulatorSelection(avds);
+    }
+
+    await startEmulators(toStart);
+    runningEmulators = await getRunningEmulators();
+  }
+
+  if (runningEmulators.length === 0) {
+    console.error('\n❌ No emulators available. Exiting.');
+    process.exit(1);
+  }
+
+  const ip = serverIp!;
+  const port = serverPort;
+
+  console.log(`\n🔨 Initial build and sync...`);
+
   const ok = await syncPluginAndNative();
   if (!ok) {
     console.error('\n❌ Initial sync failed. Please fix errors and try again.');
     process.exit(1);
   }
 
-  startViteServer();
+  await ensurePortFree(port);
+  startViteServer('localhost', port);
 
-  await new Promise<void>((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, 2000);
-  });
+  await deployToAllEmulators(port);
 
   console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                     LIVE-RELOAD READY                        ║
 ╠══════════════════════════════════════════════════════════════╣
-║  Web server:  http://${serverIp}:${serverPort.padEnd(23)}║
+║  Web server:  http://localhost:${port.padEnd(18)}║
+║  Emulators:   ${runningEmulators
+    .map((e) => e.id)
+    .join(', ')
+    .padEnd(52)}║
 ║  Platform:    ${platform.padEnd(52)}║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Web/JS changes:  Auto-loaded via Vite HMR                   ║
-║  Native changes:  Auto-rebuilds plugin + cap sync            ║
-║  Manual restart: Kill this script and re-run 'bun start'     ║
+║  Native changes:  Auto-rebuilds plugin + redeploys all      ║
 ╚══════════════════════════════════════════════════════════════╝
-
-Launching app on ${platform} emulator with live-reload...
 `);
 
-  const capRunProc = Bun.spawn(['bunx', 'cap', 'run', platform, '--live-reload'], {
-    cwd: PATHS.EXAMPLE_APP,
-    stdout: 'inherit',
-    stderr: 'inherit',
-  });
-
-  const exitCode = await capRunProc.exited;
-  console.log(`\n👋 Capacitor run exited with code ${exitCode}. Shutting down...`);
-  if (viteProc) viteProc.kill();
-  process.exit(0);
+  await watchNativeChanges(port);
 }
 
-process.on('SIGINT', () => {
-  console.log('\n👋 Shutting down...');
-  if (viteProc) viteProc.kill();
-  process.exit(0);
-});
+async function watchNativeChanges(port: string): Promise<void> {
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let syncing = false;
+
+  function onChange(label: string): void {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      if (syncing) return;
+      syncing = true;
+      try {
+        console.log(`\n📦 ${label} changed, rebuilding and redeploying...`);
+        await redeployAll(port);
+        console.log(`\n👀 Watching native changes...`);
+      } finally {
+        syncing = false;
+      }
+    }, 1000);
+  }
+
+  watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, (_evt, filename) => {
+    console.log(`\n📦 Plugin Android changed: ${filename}`);
+    onChange('Android');
+  });
+
+  watch(resolve(PATHS.ROOT, 'ios', 'Sources'), { recursive: true }, (_evt, filename) => {
+    console.log(`\n📦 Plugin iOS changed: ${filename}`);
+    onChange('iOS');
+  });
+
+  await new Promise<void>((resolve) =>
+    process.on('SIGINT', () => {
+      console.log('\n👋 Shutting down Vite...');
+      if (viteProc) viteProc.kill();
+      resolve();
+    }),
+  );
+}
 
 console.log('\n👀 Watching for native changes...\n');
-
-watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, (_evt, filename) => {
-  console.log(`\n📦 Plugin Android changed: ${filename}`);
-  debouncedSync();
+main().catch((err) => {
+  console.error(err);
+  if (viteProc) viteProc.kill();
+  process.exit(1);
 });
-
-watch(resolve(PATHS.ROOT, 'ios', 'Sources'), { recursive: true }, (_evt, filename) => {
-  console.log(`\n📦 Plugin iOS changed: ${filename}`);
-  debouncedSync();
-});
-
-main();

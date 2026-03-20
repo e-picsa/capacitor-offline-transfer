@@ -36,7 +36,7 @@ const config: CapacitorConfig = {
   },
   server: {
     cleartext: true,
-    ...(serverIp ? { url: `http://192.168.1.66:5173` } : {}),
+    ...(serverIp ? { url: `http://${serverIp}:${serverPort}` } : {}),
   },
 };
 

@@ -8,6 +8,7 @@ interface EnvVars {
   CAPACITOR_SERVER_IP?: string;
   CAPACITOR_SERVER_PORT?: string;
   CAPACITOR_PLATFORM?: string;
+  EMULATOR_AVDS?: string;
 }
 
 export function getEnv(): EnvVars {
@@ -24,6 +25,7 @@ export function getEnv(): EnvVars {
           if (key === 'CAPACITOR_SERVER_IP') env.CAPACITOR_SERVER_IP = value;
           if (key === 'CAPACITOR_SERVER_PORT') env.CAPACITOR_SERVER_PORT = value;
           if (key === 'CAPACITOR_PLATFORM') env.CAPACITOR_PLATFORM = value;
+          if (key === 'EMULATOR_AVDS') env.EMULATOR_AVDS = value;
         }
       }
     }
@@ -42,6 +44,9 @@ export function saveEnv(env: EnvVars): void {
   }
   if (env.CAPACITOR_PLATFORM) {
     lines.push(`CAPACITOR_PLATFORM=${env.CAPACITOR_PLATFORM}`);
+  }
+  if (env.EMULATOR_AVDS) {
+    lines.push(`EMULATOR_AVDS=${env.EMULATOR_AVDS}`);
   }
   writeFileSync(ENV_FILE, lines.join('\n') + '\n', 'utf-8');
 }
