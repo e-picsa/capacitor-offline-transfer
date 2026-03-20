@@ -172,11 +172,13 @@ open class ServerManager(private val context: Context, private val plugin: Capac
             line = reader.readLine()
         }
 
-        val body = CharArray(contentLength)
-        if (contentLength > 0) {
+        val json = if (contentLength > 0) {
+            val body = CharArray(contentLength)
             reader.read(body, 0, contentLength)
+            JSObject(String(body))
+        } else {
+            JSObject()
         }
-        val json = JSObject(String(body))
         val displayName = json.optString("displayName", "Unknown")
         val clientIp = client.inetAddress.hostAddress ?: "unknown"
 

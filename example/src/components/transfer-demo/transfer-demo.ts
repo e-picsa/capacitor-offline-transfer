@@ -153,11 +153,13 @@ window.customElements.define(
           updateStatus(initStatus, 'Initializing...', 'loading');
           const strategy = strategySelect.value;
 
-          if (strategy !== 'HTTP_SERVER') {
-            await OfflineTransfer.setStrategy({ strategy: strategy as any });
-            [advertiseBtn, discoveryBtn].forEach((b) => (b.disabled = false));
-          } else {
+          if (strategy === 'HTTP_SERVER') {
             [serverBtn, manualConnectBtn].forEach((b) => (b.disabled = false));
+          } else {
+            await OfflineTransfer.setStrategy({
+              strategy: strategy as 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT',
+            });
+            [advertiseBtn, discoveryBtn].forEach((b) => (b.disabled = false));
           }
 
           await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
