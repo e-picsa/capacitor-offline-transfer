@@ -1,0 +1,94 @@
+    <style>
+      @import url('../css/style.css');
+    </style>
+    <div>
+      <div class="titlebar">
+        <h1>Offline Transfer</h1>
+      </div>
+      <main>
+        <section>
+          <h3>1. Setup</h3>
+          <div class="field">
+            <label>P2P Strategy</label>
+            <select id="strategy-select">
+              <option value="P2P_STAR">P2P Star (1-to-many)</option>
+              <option value="P2P_CLUSTER" selected>P2P Cluster (Mesh)</option>
+              <option value="P2P_POINT_TO_POINT">P2P Point-to-Point (Direct)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Log Level</label>
+            <select id="log-level-select">
+              <option value="0">None</option>
+              <option value="1">Error</option>
+              <option value="2">Warn</option>
+              <option value="3" selected>Info (Default)</option>
+              <option value="4">Debug</option>
+              <option value="5">Verbose</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-wrap: wrap;">
+            <button class="button" id="init-btn">Initialize</button>
+            <button class="button secondary" id="check-perms">Check Perms</button>
+            <button class="button secondary" id="request-perms">Request Perms</button>
+          </div>
+        </section>
+
+        <section>
+          <h3>2. Connections</h3>
+          <div style="display: flex; flex-wrap: wrap;">
+            <button class="button" id="advertise-btn" disabled>Advertise</button>
+            <button class="button" id="discovery-btn" disabled>Discover</button>
+            <button class="button danger" id="stop-btn" disabled>Stop All</button>
+          </div>
+          <div class="field" style="margin-top: 10px;">
+            <label>Manual Server URL (for Emulators)</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="manual-url-input" placeholder="http://10.0.2.2:8080" value="http://10.0.2.2:8080">
+              <button class="button secondary" id="manual-connect-btn" style="margin:0">Manual Connect</button>
+            </div>
+          </div>
+          <div class="device-list" id="devices-list">
+            <div style="color: #8e8e93; font-size: 0.9em; padding: 10px;">No devices found yet...</div>
+          </div>
+        </section>
+
+        <section>
+          <h3>3. Transfer</h3>
+          <div class="field">
+            <label>Text Message</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="message-input" placeholder="Type here...">
+              <button class="button" id="send-btn" disabled style="margin:0">Send</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>File Transfer</label>
+            <button class="button secondary" id="send-file-btn" disabled style="margin-left:0">Pick & Send Image</button>
+          </div>
+          <div id="progress-container" class="progress-container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin-bottom: 4px;">
+              <span id="progress-filename">Sending...</span>
+              <span id="progress-text">0%</span>
+            </div>
+            <div class="progress-bg">
+              <div id="progress-bar" class="progress-fill"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="android-tier3">
+          <h3>Tier 3 (Android)</h3>
+          <div style="display: flex; flex-wrap: wrap;">
+            <button class="button secondary" id="hotspot-btn">Start Hotspot</button>
+            <button class="button secondary" id="server-btn">Start Server</button>
+            <button class="button danger" id="stop-t3-btn">Stop Tier 3</button>
+          </div>
+        </section>
+
+        <label>Log Console</label>
+        <div class="message-box" id="messages">
+          Ready.
+        </div>
+      </main>
+    </div>
