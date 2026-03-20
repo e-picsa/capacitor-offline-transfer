@@ -121,7 +121,10 @@ async function adbUninstall(emulatorId: string): Promise<boolean> {
 }
 
 async function adbFreshInstall(emulatorId: string, apkPath: string): Promise<AdbInstallResult> {
-  await adbUninstall(emulatorId);
+  const uninstalled = await adbUninstall(emulatorId);
+  if (!uninstalled) {
+    return { success: false, error: 'Failed to uninstall app before attempting a fresh install.' };
+  }
 
   const { code, stdout, stderr } = await execCmd('adb', ['-s', emulatorId, 'install', apkPath]);
 
