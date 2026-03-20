@@ -38,12 +38,16 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
         }
     }
 
+    internal open fun openConnection(url: String): HttpURLConnection {
+        return URL(url).openConnection() as HttpURLConnection
+    }
+
     fun sendMessage(url: String, data: String) {
         executor.execute {
             var connection: HttpURLConnection? = null
             try {
                 val postUrl = if (url.endsWith("/")) "${url}message" else "$url/message"
-                connection = URL(postUrl).openConnection() as HttpURLConnection
+                connection = openConnection(postUrl)
                 connection.requestMethod = "POST"
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "text/plain")

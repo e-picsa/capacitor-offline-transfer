@@ -53,13 +53,13 @@ class ManualConnectionManagerTest : BaseTest() {
 
     @Test
     fun `sendMessage executes POST request`() {
-        mockkConstructor(URL::class)
+        val spyManager = spyk(manualManager)
         val mockConnection = mockk<HttpURLConnection>(relaxed = true)
-        every { anyConstructed<URL>().openConnection() } returns mockConnection
+        every { spyManager.openConnection(any()) } returns mockConnection
         every { mockConnection.responseCode } returns 200
 
         val data = "Hello, Emulator!"
-        manualManager.sendMessage("http://localhost:8080", data)
+        spyManager.sendMessage("http://localhost:8080", data)
 
         // Wait for executor to run
         Thread.sleep(100)
@@ -72,12 +72,12 @@ class ManualConnectionManagerTest : BaseTest() {
 
     @Test
     fun `sendFile sends metadata via POST message`() {
-        mockkConstructor(URL::class)
+        val spyManager = spyk(manualManager)
         val mockConnection = mockk<HttpURLConnection>(relaxed = true)
-        every { anyConstructed<URL>().openConnection() } returns mockConnection
+        every { spyManager.openConnection(any()) } returns mockConnection
         every { mockConnection.responseCode } returns 200
 
-        manualManager.sendFile("http://localhost:8080", "/path/to/test.jpg", "test.jpg")
+        spyManager.sendFile("http://localhost:8080", "/path/to/test.jpg", "test.jpg")
 
         // Wait for executor
         Thread.sleep(100)

@@ -18,12 +18,8 @@ abstract class BaseTest {
 
     @Before
     fun baseSetUp() {
-        mockkStatic(Log::class)
-        every { Log.d(any(), any()) } returns 0
-        every { Log.i(any(), any()) } returns 0
-        every { Log.w(any(), any<String>()) } returns 0
-        every { Log.e(any(), any(), any()) } returns 0
-        every { Log.e(any(), any()) } returns 0
+        // With unitTests.returnDefaultValues = true, Log methods return default values (0 for Int)
+        // so we don't need to manually mock every call.
         
         // Mock MimeTypeMap by default as it's frequently used in this plugin
         mockkStatic(MimeTypeMap::class)

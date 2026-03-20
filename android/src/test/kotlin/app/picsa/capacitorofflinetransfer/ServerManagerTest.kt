@@ -13,9 +13,8 @@ import org.junit.Test
 import java.io.File
 import java.net.URL
 import java.net.HttpURLConnection
-import java.net.NetworkInterface
 import java.net.InetAddress
-import java.util.Collections
+import java.util.*
 
 class ServerManagerTest : BaseTest() {
     private lateinit var context: Context
@@ -28,16 +27,6 @@ class ServerManagerTest : BaseTest() {
         context = mockk(relaxed = true)
         plugin = mockk(relaxed = true)
         
-        // Custom NetworkInterface mocking for this test
-        mockkStatic(NetworkInterface::class)
-        val mockInterface = mockk<NetworkInterface>()
-        val mockAddress = mockk<java.net.InetAddress>()
-        every { mockAddress.isLoopbackAddress } returns false
-        every { mockAddress.hostAddress } returns "127.0.0.1"
-        every { mockInterface.displayName } returns "wlan0"
-        every { mockInterface.inetAddresses } returns Collections.enumeration(listOf(mockAddress))
-        every { NetworkInterface.getNetworkInterfaces() } returns Collections.enumeration(listOf(mockInterface))
-        
         // Need to override the default text/plain for some tests
         mockMimeType("txt", "text/plain")
         
@@ -47,7 +36,10 @@ class ServerManagerTest : BaseTest() {
         tempDir.mkdir()
         
         every { context.filesDir } returns tempDir
-        serverManager = ServerManager(context, plugin)
+        
+        // Use spyk to mock the internal IP address method without touching JDK NetworkInterface
+        serverManager = spyk(ServerManager(context, plugin))
+        every { serverManager.getLocalIpAddress() } returns "127.0.0.1"
     }
 
     @After
@@ -116,7 +108,8 @@ class ServerManagerTest : BaseTest() {
         
         // Emulate plugin casting
         val realPlugin = mockk<CapacitorOfflineTransferPlugin>(relaxed = true)
-        serverManager = ServerManager(context, realPlugin)
+        serverManager = spyk(ServerManager(context, realPlugin))
+        every { serverManager.getLocalIpAddress() } returns "127.0.0.1"
         
         // Need to restart server to use new plugin mock
         serverManager.start(portSlot.captured.getInteger("port") ?: 0, call)

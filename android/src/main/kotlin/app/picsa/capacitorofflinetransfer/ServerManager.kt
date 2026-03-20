@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
  * Embedded HTTP server for serving files over local network.
  * Zero-dependency implementation using ServerSocket.
  */
-class ServerManager(private val context: Context, private val plugin: Plugin) {
+open class ServerManager(private val context: Context, private val plugin: Plugin) {
 
     private var serverThread: Thread? = null
     private var serverSocket: ServerSocket? = null
@@ -82,16 +82,23 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
             val reader = BufferedReader(InputStreamReader(client.getInputStream()))
             val firstLine = reader.readLine() ?: return
             
-            // Basic HTTP request parsing: GET /filename HTTP/1.1
+            // Basic HTTP request parsing: METHOD /path HTTP/1.1
             val parts = firstLine.split(" ")
-            if (parts.size < 2 || parts[0] != "GET") {
+            if (parts.size < 2) {
                 sendErrorResponse(client, 400, "Bad Request")
                 return
             }
 
+            val method = parts[0]
             val rawUri = parts[1]
-            if (parts[0] == "POST" && rawUri == "/message") {
+
+            if (method == "POST" && rawUri == "/message") {
                 handlePostMessage(client, reader)
+                return
+            }
+
+            if (method != "GET") {
+                sendErrorResponse(client, 405, "Method Not Allowed")
                 return
             }
 
@@ -186,7 +193,7 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
         }
     }
 
-    private fun getLocalIpAddress(): String? {
+    internal open fun getLocalIpAddress(): String? {
         try {
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
             while (interfaces.hasMoreElements()) {

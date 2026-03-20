@@ -1,6 +1,7 @@
 package app.picsa.capacitorofflinetransfer
 
 import android.content.Context
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.After
@@ -19,6 +20,12 @@ class CapacitorOfflineTransferTest : BaseTest() {
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
+        val appContext = mockk<Context>(relaxed = true)
+        every { context.applicationContext } returns appContext
+        
+        val wifiManager = mockk<android.net.wifi.WifiManager>(relaxed = true)
+        every { appContext.getSystemService(Context.WIFI_SERVICE) } returns wifiManager
+
         plugin = mockk(relaxed = true)
         offlineTransfer = CapacitorOfflineTransfer()
         offlineTransfer.load(context, plugin)

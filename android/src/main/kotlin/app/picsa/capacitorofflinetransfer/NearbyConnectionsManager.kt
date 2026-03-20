@@ -129,7 +129,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
 
             if (update.status == PayloadTransferUpdate.Status.SUCCESS) {
                 val payload = incomingPayloads.remove(update.payloadId)
-                val payloadFile = payload.asFile()
+                val payloadFile = payload?.asFile()
                 if (payloadFile != null) {
                     val targetFile = File(context.filesDir, incomingFileMetadata.remove(update.payloadId) ?: "received_${update.payloadId}")
                     
