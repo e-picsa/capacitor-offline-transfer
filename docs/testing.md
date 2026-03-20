@@ -32,6 +32,11 @@ adb devices
 
 Expected output:
 
+```bash
+emulator-5554   device
+emulator-5556   device
+```
+
 2. Setup TCP Bridge
 
 Assuming `5554` is the Client and `5556` is the Server:
