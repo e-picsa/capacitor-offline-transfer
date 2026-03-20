@@ -7,6 +7,18 @@ export interface PermissionStatus {
   nearby: PermissionState;
 }
 
+export type TransferMethod = 'nearby' | 'lan' | 'none';
+export type PlatformType = 'android' | 'ios' | 'web' | 'unknown';
+
+export interface PlatformCapabilities {
+  platform: PlatformType;
+  transferMethod: TransferMethod;
+  supportsNearby: boolean;
+  isEmulator: boolean;
+  nearbyApiVersion?: string;
+  reason?: string;
+}
+
 export interface OfflineTransferPlugin {
   /**
    * Initializes the plugin with a unique service identifier.
@@ -23,11 +35,10 @@ export interface OfflineTransferPlugin {
   initialize(options: { serviceId: string }): Promise<void>;
 
   /**
-   * Sets the P2P connection strategy.
-   * Defaults to P2P_CLUSTER for mesh support on Android.
-   * @param options Strategy ("P2P_STAR", "P2P_CLUSTER", "P2P_POINT_TO_POINT")
+   * Checks platform capabilities and determines the best available transfer method.
+   * Call this after initialization to know what features are available.
    */
-  setStrategy(options: { strategy: 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT' }): Promise<void>;
+  checkCapabilities(): Promise<PlatformCapabilities>;
 
   /**
    * Starts advertising the device to nearby peers.
@@ -53,12 +64,6 @@ export interface OfflineTransferPlugin {
    * Requests a connection to a discovered endpoint.
    */
   connect(options: { endpointId: string; displayName: string }): Promise<void>;
-
-  /**
-   * Android Only (Dev Tooling): Manually connects to a device using its IP/URL.
-   * Intended for emulator testing. Production use nearby P2P discovery instead.
-   */
-  connectByAddress(options: { url: string; displayName?: string }): Promise<void>;
 
   /**
    * Accepts an incoming connection request.
@@ -91,19 +96,6 @@ export interface OfflineTransferPlugin {
    * @param options.filePath The local path or URL to the file.
    */
   sendFile(options: { endpointId: string; filePath: string; fileName: string }): Promise<void>;
-
-  /**
-   * Android Only (Dev Tooling): Starts a LAN HTTP server for emulator testing.
-   * Use this to test file transfers between emulators on the same development machine.
-   * Not for production use.
-   * @param options.port The port to bind to (0 for dynamic selection).
-   */
-  startLanServer(options: { port?: number }): Promise<{ port: number; url: string }>;
-
-  /**
-   * Android Only (Dev Tooling): Stops the LAN HTTP server.
-   */
-  stopLanServer(): Promise<void>;
 
   /**
    * Sets the logging level.
@@ -150,14 +142,6 @@ export interface OfflineTransferPlugin {
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
-   * Android Only (Dev Tooling): Fired when an emulator or HTTP client connects to the LAN server.
-   */
-  addListener(
-    eventName: 'emulatorClientConnected',
-    listenerFunc: (event: EmulatorClientConnectedEvent) => void,
-  ): Promise<PluginListenerHandle> & PluginListenerHandle;
-
-  /**
    * Check permission status
    */
   checkPermissions(): Promise<PermissionStatus>;
@@ -195,7 +179,6 @@ export interface EndpointFoundEvent {
   endpointId: string;
   endpointName: string;
   serviceId: string;
-  url?: string;
 }
 
 export interface EndpointLostEvent {
@@ -220,9 +203,4 @@ export interface FileReceivedEvent {
   payloadId: string;
   fileName: string;
   path: string;
-}
-
-export interface EmulatorClientConnectedEvent {
-  endpointId: string;
-  endpointName: string;
 }

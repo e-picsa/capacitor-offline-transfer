@@ -207,21 +207,18 @@ Add these to your `Info.plist`:
 <docgen-index>
 
 * [`initialize(...)`](#initialize)
-* [`setStrategy(...)`](#setstrategy)
+* [`checkCapabilities()`](#checkcapabilities)
 * [`startAdvertising(...)`](#startadvertising)
 * [`stopAdvertising()`](#stopadvertising)
 * [`startDiscovery()`](#startdiscovery)
 * [`stopDiscovery()`](#stopdiscovery)
 * [`connect(...)`](#connect)
-* [`connectByAddress(...)`](#connectbyaddress)
 * [`acceptConnection(...)`](#acceptconnection)
 * [`rejectConnection(...)`](#rejectconnection)
 * [`disconnectFromEndpoint(...)`](#disconnectfromendpoint)
 * [`disconnect()`](#disconnect)
 * [`sendMessage(...)`](#sendmessage)
 * [`sendFile(...)`](#sendfile)
-* [`startLanServer(...)`](#startlanserver)
-* [`stopLanServer()`](#stoplanserver)
 * [`setLogLevel(...)`](#setloglevel)
 * [`addListener('connectionRequested', ...)`](#addlistenerconnectionrequested-)
 * [`addListener('connectionResult', ...)`](#addlistenerconnectionresult-)
@@ -230,7 +227,6 @@ Add these to your `Info.plist`:
 * [`addListener('messageReceived', ...)`](#addlistenermessagereceived-)
 * [`addListener('transferProgress', ...)`](#addlistenertransferprogress-)
 * [`addListener('fileReceived', ...)`](#addlistenerfilereceived-)
-* [`addListener('emulatorClientConnected', ...)`](#addlisteneremulatorclientconnected-)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
@@ -261,18 +257,16 @@ Only devices using the same `serviceId` will be able to discover and connect to 
 --------------------
 
 
-### setStrategy(...)
+### checkCapabilities()
 
 ```typescript
-setStrategy(options: { strategy: 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT'; }) => Promise<void>
+checkCapabilities() => Promise<PlatformCapabilities>
 ```
 
-Sets the P2P connection strategy.
-Defaults to P2P_CLUSTER for mesh support on Android.
+Checks platform capabilities and determines the best available transfer method.
+Call this after initialization to know what features are available.
 
-| Param         | Type                                                                            | Description                                                |
-| ------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| **`options`** | <code>{ strategy: 'P2P_STAR' \| 'P2P_CLUSTER' \| 'P2P_POINT_TO_POINT'; }</code> | Strategy ("P2P_STAR", "P2P_CLUSTER", "P2P_POINT_TO_POINT") |
+**Returns:** <code>Promise&lt;<a href="#platformcapabilities">PlatformCapabilities</a>&gt;</code>
 
 --------------------
 
@@ -336,22 +330,6 @@ Requests a connection to a discovered endpoint.
 | Param         | Type                                                      |
 | ------------- | --------------------------------------------------------- |
 | **`options`** | <code>{ endpointId: string; displayName: string; }</code> |
-
---------------------
-
-
-### connectByAddress(...)
-
-```typescript
-connectByAddress(options: { url: string; displayName?: string; }) => Promise<void>
-```
-
-Android Only (Dev Tooling): Manually connects to a device using its IP/URL.
-Intended for emulator testing. Production use nearby P2P discovery instead.
-
-| Param         | Type                                                |
-| ------------- | --------------------------------------------------- |
-| **`options`** | <code>{ url: string; displayName?: string; }</code> |
 
 --------------------
 
@@ -439,36 +417,6 @@ Uses Payload.Type.FILE (Android) or Resource URLs (iOS) to avoid OOM.
 | Param         | Type                                                                     |
 | ------------- | ------------------------------------------------------------------------ |
 | **`options`** | <code>{ endpointId: string; filePath: string; fileName: string; }</code> |
-
---------------------
-
-
-### startLanServer(...)
-
-```typescript
-startLanServer(options: { port?: number; }) => Promise<{ port: number; url: string; }>
-```
-
-Android Only (Dev Tooling): Starts a LAN HTTP server for emulator testing.
-Use this to test file transfers between emulators on the same development machine.
-Not for production use.
-
-| Param         | Type                            |
-| ------------- | ------------------------------- |
-| **`options`** | <code>{ port?: number; }</code> |
-
-**Returns:** <code>Promise&lt;{ port: number; url: string; }&gt;</code>
-
---------------------
-
-
-### stopLanServer()
-
-```typescript
-stopLanServer() => Promise<void>
-```
-
-Android Only (Dev Tooling): Stops the LAN HTTP server.
 
 --------------------
 
@@ -602,24 +550,6 @@ addListener(eventName: 'fileReceived', listenerFunc: (event: FileReceivedEvent) 
 --------------------
 
 
-### addListener('emulatorClientConnected', ...)
-
-```typescript
-addListener(eventName: 'emulatorClientConnected', listenerFunc: (event: EmulatorClientConnectedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
-```
-
-Android Only (Dev Tooling): Fired when an emulator or HTTP client connects to the LAN server.
-
-| Param              | Type                                                                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------------------- |
-| **`eventName`**    | <code>'emulatorClientConnected'</code>                                                                    |
-| **`listenerFunc`** | <code>(event: <a href="#emulatorclientconnectedevent">EmulatorClientConnectedEvent</a>) =&gt; void</code> |
-
-**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
-
---------------------
-
-
 ### checkPermissions()
 
 ```typescript
@@ -674,6 +604,18 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 ### Interfaces
 
 
+#### PlatformCapabilities
+
+| Prop                   | Type                                                      |
+| ---------------------- | --------------------------------------------------------- |
+| **`platform`**         | <code><a href="#platformtype">PlatformType</a></code>     |
+| **`transferMethod`**   | <code><a href="#transfermethod">TransferMethod</a></code> |
+| **`supportsNearby`**   | <code>boolean</code>                                      |
+| **`isEmulator`**       | <code>boolean</code>                                      |
+| **`nearbyApiVersion`** | <code>string</code>                                       |
+| **`reason`**           | <code>string</code>                                       |
+
+
 #### PluginListenerHandle
 
 | Prop         | Type                                      |
@@ -706,7 +648,6 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 | **`endpointId`**   | <code>string</code> |
 | **`endpointName`** | <code>string</code> |
 | **`serviceId`**    | <code>string</code> |
-| **`url`**          | <code>string</code> |
 
 
 #### EndpointLostEvent
@@ -745,14 +686,6 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 | **`path`**       | <code>string</code> |
 
 
-#### EmulatorClientConnectedEvent
-
-| Prop               | Type                |
-| ------------------ | ------------------- |
-| **`endpointId`**   | <code>string</code> |
-| **`endpointName`** | <code>string</code> |
-
-
 #### PermissionStatus
 
 | Prop         | Type                                                        |
@@ -761,6 +694,16 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 
 
 ### Type Aliases
+
+
+#### PlatformType
+
+<code>'android' | 'ios' | 'web' | 'unknown'</code>
+
+
+#### TransferMethod
+
+<code>'nearby' | 'lan' | 'none'</code>
 
 
 #### PermissionState

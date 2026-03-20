@@ -1,11 +1,10 @@
-import type { OfflineTransferPlugin } from '@picsa/capacitor-offline-transfer';
+import type { OfflineTransferPlugin, PlatformCapabilities } from '@picsa/capacitor-offline-transfer';
 import { signal } from '@preact/signals';
 
 export interface EndpointInfo {
   endpointId: string;
   endpointName: string;
   serviceId?: string;
-  url?: string;
 }
 
 export interface ConnectedEndpoint {
@@ -51,10 +50,8 @@ export const stats = signal<Stats>({
   sessionStart: Date.now(),
   currentSpeedBps: 0,
 });
-export const initialized = signal(false);
+export const capabilities = signal<PlatformCapabilities | null>(null);
 export const connectedEndpointId = signal<string | null>(null);
-export const lanServerRunning = signal(false);
-export const lanServerUrl = signal<string>('');
 
 let _setConnectedEndpointId: (id: string | null) => void = () => {};
 
@@ -77,6 +74,9 @@ export function initPluginState(plugin: OfflineTransferPlugin): void {
   });
   state.subscribe<Stats>('stats', (v) => {
     stats.value = v;
+  });
+  state.subscribe<PlatformCapabilities | null>('capabilities', (v) => {
+    capabilities.value = v;
   });
 
   _setConnectedEndpointId = (id: string | null) => {

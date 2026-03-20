@@ -3,6 +3,7 @@ import type {
   EndpointFoundEvent,
   EndpointLostEvent,
   FileReceivedEvent,
+  PlatformCapabilities,
   TransferProgressEvent,
 } from './definitions';
 
@@ -34,7 +35,13 @@ export interface StatsSnapshot {
   currentSpeedBps: number;
 }
 
-export type StateKey = 'endpoints' | 'connectedEndpoints' | 'activeTransfers' | 'transferHistory' | 'stats';
+export type StateKey =
+  | 'endpoints'
+  | 'connectedEndpoints'
+  | 'activeTransfers'
+  | 'transferHistory'
+  | 'stats'
+  | 'capabilities';
 
 type Listener<T> = (value: T) => void;
 
@@ -54,6 +61,7 @@ export class TransferState {
     sessionStart: Date.now(),
     currentSpeedBps: 0,
   };
+  private _capabilities: PlatformCapabilities | null = null;
 
   private _subscribers: Subscriber[] = [];
 
@@ -85,6 +93,8 @@ export class TransferState {
         return [...this._transferHistory];
       case 'stats':
         return { ...this._stats };
+      case 'capabilities':
+        return this._capabilities;
     }
   }
 
@@ -103,6 +113,12 @@ export class TransferState {
     this._notify('activeTransfers', this.getSnapshot('activeTransfers'));
     this._notify('transferHistory', this.getSnapshot('transferHistory'));
     this._notify('stats', this.getSnapshot('stats'));
+    this._notify('capabilities', this.getSnapshot('capabilities'));
+  }
+
+  onCapabilitiesDetected(capabilities: PlatformCapabilities): void {
+    this._capabilities = capabilities;
+    this._notify('capabilities', this._capabilities);
   }
 
   onEndpointFound(event: EndpointFoundEvent): void {
