@@ -58,7 +58,7 @@ window.customElements.define(
       }
 
       // State
-      let endpoints: Record<string, any> = {};
+      let endpoints: Record<string, EndpointFoundEvent> = {};
       let connectedEndpointId: string | null = null;
 
       const addLog = (msg: string) => {
