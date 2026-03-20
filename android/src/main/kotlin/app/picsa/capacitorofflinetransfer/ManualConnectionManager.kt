@@ -1,7 +1,6 @@
 package app.picsa.capacitorofflinetransfer
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import com.getcapacitor.JSObject
 import java.io.File
@@ -18,8 +17,27 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
     fun connect(url: String, displayName: String?) {
         executor.execute {
             try {
-                // Simulate a connection by simply emitting an endpointFound and then connectionResult
-                val endpointId = url 
+                val connectUrl = if (url.endsWith("/")) "${url}connect" else "$url/connect"
+                val connection = openConnection(connectUrl)
+                connection.requestMethod = "POST"
+                connection.doOutput = true
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                connection.setRequestProperty("Content-Type", "application/json")
+
+                val payload = JSObject().apply {
+                    put("displayName", displayName ?: "Manual Endpoint")
+                }
+                connection.outputStream.use { it.write(payload.toString().toByteArray()) }
+
+                val responseCode = connection.responseCode
+                connection.disconnect()
+
+                if (responseCode != 200) {
+                    throw Exception("Server rejected connection: $responseCode")
+                }
+
+                val endpointId = url
                 val foundEvent = JSObject().apply {
                     put("endpointId", endpointId)
                     put("endpointName", displayName ?: "Manual Endpoint")
@@ -34,7 +52,13 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
                 }
                 plugin.emit("connectionResult", resultEvent)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to connect manually", e)
+                Log.e(TAG, "Failed to connect manually to $url", e)
+                val resultEvent = JSObject().apply {
+                    put("endpointId", url)
+                    put("status", "FAILURE")
+                    put("message", e.message)
+                }
+                plugin.emit("connectionResult", resultEvent)
             }
         }
     }
@@ -47,7 +71,7 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
         executor.execute {
             var connection: HttpURLConnection? = null
             try {
-                val postUrl = android.net.Uri.parse(url).buildUpon().appendPath("message").build().toString()
+                val postUrl = if (url.endsWith("/")) "${url}message" else "$url/message"
                 connection = openConnection(postUrl)
                 connection.requestMethod = "POST"
                 connection.doOutput = true
@@ -82,6 +106,15 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
             } catch (e: Exception) {
                 Log.e(TAG, "Error notifying about file", e)
             }
+        }
+    }
+
+    fun disconnect(endpointId: String) {
+        executor.execute {
+            val lostEvent = JSObject().apply {
+                put("endpointId", endpointId)
+            }
+            plugin.emit("endpointLost", lostEvent)
         }
     }
 }

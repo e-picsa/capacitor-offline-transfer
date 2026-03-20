@@ -237,6 +237,7 @@ Add these to your `Info.plist`:
 * [`addListener('messageReceived', ...)`](#addlistenermessagereceived-)
 * [`addListener('transferProgress', ...)`](#addlistenertransferprogress-)
 * [`addListener('fileReceived', ...)`](#addlistenerfilereceived-)
+* [`addListener('emulatorClientConnected', ...)`](#addlisteneremulatorclientconnected-)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
@@ -631,6 +632,22 @@ addListener(eventName: 'fileReceived', listenerFunc: (event: FileReceivedEvent) 
 --------------------
 
 
+### addListener('emulatorClientConnected', ...)
+
+```typescript
+addListener(eventName: 'emulatorClientConnected', listenerFunc: (event: emulatorClientConnectedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+```
+
+| Param              | Type                                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'emulatorClientConnected'</code>                                                                    |
+| **`listenerFunc`** | <code>(event: <a href="#emulatorclientconnectedevent">emulatorClientConnectedEvent</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+
+--------------------
+
+
 ### checkPermissions()
 
 ```typescript
@@ -748,6 +765,14 @@ Removes all listeners added by the plugin
 | **`payloadId`**  | <code>string</code> |
 | **`fileName`**   | <code>string</code> |
 | **`path`**       | <code>string</code> |
+
+
+#### emulatorClientConnectedEvent
+
+| Prop               | Type                |
+| ------------------ | ------------------- |
+| **`endpointId`**   | <code>string</code> |
+| **`endpointName`** | <code>string</code> |
 
 
 #### PermissionStatus

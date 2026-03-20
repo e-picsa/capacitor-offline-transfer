@@ -4,23 +4,23 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import type { EndpointFoundEvent } from '@picsa/capacitor-offline-transfer';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 
-import template from './capacitor-welcome.html?raw';
+import './transfer-demo.css';
+import template from './transfer-demo.html?raw';
 
 window.customElements.define(
-  'capacitor-welcome',
+  'transfer-demo',
   class extends HTMLElement {
     constructor() {
       super();
 
       SplashScreen.hide();
 
-      const root = this.attachShadow({ mode: 'open' });
-      root.innerHTML = template;
+      this.innerHTML = template;
     }
 
     connectedCallback() {
       const self = this;
-      const shadow = self.shadowRoot;
+      const shadow = self;
       if (!shadow) return;
 
       // Selectors
@@ -42,17 +42,31 @@ window.customElements.define(
       const serverBtn = shadow.querySelector('#server-btn') as HTMLButtonElement;
       const stopT3Btn = shadow.querySelector('#stop-t3-btn') as HTMLButtonElement;
 
+      const nearbyControls = shadow.querySelector('#nearby-controls') as HTMLDivElement;
+      const emulatorControls = shadow.querySelector('#emulator-controls') as HTMLDivElement;
+
       const devicesList = shadow.querySelector('#devices-list') as HTMLDivElement;
       const messagesBox = shadow.querySelector('#messages') as HTMLDivElement;
 
       const manualUrlInput = shadow.querySelector('#manual-url-input') as HTMLInputElement;
       const manualConnectBtn = shadow.querySelector('#manual-connect-btn') as HTMLButtonElement;
+      const manualConnectArea = shadow.querySelector('#manual-connect-area') as HTMLDivElement;
 
       const progressContainer = shadow.querySelector('#progress-container') as HTMLDivElement;
       const progressBar = shadow.querySelector('#progress-bar') as HTMLDivElement;
       const progressText = shadow.querySelector('#progress-text') as HTMLSpanElement;
       const progressFilename = shadow.querySelector('#progress-filename') as HTMLSpanElement;
       const tier3Section = shadow.querySelector('#android-tier3') as HTMLElement;
+
+      const errorBanner = shadow.querySelector('#error-banner') as HTMLDivElement;
+      const initStatus = shadow.querySelector('#init-status') as HTMLSpanElement;
+      const advertiseStatus = shadow.querySelector('#advertise-status') as HTMLSpanElement;
+      const discoveryStatus = shadow.querySelector('#discovery-status') as HTMLSpanElement;
+      const serverStatus = shadow.querySelector('#server-status') as HTMLSpanElement;
+      const manualConnectStatus = shadow.querySelector('#manual-connect-status') as HTMLSpanElement;
+
+      const mainControls = shadow.querySelector('#main-controls') as HTMLDivElement;
+      const notificationArea = shadow.querySelector('#notification-area') as HTMLDivElement;
 
       if (Capacitor.getPlatform() !== 'android') {
         tier3Section.style.display = 'none';
@@ -67,6 +81,49 @@ window.customElements.define(
         messagesBox.innerHTML += `<div style="margin-bottom:4px"><span style="color:#8e8e93">[${time}]</span> ${msg}</div>`;
         messagesBox.scrollTop = messagesBox.scrollHeight;
       };
+
+      const showError = (msg: string) => {
+        errorBanner.textContent = msg;
+        errorBanner.style.display = 'block';
+        addLog(`ERROR: ${msg}`);
+        setTimeout(() => {
+          errorBanner.style.display = 'none';
+        }, 5000);
+      };
+
+      const updateStatus = (el: HTMLSpanElement, text: string, type: 'active' | 'loading' | 'stopped' | '') => {
+        el.textContent = text;
+        el.className = 'status-badge ' + type;
+      };
+
+      const showNotification = (msg: string, type: 'info' | 'success' = 'info') => {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.textContent = msg;
+        notificationArea.appendChild(toast);
+        addLog(`NOTIFICATION: ${msg}`);
+
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateX(20px)';
+          toast.style.transition = 'opacity 0.3s, transform 0.3s';
+          setTimeout(() => toast.remove(), 300);
+        }, 4000);
+      };
+
+      // UI Toggling based on Strategy
+      strategySelect.addEventListener('change', () => {
+        const strategy = strategySelect.value;
+        if (strategy === 'HTTP_SERVER') {
+          nearbyControls.style.display = 'none';
+          emulatorControls.style.display = 'block';
+          addLog('Switched to Emulator mode (HTTP Server Bridge)');
+        } else {
+          nearbyControls.style.display = 'block';
+          emulatorControls.style.display = 'none';
+          addLog(`Switched to Nearby mode (${strategy})`);
+        }
+      });
 
       // Permissions
       const checkPermissions = async () => {
@@ -92,35 +149,60 @@ window.customElements.define(
       // Plugin Init
       initBtn.addEventListener('click', async () => {
         try {
-          const strategy = strategySelect.value as 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT';
-          await OfflineTransfer.setStrategy({ strategy });
-          await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
+          initBtn.disabled = true;
+          updateStatus(initStatus, 'Initializing...', 'loading');
+          const strategy = strategySelect.value;
 
+          if (strategy === 'HTTP_SERVER') {
+            [serverBtn, manualConnectBtn].forEach((b) => (b.disabled = false));
+          } else {
+            await OfflineTransfer.setStrategy({
+              strategy: strategy as 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT',
+            });
+            [advertiseBtn, discoveryBtn].forEach((b) => (b.disabled = false));
+          }
+
+          await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
           setupListeners();
 
-          [advertiseBtn, discoveryBtn, stopBtn].forEach((b) => (b.disabled = false));
+          stopBtn.disabled = false;
+          mainControls.style.display = 'block';
+          updateStatus(initStatus, 'Ready', 'active');
           addLog(`Initialized with ${strategy}`);
+          showNotification('System Initialized', 'success');
         } catch (e: any) {
-          addLog(`Init Error: ${e.message}`);
+          initBtn.disabled = false;
+          updateStatus(initStatus, 'Failed', 'stopped');
+          showError(`Init Error: ${e.message}`);
         }
       });
 
       // Discovery & Advertising
       advertiseBtn.addEventListener('click', async () => {
         try {
+          advertiseBtn.disabled = true;
+          updateStatus(advertiseStatus, 'Starting...', 'loading');
           await OfflineTransfer.startAdvertising({ displayName: 'Device_' + Math.floor(Math.random() * 100) });
+          updateStatus(advertiseStatus, 'Advertising', 'active');
           addLog('Advertising started...');
         } catch (e: any) {
-          addLog(`Error: ${e.message}`);
+          advertiseBtn.disabled = false;
+          updateStatus(advertiseStatus, 'Failed', 'stopped');
+          showError(`Advertising Error: ${e.message}`);
         }
       });
 
       discoveryBtn.addEventListener('click', async () => {
         try {
+          discoveryBtn.disabled = true;
+          updateStatus(discoveryStatus, 'Starting...', 'loading');
           await OfflineTransfer.startDiscovery();
+          updateStatus(discoveryStatus, 'Discovering', 'active');
           addLog('Discovery started...');
         } catch (e: any) {
-          addLog(`Error: ${e.message}`);
+          discoveryBtn.disabled = false;
+          updateStatus(discoveryStatus, 'Failed', 'stopped');
+          showError(`Discovery Error: ${e.message}`);
         }
       });
 
@@ -128,22 +210,37 @@ window.customElements.define(
         try {
           const url = manualUrlInput.value.trim();
           if (!url) return;
+          manualConnectBtn.disabled = true;
+          updateStatus(manualConnectStatus, 'Connecting...', 'loading');
           addLog(`Manually connecting to ${url}...`);
           await OfflineTransfer.connectByAddress({ url });
+          // Note: Do not report 'Connected' here because the native call resolves immediately
+          // while connecting in a background thread. Wait for the 'connectionResult' event instead.
         } catch (e: any) {
-          addLog(`Manual Connect Error: ${e.message}`);
+          manualConnectBtn.disabled = false;
+          updateStatus(manualConnectStatus, 'Failed', 'stopped');
+          showError(`Manual Connect Error: ${e.message}`);
         }
       });
 
       stopBtn.addEventListener('click', async () => {
+        updateStatus(initStatus, 'Stopping...', 'loading');
         await OfflineTransfer.stopAdvertising();
         await OfflineTransfer.stopDiscovery();
+        await OfflineTransfer.stopServer();
         await OfflineTransfer.disconnect();
         endpoints = {};
         connectedEndpointId = null;
         updateDevicesUI();
-        [sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
-        addLog('Stopped all P2P activities');
+        initBtn.disabled = false;
+        mainControls.style.display = 'none';
+        [advertiseBtn, discoveryBtn, serverBtn, manualConnectBtn, sendBtn, sendFileBtn].forEach(
+          (b) => (b.disabled = true),
+        );
+        [advertiseStatus, discoveryStatus, serverStatus, manualConnectStatus].forEach((el) => updateStatus(el, '', ''));
+        if (manualConnectArea) manualConnectArea.style.display = 'block';
+        updateStatus(initStatus, 'Ready', 'active');
+        addLog('Stopped all P2P and Server activities');
       });
 
       // Transfer
@@ -196,10 +293,15 @@ window.customElements.define(
 
       serverBtn.addEventListener('click', async () => {
         try {
+          serverBtn.disabled = true;
+          updateStatus(serverStatus, 'Starting...', 'loading');
           const info = await OfflineTransfer.startServer({ port: 8080 });
+          updateStatus(serverStatus, `Running: ${info.url}`, 'active');
           addLog(`SERVER: ${info.url}`);
         } catch (e: any) {
-          addLog(`Server Error: ${e.message}`);
+          serverBtn.disabled = false;
+          updateStatus(serverStatus, 'Failed', 'stopped');
+          showError(`Server Error: ${e.message}`);
         }
       });
 
@@ -223,12 +325,14 @@ window.customElements.define(
           if (connectedEndpointId === ev.endpointId) {
             connectedEndpointId = null;
             [sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
+            if (manualConnectArea) manualConnectArea.style.display = 'block';
           }
           updateDevicesUI();
         });
 
         OfflineTransfer.addListener('connectionRequested', (ev) => {
           addLog(`Conn Request: ${ev.endpointName}. Accepting...`);
+          showNotification(`Connection requested from ${ev.endpointName}`);
           OfflineTransfer.acceptConnection({ endpointId: ev.endpointId });
         });
 
@@ -236,9 +340,18 @@ window.customElements.define(
           if (ev.status === 'SUCCESS') {
             connectedEndpointId = ev.endpointId;
             [sendBtn, sendFileBtn].forEach((b) => (b.disabled = false));
+            if (manualConnectArea) manualConnectArea.style.display = 'none';
+            if (strategySelect.value === 'HTTP_SERVER') updateStatus(manualConnectStatus, 'Connected', 'active');
+            updateDevicesUI();
             addLog(`Connected to ${ev.endpointId}`);
+            showNotification(`Connected to ${ev.endpointId}`, 'success');
           } else {
             addLog(`Connection failed/rejected: ${ev.status}`);
+            showError(`Connection failed: ${ev.status}`);
+            if (strategySelect.value === 'HTTP_SERVER') {
+              updateStatus(manualConnectStatus, 'Failed', 'stopped');
+              manualConnectBtn.disabled = false;
+            }
           }
         });
 
@@ -262,6 +375,10 @@ window.customElements.define(
               progressContainer.style.display = 'none';
             }, 2000);
           }
+        });
+
+        OfflineTransfer.addListener('emulatorClientConnected', (event) => {
+          console.log(`Client connected: ${event.endpointName} (${event.endpointId})`);
         });
       };
 

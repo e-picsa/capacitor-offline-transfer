@@ -28,12 +28,13 @@ class ManualConnectionManagerTest : BaseTest() {
     }
 
     @Test
-    fun `connect emits expected events`() {
-        // We use an asynchronous manager, so we need to wait or mock carefully.
-        // For tests, we can verify that executor was called, but waiting for executor is tricky without a synchronous executor.
-        // Let's replace the executor execution with synchronous in the test, or just use verify(timeout = 1000).
-        
-        manualManager.connect("http://localhost:8080", "Test User")
+    fun `connect emits expected events on success`() {
+        val spyManager = spyk(manualManager)
+        val mockConnection = mockk<HttpURLConnection>(relaxed = true)
+        every { spyManager.openConnection(any()) } returns mockConnection
+        every { mockConnection.responseCode } returns 200
+
+        spyManager.connect("http://localhost:8080", "Test User")
 
         val foundSlot = slot<JSObject>()
         val resultSlot = slot<JSObject>()
@@ -52,6 +53,26 @@ class ManualConnectionManagerTest : BaseTest() {
     }
 
     @Test
+    fun `connect emits failure when unreachable`() {
+        val spyManager = spyk(manualManager)
+        every { spyManager.openConnection(any()) } throws java.io.IOException("Connection refused")
+
+        spyManager.connect("http://fake-url:9999", "Test User")
+
+        val resultSlot = slot<JSObject>()
+
+        verify(timeout = 1000) { 
+            plugin.emit("connectionResult", capture(resultSlot))
+        }
+
+        assert(resultSlot.captured.getString("status") == "FAILURE")
+        assert(resultSlot.captured.getString("message") == "Connection refused")
+        
+        // Ensure no endpointFound is emitted on failure
+        verify(exactly = 0) { plugin.emit("endpointFound", any()) }
+    }
+
+    @Test
     fun `sendMessage executes POST request`() {
         val spyManager = spyk(manualManager)
         val mockConnection = mockk<HttpURLConnection>(relaxed = true)
@@ -61,13 +82,12 @@ class ManualConnectionManagerTest : BaseTest() {
         val data = "Hello, Emulator!"
         spyManager.sendMessage("http://localhost:8080", data)
 
-        // Wait for executor to run
-        Thread.sleep(100)
-
-        verify { mockConnection.requestMethod = "POST" }
-        verify { mockConnection.doOutput = true }
-        verify { mockConnection.outputStream }
-        verify { mockConnection.disconnect() }
+        verify(timeout = 2000) { 
+            mockConnection.requestMethod = "POST"
+            mockConnection.doOutput = true
+            mockConnection.outputStream
+            mockConnection.disconnect()
+        }
     }
 
     @Test
@@ -79,11 +99,22 @@ class ManualConnectionManagerTest : BaseTest() {
 
         spyManager.sendFile("http://localhost:8080", "/path/to/test.jpg", "test.jpg")
 
-        // Wait for executor
-        Thread.sleep(100)
+        verify(timeout = 2000) { 
+            mockConnection.requestMethod = "POST"
+            mockConnection.outputStream
+        }
+    }
 
-        verify { mockConnection.requestMethod = "POST" }
-        // The output stream gets the metadata JSON string written to it
-        verify { mockConnection.outputStream }
+    @Test
+    fun `disconnect emits endpointLost event`() {
+        manualManager.disconnect("http://localhost:8080")
+
+        val lostSlot = slot<JSObject>()
+
+        verify(timeout = 1000) { 
+            plugin.emit("endpointLost", capture(lostSlot)) 
+        }
+
+        assert(lostSlot.captured.getString("endpointId") == "http://localhost:8080")
     }
 }

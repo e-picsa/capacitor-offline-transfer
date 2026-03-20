@@ -157,6 +157,11 @@ export interface OfflineTransferPlugin {
     listenerFunc: (event: FileReceivedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
+  addListener(
+    eventName: 'emulatorClientConnected',
+    listenerFunc: (event: emulatorClientConnectedEvent) => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
   /**
    * Check permission status
    */
@@ -176,6 +181,11 @@ export interface OfflineTransferPlugin {
 export interface HotspotInfo {
   ssid: string;
   password: string;
+}
+
+export interface emulatorClientConnectedEvent {
+  endpointId: string;
+  endpointName: string;
 }
 
 export interface ConnectionRequestEvent {
