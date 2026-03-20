@@ -4,10 +4,11 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import type { EndpointFoundEvent } from '@picsa/capacitor-offline-transfer';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 
-import template from './capacitor-welcome.html?raw';
+import './transfer-demo.css';
+import template from './transfer-demo.html?raw';
 
 window.customElements.define(
-  'capacitor-welcome',
+  'transfer-demo',
   class extends HTMLElement {
     constructor() {
       super();
