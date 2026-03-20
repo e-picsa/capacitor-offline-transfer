@@ -12,6 +12,17 @@ export function execCmd(cmd: string, args: string[]): Promise<{ stdout: string; 
   });
 }
 
+export async function prompt(question: string): Promise<string> {
+  const readline = await import('readline');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(question, (ans) => {
+      rl.close();
+      resolve(ans);
+    });
+  });
+}
+
 export function detectLocalIP(): string | null {
   const interfaces = networkInterfaces();
   for (const [, addrs] of Object.entries(interfaces)) {
