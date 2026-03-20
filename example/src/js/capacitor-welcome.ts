@@ -58,7 +58,7 @@ window.customElements.define(
       }
 
       // State
-      let endpoints: Record<string, any> = {};
+      let endpoints: Record<string, EndpointFoundEvent> = {};
       let connectedEndpointId: string | null = null;
 
       const addLog = (msg: string) => {
@@ -91,7 +91,7 @@ window.customElements.define(
       // Plugin Init
       initBtn.addEventListener('click', async () => {
         try {
-          const strategy = strategySelect.value as any;
+          const strategy = strategySelect.value as 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT';
           await OfflineTransfer.setStrategy({ strategy });
           await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
 
