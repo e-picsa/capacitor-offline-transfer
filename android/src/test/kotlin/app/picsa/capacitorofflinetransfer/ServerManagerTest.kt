@@ -13,30 +13,19 @@ import org.junit.Test
 import java.io.File
 import java.net.URL
 import java.net.HttpURLConnection
-import java.net.NetworkInterface
 import java.net.InetAddress
-import java.util.Collections
+import java.util.*
 
 class ServerManagerTest : BaseTest() {
     private lateinit var context: Context
-    private lateinit var plugin: Plugin
+    private lateinit var plugin: CapacitorOfflineTransferPlugin
     private lateinit var serverManager: ServerManager
     private lateinit var tempDir: File
 
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
-        plugin = mockk(relaxed = true)
-        
-        // Custom NetworkInterface mocking for this test
-        mockkStatic(NetworkInterface::class)
-        val mockInterface = mockk<NetworkInterface>()
-        val mockAddress = mockk<java.net.InetAddress>()
-        every { mockAddress.isLoopbackAddress } returns false
-        every { mockAddress.hostAddress } returns "127.0.0.1"
-        every { mockInterface.displayName } returns "wlan0"
-        every { mockInterface.inetAddresses } returns Collections.enumeration(listOf(mockAddress))
-        every { NetworkInterface.getNetworkInterfaces() } returns Collections.enumeration(listOf(mockInterface))
+        plugin = mockk<CapacitorOfflineTransferPlugin>(relaxed = true)
         
         // Need to override the default text/plain for some tests
         mockMimeType("txt", "text/plain")
@@ -47,7 +36,10 @@ class ServerManagerTest : BaseTest() {
         tempDir.mkdir()
         
         every { context.filesDir } returns tempDir
-        serverManager = ServerManager(context, plugin)
+        
+        // Use spyk to mock the internal IP address method without touching JDK NetworkInterface
+        serverManager = spyk(ServerManager(context, plugin))
+        every { serverManager.getLocalIpAddress() } returns "127.0.0.1"
     }
 
     @After
@@ -97,6 +89,41 @@ class ServerManagerTest : BaseTest() {
         val connection = URL("${url}missing.txt").openConnection() as HttpURLConnection
         try {
             assert(connection.responseCode == 404)
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    @Test
+    fun `server handles POST message and emits event`() {
+        val call = mockk<PluginCall>(relaxed = true)
+        val portSlot = slot<JSObject>()
+        
+        serverManager.start(0, call)
+        
+        verify { call.resolve(capture(portSlot)) }
+        val urlString = portSlot.captured.getString("url")
+        val port = portSlot.captured.getInteger("port")
+        
+        val testMessage = "Test message body"
+        
+        val url = URL("${urlString}message")
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.doOutput = true
+        connection.setRequestProperty("Content-Length", testMessage.length.toString())
+        
+        try {
+            connection.outputStream.use { it.write(testMessage.toByteArray()) }
+            
+            assert(connection.responseCode == 200)
+            
+            // Verify event emission
+            val eventSlot = slot<JSObject>()
+            verify { plugin.emit("messageReceived", capture(eventSlot)) }
+            
+            assert(eventSlot.captured.getString("data") == testMessage)
+            assert(eventSlot.captured.getString("endpointId") != null)
         } finally {
             connection.disconnect()
         }

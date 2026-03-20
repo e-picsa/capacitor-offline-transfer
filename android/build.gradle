@@ -45,6 +45,10 @@ android {
         targetCompatibility JavaVersion.VERSION_21
     }
     testOptions {
+        // Use default value returns for unmocked methods
+        // whilst this can make failed test debugging slightly harder
+        // it also reduces amount of boilerplate required to mock methods used
+        unitTests.returnDefaultValues = true
         // Improve logging
         unitTests.all {
             testLogging {

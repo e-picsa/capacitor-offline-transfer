@@ -22,11 +22,19 @@ class HotspotManager(private val context: Context, private val plugin: Plugin) {
                 override fun onStarted(reservation: WifiManager.LocalOnlyHotspotReservation) {
                     super.onStarted(reservation)
                     hotspotReservation = reservation
-                    val config = reservation.wifiConfiguration
-                    if (config != null) {
+                    val (ssid, password) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val config = reservation.softApConfiguration
+                        Pair(config?.ssid, config?.passphrase)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        val config = reservation.wifiConfiguration
+                        Pair(config?.SSID?.removeSurrounding("\""), config?.preSharedKey)
+                    }
+
+                    if (ssid != null) {
                         val ret = JSObject().apply {
-                            put("ssid", config.SSID)
-                            put("password", config.preSharedKey)
+                            put("ssid", ssid)
+                            put("password", password)
                         }
                         call.resolve(ret)
                     } else {

@@ -40,7 +40,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
             val event = JSObject().apply {
                 put("endpointId", endpointId)
                 put("endpointName", info.endpointName)
-                put("authenticationToken", info.authenticationToken)
+                put("authenticationToken", info.authenticationDigits)
                 put("isIncomingConnection", info.isIncomingConnection)
             }
             plugin.emit("connectionRequested", event)
@@ -129,20 +129,29 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
 
             if (update.status == PayloadTransferUpdate.Status.SUCCESS) {
                 val payload = incomingPayloads.remove(update.payloadId)
-                if (payload != null && payload.type == Payload.Type.FILE) {
-                    val file = payload.asFile()!!.asJavaFile()
+                val payloadFile = payload?.asFile()
+                if (payloadFile != null) {
                     val targetFile = File(context.filesDir, incomingFileMetadata.remove(update.payloadId) ?: "received_${update.payloadId}")
-                    if (file?.renameTo(targetFile) != true) {
-                        Log.e(TAG, "Failed to rename received file to ${targetFile.absolutePath}")
-                    }
                     
-                    val receivedEvent = JSObject().apply {
-                        put("endpointId", endpointId)
-                        put("payloadId", update.payloadId.toString())
-                        put("fileName", targetFile.name)
-                        put("path", targetFile.absolutePath)
+                    @Suppress("DEPRECATION")
+                    val sourceFile = payloadFile.asJavaFile()
+                    val success = if (sourceFile != null) {
+                        sourceFile.renameTo(targetFile)
+                    } else {
+                        copyPayloadToTarget(payloadFile, targetFile)
                     }
-                    plugin.emit("fileReceived", receivedEvent)
+
+                    if (success) {
+                        val receivedEvent = JSObject().apply {
+                            put("endpointId", endpointId)
+                            put("payloadId", update.payloadId.toString())
+                            put("fileName", targetFile.name)
+                            put("path", targetFile.absolutePath)
+                        }
+                        plugin.emit("fileReceived", receivedEvent)
+                    } else {
+                        Log.e(TAG, "Failed to move/copy received file to ${targetFile.absolutePath}")
+                    }
                 }
             }
         }
@@ -213,6 +222,23 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send file", e)
+        }
+    }
+
+    private fun copyPayloadToTarget(payloadFile: Payload.File, targetFile: File): Boolean {
+        return try {
+            val uri = payloadFile.asUri() ?: return false
+
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                targetFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return false // Return false if the input stream is null
+
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to copy payload to target", e)
+            false
         }
     }
 }
