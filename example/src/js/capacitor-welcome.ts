@@ -14,13 +14,12 @@ window.customElements.define(
 
       SplashScreen.hide();
 
-      const root = this.attachShadow({ mode: 'open' });
-      root.innerHTML = template;
+      this.innerHTML = template;
     }
 
     connectedCallback() {
       const self = this;
-      const shadow = self.shadowRoot;
+      const shadow = self;
       if (!shadow) return;
 
       // Selectors
@@ -41,6 +40,9 @@ window.customElements.define(
       const hotspotBtn = shadow.querySelector('#hotspot-btn') as HTMLButtonElement;
       const serverBtn = shadow.querySelector('#server-btn') as HTMLButtonElement;
       const stopT3Btn = shadow.querySelector('#stop-t3-btn') as HTMLButtonElement;
+
+      const nearbyControls = shadow.querySelector('#nearby-controls') as HTMLDivElement;
+      const emulatorControls = shadow.querySelector('#emulator-controls') as HTMLDivElement;
 
       const devicesList = shadow.querySelector('#devices-list') as HTMLDivElement;
       const messagesBox = shadow.querySelector('#messages') as HTMLDivElement;
@@ -68,6 +70,20 @@ window.customElements.define(
         messagesBox.scrollTop = messagesBox.scrollHeight;
       };
 
+      // UI Toggling based on Strategy
+      strategySelect.addEventListener('change', () => {
+        const strategy = strategySelect.value;
+        if (strategy === 'HTTP_SERVER') {
+          nearbyControls.style.display = 'none';
+          emulatorControls.style.display = 'block';
+          addLog('Switched to Emulator mode (HTTP Server Bridge)');
+        } else {
+          nearbyControls.style.display = 'block';
+          emulatorControls.style.display = 'none';
+          addLog(`Switched to Nearby mode (${strategy})`);
+        }
+      });
+
       // Permissions
       const checkPermissions = async () => {
         const status = await OfflineTransfer.checkPermissions();
@@ -92,13 +108,19 @@ window.customElements.define(
       // Plugin Init
       initBtn.addEventListener('click', async () => {
         try {
-          const strategy = strategySelect.value as 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT';
-          await OfflineTransfer.setStrategy({ strategy });
-          await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
+          const strategy = strategySelect.value;
 
+          if (strategy !== 'HTTP_SERVER') {
+            await OfflineTransfer.setStrategy({ strategy: strategy as any });
+            [advertiseBtn, discoveryBtn].forEach((b) => (b.disabled = false));
+          } else {
+            [serverBtn, manualConnectBtn].forEach((b) => (b.disabled = false));
+          }
+
+          await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
           setupListeners();
 
-          [advertiseBtn, discoveryBtn, stopBtn].forEach((b) => (b.disabled = false));
+          stopBtn.disabled = false;
           addLog(`Initialized with ${strategy}`);
         } catch (e: any) {
           addLog(`Init Error: ${e.message}`);
@@ -138,12 +160,15 @@ window.customElements.define(
       stopBtn.addEventListener('click', async () => {
         await OfflineTransfer.stopAdvertising();
         await OfflineTransfer.stopDiscovery();
+        await OfflineTransfer.stopServer();
         await OfflineTransfer.disconnect();
         endpoints = {};
         connectedEndpointId = null;
         updateDevicesUI();
-        [sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
-        addLog('Stopped all P2P activities');
+        [advertiseBtn, discoveryBtn, serverBtn, manualConnectBtn, sendBtn, sendFileBtn].forEach(
+          (b) => (b.disabled = true),
+        );
+        addLog('Stopped all P2P and Server activities');
       });
 
       // Transfer

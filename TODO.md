@@ -1,5 +1,4 @@
-- [ ] Precommit hooks (eslint/prettier)
-- [ ] CI lint (fmt)
+- [ ] Live reload app web content
 - [ ] Automated testing for older devices
 - [ ] Update core capacitor 8 (min sdk 24 -> 7.0)
 - [ ] Fallback for older devices API 24-30 (>=7, <12), using hotspot

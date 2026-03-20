@@ -1,6 +1,3 @@
-<style>
-  @import url('../css/style.css');
-</style>
 <div>
   <div class="titlebar">
     <h1>Offline Transfer</h1>
@@ -14,6 +11,7 @@
           <option value="P2P_STAR">P2P Star (1-to-many)</option>
           <option value="P2P_CLUSTER" selected>P2P Cluster (Mesh)</option>
           <option value="P2P_POINT_TO_POINT">P2P Point-to-Point (Direct)</option>
+          <option value="HTTP_SERVER">Emulator (HTTP Server Bridge)</option>
         </select>
       </div>
       <div class="field">
@@ -36,19 +34,35 @@
 
     <section>
       <h3>2. Connections</h3>
-      <div style="display: flex; flex-wrap: wrap">
-        <button class="button" id="advertise-btn" disabled>Advertise</button>
-        <button class="button" id="discovery-btn" disabled>Discover</button>
-        <button class="button danger" id="stop-btn" disabled>Stop All</button>
-      </div>
-      <div class="field" style="margin-top: 10px">
-        <label>Manual Server URL (for Emulators)</label>
-        <div style="display: flex; gap: 8px">
-          <input type="text" id="manual-url-input" placeholder="http://10.0.2.2:8080" value="http://10.0.2.2:8080" />
-          <button class="button secondary" id="manual-connect-btn" style="margin: 0">Manual Connect</button>
+      
+      <!-- Nearby Controls -->
+      <div id="nearby-controls" style="display: block;">
+        <div style="display: flex; flex-wrap: wrap">
+          <button class="button" id="advertise-btn" disabled>Advertise</button>
+          <button class="button" id="discovery-btn" disabled>Discover</button>
         </div>
       </div>
-      <div class="device-list" id="devices-list">
+
+      <!-- Emulator Controls -->
+      <div id="emulator-controls" style="display: none; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+        <div style="margin-bottom: 10px;">
+          <label style="font-size: 0.8em; color: #666;">Step A: Host Emulator (Server)</label>
+          <br/>
+          <button class="button secondary" id="server-btn" style="margin: 5px 0" disabled>Start Server</button>
+        </div>
+        
+        <div>
+          <label style="font-size: 0.8em; color: #666;">Step B: Client Emulator (Connect)</label>
+          <div style="display: flex; gap: 8px; margin-top: 5px;">
+            <input type="text" id="manual-url-input" placeholder="http://localhost:8080" value="http://localhost:8080" />
+            <button class="button secondary" id="manual-connect-btn" style="margin: 0" disabled>Manual Connect</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="button danger" id="stop-btn" disabled>Stop All Activities</button>
+
+      <div class="device-list" id="devices-list" style="margin-top: 15px;">
         <div style="color: #8e8e93; font-size: 0.9em; padding: 10px">No devices found yet...</div>
       </div>
     </section>
@@ -81,7 +95,6 @@
       <h3>Tier 3 (Android)</h3>
       <div style="display: flex; flex-wrap: wrap">
         <button class="button secondary" id="hotspot-btn">Start Hotspot</button>
-        <button class="button secondary" id="server-btn">Start Server</button>
         <button class="button danger" id="stop-t3-btn">Stop Tier 3</button>
       </div>
     </section>
