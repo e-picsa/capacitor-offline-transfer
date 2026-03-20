@@ -201,6 +201,7 @@ window.customElements.define(
         updateStatus(initStatus, 'Stopping...', 'loading');
         await OfflineTransfer.stopAdvertising();
         await OfflineTransfer.stopDiscovery();
+        await OfflineTransfer.stopServer();
         await OfflineTransfer.disconnect();
         if (lanServerRunning) {
           await OfflineTransfer.stopLanServer();
@@ -318,6 +319,7 @@ window.customElements.define(
           if (connectedEndpointId === ev.endpointId) {
             connectedEndpointId = null;
             [sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
+            if (manualConnectArea) manualConnectArea.style.display = 'block';
           }
           updateDevicesUI();
         });
@@ -363,6 +365,10 @@ window.customElements.define(
               progressContainer.style.display = 'none';
             }, 2000);
           }
+        });
+
+        OfflineTransfer.addListener('emulatorClientConnected', (event) => {
+          console.log(`Client connected: ${event.endpointName} (${event.endpointId})`);
         });
       };
 

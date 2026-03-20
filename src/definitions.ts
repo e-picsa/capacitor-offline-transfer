@@ -147,6 +147,11 @@ export interface OfflineTransferPlugin {
     listenerFunc: (event: FileReceivedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
+  addListener(
+    eventName: 'emulatorClientConnected',
+    listenerFunc: (event: emulatorClientConnectedEvent) => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
   /**
    * Android Only (Dev Tooling): Fired when an emulator or HTTP client connects to the LAN server.
    */
