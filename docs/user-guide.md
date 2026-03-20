@@ -7,17 +7,23 @@ Learn how to use several peer-to-peer (P2P) file transfer strategies in your Cap
 This plugin uses a layered approach to ensure transfers work in diverse network situations.
 
 ### Tier 1: High Performance (App-to-App)
+
 Uses native SDKs (**Android Nearby Connections** and **iOS Multipeer Connectivity**) for the fastest possible local transfer.
+
 - **Best for**: Two people who both have your app installed.
 - **Features**: Fast discovery, high bandwidth, Bluetooth/Wi-Fi Direct.
 - **Platform support**: Works within each OS family (Android to Android, iOS to iOS).
 
 ### Tier 2: Enhanced Compatibility (App-to-App fallback)
+
 Automatically handled by native SDKs when Tier 1 fails, often using an ad-hoc Wi-Fi network or a temporary hotspot.
+
 - **Benefit**: Works even if a shared Wi-Fi network is not available.
 
 ### Tier 3: Universal Sharing (App-to-Device / App-to-Browser)
-When the other person **doesn't** have your app installed. 
+
+When the other person **doesn't** have your app installed.
+
 - **Android**: Can start a "Local Hotspot" and an "Embedded HTTP Server".
 - **Usage**:
   - The sender with the app starts the hotspot.
@@ -28,6 +34,7 @@ When the other person **doesn't** have your app installed.
 ## Scenario Examples
 
 ### 1. Sharing Photos with a Friend (Both have the APP)
+
 1. **Alice** (Sender) taps "Start Advertising".
 2. **Bob** (Receiver) taps "Start Discovery".
 3. Bob sees "Alice's Phone" on his screen and taps "Connect".
@@ -36,6 +43,7 @@ When the other person **doesn't** have your app installed.
 6. Bob sees the progress bar and the photos appear in his gallery.
 
 ### 2. Sending a Large PDF to a Stranger's Laptop (No APP installed)
+
 1. **Alice** (Sender) taps "Start Local Hotspot" within the app.
 2. The app displays a Wi-Fi SSID ("Direct-XX-Alice") and a Password.
 3. Alice also taps "Start Server" to host the PDF.

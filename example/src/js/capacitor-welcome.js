@@ -171,6 +171,13 @@ window.customElements.define(
             <button class="button" id="discovery-btn" disabled>Discover</button>
             <button class="button danger" id="stop-btn" disabled>Stop All</button>
           </div>
+          <div class="field" style="margin-top: 10px;">
+            <label>Manual Server URL (for Emulators)</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="manual-url-input" placeholder="http://10.0.2.2:8080" value="http://10.0.2.2:8080">
+              <button class="button secondary" id="manual-connect-btn" style="margin:0">Manual Connect</button>
+            </div>
+          </div>
           <div class="device-list" id="devices-list">
             <div style="color: #8e8e93; font-size: 0.9em; padding: 10px;">No devices found yet...</div>
           </div>
@@ -243,6 +250,9 @@ window.customElements.define(
 
       const devicesList = shadow.querySelector('#devices-list');
       const messagesBox = shadow.querySelector('#messages');
+
+      const manualUrlInput = shadow.querySelector('#manual-url-input');
+      const manualConnectBtn = shadow.querySelector('#manual-connect-btn');
 
       const progressContainer = shadow.querySelector('#progress-container');
       const progressBar = shadow.querySelector('#progress-bar');
@@ -317,6 +327,17 @@ window.customElements.define(
           addLog('Discovery started...');
         } catch (e) {
           addLog(`Error: ${e.message}`);
+        }
+      });
+
+      manualConnectBtn.addEventListener('click', async () => {
+        try {
+          const url = manualUrlInput.value.trim();
+          if (!url) return;
+          addLog(`Manually connecting to ${url}...`);
+          await OfflineTransfer.connectByAddress({ url });
+        } catch (e) {
+          addLog(`Manual Connect Error: ${e.message}`);
         }
       });
 

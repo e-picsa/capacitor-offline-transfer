@@ -218,6 +218,7 @@ Add these to your `Info.plist`:
 * [`startDiscovery()`](#startdiscovery)
 * [`stopDiscovery()`](#stopdiscovery)
 * [`connect(...)`](#connect)
+* [`connectByAddress(...)`](#connectbyaddress)
 * [`acceptConnection(...)`](#acceptconnection)
 * [`rejectConnection(...)`](#rejectconnection)
 * [`disconnectFromEndpoint(...)`](#disconnectfromendpoint)
@@ -340,6 +341,22 @@ Requests a connection to a discovered endpoint.
 | Param         | Type                                                      |
 | ------------- | --------------------------------------------------------- |
 | **`options`** | <code>{ endpointId: string; displayName: string; }</code> |
+
+--------------------
+
+
+### connectByAddress(...)
+
+```typescript
+connectByAddress(options: { url: string; displayName?: string; }) => Promise<void>
+```
+
+Android Only: Manually connects to a device using its IP/URL.
+Useful for emulators and Tier 3 manual connections.
+
+| Param         | Type                                                |
+| ------------- | --------------------------------------------------- |
+| **`options`** | <code>{ url: string; displayName?: string; }</code> |
 
 --------------------
 
@@ -694,6 +711,7 @@ Removes all listeners added by the plugin
 | **`endpointId`**   | <code>string</code> |
 | **`endpointName`** | <code>string</code> |
 | **`serviceId`**    | <code>string</code> |
+| **`url`**          | <code>string</code> |
 
 
 #### EndpointLostEvent
