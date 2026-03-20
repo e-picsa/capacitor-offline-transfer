@@ -1,8 +1,16 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { OfflineTransferPlugin, PermissionStatus } from './definitions';
+import type { OfflineTransferPlugin, PermissionStatus, PlatformCapabilities } from './definitions';
 import type { TransferState } from './reactive-state';
 import { transferState } from './reactive-state';
+
+const WEB_CAPABILITIES: PlatformCapabilities = {
+  platform: 'web',
+  transferMethod: 'none',
+  supportsNearby: false,
+  isEmulator: false,
+  reason: 'Web not supported',
+};
 
 export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlugin {
   private initialized = false;
@@ -10,10 +18,11 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
   async initialize(_options: { serviceId: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available');
     this.initialized = true;
+    transferState.onCapabilitiesDetected(WEB_CAPABILITIES);
   }
 
-  async setStrategy(_options: { strategy: 'P2P_STAR' | 'P2P_CLUSTER' | 'P2P_POINT_TO_POINT' }): Promise<void> {
-    console.warn('OfflineTransfer: Web implementation not available');
+  async checkCapabilities(): Promise<PlatformCapabilities> {
+    return WEB_CAPABILITIES;
   }
 
   async startAdvertising(_options: { displayName: string }): Promise<void> {
@@ -34,10 +43,6 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
 
   async connect(_options: { endpointId: string; displayName: string }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available');
-  }
-
-  async connectByAddress(_options: { url: string; displayName?: string }): Promise<void> {
-    console.warn('OfflineTransfer: connectByAddress is not available on web');
   }
 
   async acceptConnection(_options: { endpointId: string }): Promise<void> {
@@ -64,15 +69,6 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
     console.warn('OfflineTransfer: Web implementation not available');
   }
 
-  async startLanServer(_options: { port?: number }): Promise<{ port: number; url: string }> {
-    console.warn('OfflineTransfer: LAN server is not available on web');
-    return Promise.reject('LAN server is not available on web');
-  }
-
-  async stopLanServer(): Promise<void> {
-    console.warn('OfflineTransfer: LAN server is not available on web');
-  }
-
   async setLogLevel(_options: { logLevel: number }): Promise<void> {
     console.warn('OfflineTransfer: Web implementation not available');
   }
@@ -95,6 +91,9 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
     bridge.onDisconnected = (endpointId: string) => transferState.onDisconnected(endpointId);
     bridge.onTransferProgress = (event: any) => transferState.onTransferProgress(event);
     bridge.onFileReceived = (event: any) => transferState.onFileReceived(event);
+    if (bridge.onCapabilitiesDetected) {
+      bridge.onCapabilitiesDetected(WEB_CAPABILITIES);
+    }
   }
 
   async checkPermissions(): Promise<PermissionStatus> {

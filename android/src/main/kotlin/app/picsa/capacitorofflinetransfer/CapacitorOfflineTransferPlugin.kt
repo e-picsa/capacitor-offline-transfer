@@ -159,10 +159,15 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     }
 
     @PluginMethod
-    fun setStrategy(call: PluginCall) {
-        val strategy = call.getString("strategy") ?: "P2P_CLUSTER"
-        implementation.setStrategy(strategy)
-        call.resolve()
+    fun checkCapabilities(call: PluginCall) {
+        val capabilities = implementation.checkCapabilities()
+        val result = JSObject()
+        result.put("platform", capabilities.platform)
+        result.put("transferMethod", capabilities.transferMethod)
+        result.put("supportsNearby", capabilities.supportsNearby)
+        result.put("isEmulator", capabilities.isEmulator)
+        capabilities.reason?.let { result.put("reason", it) }
+        call.resolve(result)
     }
 
     @PluginMethod
@@ -195,14 +200,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
         val displayName = call.getString("displayName")
         implementation.connect(endpointId, displayName)
-        call.resolve()
-    }
-
-    @PluginMethod
-    fun connectByAddress(call: PluginCall) {
-        val url = call.getString("url") ?: return call.reject("url is required")
-        val displayName = call.getString("displayName")
-        implementation.connectByAddress(url, displayName)
         call.resolve()
     }
 
@@ -255,18 +252,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         }
 
         implementation.sendFile(endpointId, filePath, fileName)
-        call.resolve()
-    }
-
-    @PluginMethod
-    fun startLanServer(call: PluginCall) {
-        val port = call.getInt("port") ?: 0
-        implementation.startLanServer(port, call)
-    }
-
-    @PluginMethod
-    fun stopLanServer(call: PluginCall) {
-        implementation.stopLanServer()
         call.resolve()
     }
 

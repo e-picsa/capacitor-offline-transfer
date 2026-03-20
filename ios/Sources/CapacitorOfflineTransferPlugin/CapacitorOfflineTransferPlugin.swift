@@ -7,21 +7,18 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     public let jsName = "OfflineTransfer"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setStrategy", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "checkCapabilities", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startAdvertising", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopAdvertising", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startDiscovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopDiscovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "connect", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "connectByAddress", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "acceptConnection", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "rejectConnection", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "disconnectFromEndpoint", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "disconnect", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendMessage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendFile", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "startLanServer", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "stopLanServer", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setLogLevel", returnType: CAPPluginReturnPromise)
     ]
 
@@ -40,8 +37,14 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         call.resolve()
     }
 
-    @objc func setStrategy(_ call: CAPPluginCall) {
-        call.resolve()
+    @objc func checkCapabilities(_ call: CAPPluginCall) {
+        let capabilities: [String: Any] = [
+            "platform": "ios",
+            "transferMethod": "nearby",
+            "supportsNearby": true,
+            "isEmulator": false
+        ]
+        call.resolve(capabilities)
     }
 
     @objc func startAdvertising(_ call: CAPPluginCall) {
@@ -75,10 +78,6 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         }
         implementation.connect(endpointId: endpointId)
         call.resolve()
-    }
-
-    @objc func connectByAddress(_ call: CAPPluginCall) {
-        call.reject("connectByAddress is only available on Android (dev tooling)")
     }
 
     @objc func acceptConnection(_ call: CAPPluginCall) {
@@ -132,14 +131,6 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         }
         implementation.sendFile(endpointId: endpointId, filePath: filePath, fileName: fileName)
         call.resolve()
-    }
-
-    @objc func startLanServer(_ call: CAPPluginCall) {
-        call.reject("LAN server is only available on Android (dev tooling)")
-    }
-
-    @objc func stopLanServer(_ call: CAPPluginCall) {
-        call.reject("LAN server is only available on Android (dev tooling)")
     }
 
     @objc func setLogLevel(_ call: CAPPluginCall) {

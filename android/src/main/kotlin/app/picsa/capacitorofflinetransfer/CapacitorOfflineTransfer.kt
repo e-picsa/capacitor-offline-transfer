@@ -2,8 +2,15 @@ package app.picsa.capacitorofflinetransfer
 
 import android.content.Context
 import android.os.Build
-import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
+
+data class PlatformCapabilities(
+    val platform: String,
+    val transferMethod: String,
+    val supportsNearby: Boolean,
+    val isEmulator: Boolean,
+    val reason: String? = null
+)
 
 class CapacitorOfflineTransfer {
     private lateinit var context: Context
@@ -25,8 +32,66 @@ class CapacitorOfflineTransfer {
         nearbyManager.initialize(id)
     }
 
-    fun setStrategy(strategy: String) {
-        nearbyManager.setStrategy(strategy)
+    fun checkCapabilities(): PlatformCapabilities {
+        val isEmulator = detectEmulator()
+        val sdkInt = Build.VERSION.SDK_INT
+
+        return if (isEmulator) {
+            PlatformCapabilities(
+                platform = "android",
+                transferMethod = "lan",
+                supportsNearby = false,
+                isEmulator = true,
+                reason = "Nearby API unavailable on emulator"
+            )
+        } else if (sdkInt < 21) {
+            PlatformCapabilities(
+                platform = "android",
+                transferMethod = "none",
+                supportsNearby = false,
+                isEmulator = false,
+                reason = "Android SDK too old (minimum: 21)"
+            )
+        } else {
+            PlatformCapabilities(
+                platform = "android",
+                transferMethod = "nearby",
+                supportsNearby = true,
+                isEmulator = false,
+            )
+        }
+    }
+
+    private fun detectEmulator(): Boolean {
+        val fingerprint = Build.FINGERPRINT
+        val brand = Build.BRAND.lowercase()
+        val device = Build.DEVICE.lowercase()
+        val model = Build.MODEL.lowercase()
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val product = Build.PRODUCT.lowercase()
+
+        if (fingerprint.contains("generic") || fingerprint.contains("emulator")) {
+            return true
+        }
+
+        if (brand == "android") {
+            val emulatorDevices = listOf("goldfish", "ranchu", "sdk_gphone", "emulator", "generic")
+            for (emulatorDevice in emulatorDevices) {
+                if (device.contains(emulatorDevice) || product.contains(emulatorDevice)) {
+                    return true
+                }
+            }
+        }
+
+        if (manufacturer == "google" && model.contains("sdk")) {
+            return true
+        }
+
+        if (brand == "generic" && device == "generic") {
+            return true
+        }
+
+        return false
     }
 
     fun startAdvertising(displayName: String?) {
@@ -49,10 +114,6 @@ class CapacitorOfflineTransfer {
         nearbyManager.connect(endpointId, displayName ?: Build.MODEL)
     }
 
-    fun connectByAddress(url: String, displayName: String?) {
-        lanClientManager.connect(url, displayName)
-    }
-
     fun acceptConnection(endpointId: String) {
         nearbyManager.acceptConnection(endpointId)
     }
@@ -62,11 +123,7 @@ class CapacitorOfflineTransfer {
     }
 
     fun disconnectFromEndpoint(endpointId: String) {
-        if (endpointId.startsWith("http")) {
-            lanClientManager.disconnect(endpointId)
-        } else {
-            nearbyManager.disconnectFromEndpoint(endpointId)
-        }
+        nearbyManager.disconnectFromEndpoint(endpointId)
     }
 
     fun disconnect() {
@@ -74,26 +131,10 @@ class CapacitorOfflineTransfer {
     }
 
     fun sendMessage(endpointId: String, data: String) {
-        if (endpointId.startsWith("http")) {
-            lanClientManager.sendMessage(endpointId, data)
-        } else {
-            nearbyManager.sendMessage(endpointId, data)
-        }
+        nearbyManager.sendMessage(endpointId, data)
     }
 
     fun sendFile(endpointId: String, filePath: String, fileName: String) {
-        if (endpointId.startsWith("http")) {
-            lanClientManager.sendFile(endpointId, filePath, fileName)
-        } else {
-            nearbyManager.sendFile(endpointId, filePath, fileName)
-        }
-    }
-
-    fun startLanServer(port: Int, call: PluginCall) {
-        lanServerManager.start(port, call)
-    }
-
-    fun stopLanServer() {
-        lanServerManager.stop()
+        nearbyManager.sendFile(endpointId, filePath, fileName)
     }
 }
