@@ -19,10 +19,12 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         CAPPluginMethod(name: "disconnect", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendMessage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendFile", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setLogLevel", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "setLogLevel", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getState", returnType: CAPPluginReturnPromise)
     ]
 
     private let implementation = CapacitorOfflineTransfer()
+    private var sessionStartTime: Int = 0
 
     public override func load() {
         implementation.delegate = self
@@ -48,6 +50,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     }
 
     @objc func startAdvertising(_ call: CAPPluginCall) {
+        sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
         guard let displayName = call.getString("displayName") else {
             call.reject("displayName is required")
             return
@@ -57,16 +60,19 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     }
 
     @objc func stopAdvertising(_ call: CAPPluginCall) {
+        sessionStartTime = 0
         implementation.stopAdvertising()
         call.resolve()
     }
 
     @objc func startDiscovery(_ call: CAPPluginCall) {
+        sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
         implementation.startDiscovery()
         call.resolve()
     }
 
     @objc func stopDiscovery(_ call: CAPPluginCall) {
+        sessionStartTime = 0
         implementation.stopDiscovery()
         call.resolve()
     }
@@ -135,6 +141,24 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
 
     @objc func setLogLevel(_ call: CAPPluginCall) {
         call.resolve()
+    }
+
+    @objc func getState(_ call: CAPPluginCall) {
+        let endpoints = implementation.getDiscoveredEndpoints()
+        let connectedEndpoints = implementation.getConnectedEndpoints()
+        let result: [String: Any] = [
+            "endpoints": endpoints,
+            "connectedEndpoints": connectedEndpoints,
+            "activeTransfers": [String: Any](),
+            "transferHistory": [[String: Any]](),
+            "stats": [
+                "totalBytesTransferred": 0,
+                "filesTransferred": 0,
+                "sessionStart": sessionStartTime,
+                "currentSpeedBps": 0
+            ]
+        ]
+        call.resolve(result)
     }
 
     public func onConnectionRequested(endpointId: String, endpointName: String, authToken: String) {

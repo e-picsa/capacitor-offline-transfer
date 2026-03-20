@@ -606,13 +606,13 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 
 #### PlatformCapabilities
 
-| Prop                   | Type                                                      |
-| ---------------------- | --------------------------------------------------------- |
-| **`platform`**         | <code><a href="#platformtype">PlatformType</a></code>     |
-| **`transferMethod`**   | <code><a href="#transfermethod">TransferMethod</a></code> |
-| **`supportsNearby`**   | <code>boolean</code>                                      |
-| **`isEmulator`**       | <code>boolean</code>                                      |
-| **`reason`**           | <code>string</code>                                       |
+| Prop                 | Type                                                      |
+| -------------------- | --------------------------------------------------------- |
+| **`platform`**       | <code><a href="#platformtype">PlatformType</a></code>     |
+| **`transferMethod`** | <code><a href="#transfermethod">TransferMethod</a></code> |
+| **`supportsNearby`** | <code>boolean</code>                                      |
+| **`isEmulator`**     | <code>boolean</code>                                      |
+| **`reason`**         | <code>string</code>                                       |
 
 
 #### PluginListenerHandle
