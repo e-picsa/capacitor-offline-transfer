@@ -37,7 +37,7 @@ async function syncExampleApp() {
       // install command will pull latest plugin code into node_module for sync
       const ok = await runInExample(['bun', 'run', 'sync:plugin'], 'sync plugin');
       if (!ok) {
-        throw new Error('sync deps failed');
+        return;
       }
     }
     if (hasWebChanges) {
@@ -45,7 +45,7 @@ async function syncExampleApp() {
       // vite build will compile web code
       const ok = await runInExample(['bun', 'run', 'build:web'], 'build web');
       if (!ok) {
-        throw new Error('build web failed');
+        return;
       }
     }
     await runInExample(['bun', 'run', 'sync:native'], 'cap sync');

@@ -68,7 +68,7 @@ _Note: When prompted, select your local network IP address (usually the one star
 
 #### `bun run start`
 
-Runs a custom development script ([`scripts/dev.ts`](file:///c:/apps/picsa/capacitor-offline-transfer/scripts/dev.ts)) that automates the "Plugin $\rightarrow$ Example App" synchronization loop. It watches for native and example source changes and performs necessary builds and `cap sync` operations.
+Runs a custom development script ([`scripts/dev.ts`](./scripts/dev.ts)) that automates the "Plugin $\rightarrow$ Example App" synchronization loop. It watches for native and example source changes and performs necessary builds and `cap sync` operations.
 
 #### `bun run build`
 
