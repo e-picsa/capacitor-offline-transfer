@@ -2,6 +2,7 @@ import { Camera, CameraResultType } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
+
 import template from './capacitor-welcome.html?raw';
 
 window.customElements.define(

@@ -45,6 +45,7 @@ android {
         targetCompatibility JavaVersion.VERSION_21
     }
     testOptions {
+        unitTests.returnDefaultValues = false
         // Improve logging
         unitTests.all {
             testLogging {
