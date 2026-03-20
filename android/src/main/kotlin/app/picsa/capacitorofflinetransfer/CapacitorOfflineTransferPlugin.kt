@@ -203,6 +203,14 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun connectByAddress(call: PluginCall) {
+        val url = call.getString("url") ?: return call.reject("url is required")
+        val displayName = call.getString("displayName")
+        implementation.connectByAddress(url, displayName)
+        call.resolve()
+    }
+
+    @PluginMethod
     fun acceptConnection(call: PluginCall) {
         val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
         implementation.acceptConnection(endpointId)

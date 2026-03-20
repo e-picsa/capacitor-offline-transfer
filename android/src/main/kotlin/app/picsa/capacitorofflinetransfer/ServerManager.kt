@@ -90,6 +90,11 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
             }
 
             val rawUri = parts[1]
+            if (parts[0] == "POST" && rawUri == "/message") {
+                handlePostMessage(client, reader)
+                return
+            }
+
             val fileName = File(URLDecoder.decode(rawUri, "UTF-8")).name
             val file = File(context.filesDir, fileName)
 
@@ -102,6 +107,40 @@ class ServerManager(private val context: Context, private val plugin: Plugin) {
             Log.e(TAG, "Error handling client", e)
         } finally {
             try { client.close() } catch (e: Exception) {}
+        }
+    }
+
+    private fun handlePostMessage(client: Socket, reader: BufferedReader) {
+        try {
+            var contentLength = 0
+            var line: String? = reader.readLine()
+            while (line != null && line.isNotEmpty()) {
+                if (line.startsWith("Content-Length:", ignoreCase = true)) {
+                    contentLength = line.substring(15).trim().toInt()
+                }
+                line = reader.readLine()
+            }
+
+            val body = CharArray(contentLength)
+            reader.read(body, 0, contentLength)
+            val message = String(body)
+
+            val event = JSObject().apply {
+                put("endpointId", client.inetAddress.hostAddress)
+                put("data", message)
+            }
+            (plugin as CapacitorOfflineTransferPlugin).emit("messageReceived", event)
+
+            val out = client.getOutputStream()
+            val header = "HTTP/1.1 200 OK\r\n" +
+                    "Content-Type: text/plain\r\n" +
+                    "Connection: close\r\n\r\n" +
+                    "OK"
+            out.write(header.toByteArray())
+            out.flush()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling POST message", e)
+            sendErrorResponse(client, 500, "Internal Server Error")
         }
     }
 

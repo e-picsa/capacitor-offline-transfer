@@ -11,6 +11,7 @@ class CapacitorOfflineTransfer {
     private lateinit var nearbyManager: NearbyConnectionsManager
     private lateinit var hotspotManager: HotspotManager
     private lateinit var serverManager: ServerManager
+    private lateinit var manualConnectionManager: ManualConnectionManager
 
     fun load(context: Context, plugin: CapacitorOfflineTransferPlugin) {
         this.context = context
@@ -18,6 +19,7 @@ class CapacitorOfflineTransfer {
         nearbyManager = NearbyConnectionsManager(context, plugin)
         hotspotManager = HotspotManager(context, plugin)
         serverManager = ServerManager(context, plugin)
+        manualConnectionManager = ManualConnectionManager(context, plugin)
     }
 
     fun initialize(serviceId: String?) {
@@ -49,6 +51,10 @@ class CapacitorOfflineTransfer {
         nearbyManager.connect(endpointId, displayName ?: Build.MODEL)
     }
 
+    fun connectByAddress(url: String, displayName: String?) {
+        manualConnectionManager.connect(url, displayName)
+    }
+
     fun acceptConnection(endpointId: String) {
         nearbyManager.acceptConnection(endpointId)
     }
@@ -66,11 +72,19 @@ class CapacitorOfflineTransfer {
     }
 
     fun sendMessage(endpointId: String, data: String) {
-        nearbyManager.sendMessage(endpointId, data)
+        if (endpointId.startsWith("http")) {
+            manualConnectionManager.sendMessage(endpointId, data)
+        } else {
+            nearbyManager.sendMessage(endpointId, data)
+        }
     }
 
     fun sendFile(endpointId: String, filePath: String, fileName: String) {
-        nearbyManager.sendFile(endpointId, filePath, fileName)
+        if (endpointId.startsWith("http")) {
+            manualConnectionManager.sendFile(endpointId, filePath, fileName)
+        } else {
+            nearbyManager.sendFile(endpointId, filePath, fileName)
+        }
     }
 
     fun startLocalHotspot(call: PluginCall) {
