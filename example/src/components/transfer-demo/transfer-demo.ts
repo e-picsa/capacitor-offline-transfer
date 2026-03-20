@@ -57,6 +57,13 @@ window.customElements.define(
       const progressFilename = shadow.querySelector('#progress-filename') as HTMLSpanElement;
       const tier3Section = shadow.querySelector('#android-tier3') as HTMLElement;
 
+      const errorBanner = shadow.querySelector('#error-banner') as HTMLDivElement;
+      const initStatus = shadow.querySelector('#init-status') as HTMLSpanElement;
+      const advertiseStatus = shadow.querySelector('#advertise-status') as HTMLSpanElement;
+      const discoveryStatus = shadow.querySelector('#discovery-status') as HTMLSpanElement;
+      const serverStatus = shadow.querySelector('#server-status') as HTMLSpanElement;
+      const manualConnectStatus = shadow.querySelector('#manual-connect-status') as HTMLSpanElement;
+
       if (Capacitor.getPlatform() !== 'android') {
         tier3Section.style.display = 'none';
       }
@@ -69,6 +76,20 @@ window.customElements.define(
         const time = new Date().toLocaleTimeString();
         messagesBox.innerHTML += `<div style="margin-bottom:4px"><span style="color:#8e8e93">[${time}]</span> ${msg}</div>`;
         messagesBox.scrollTop = messagesBox.scrollHeight;
+      };
+
+      const showError = (msg: string) => {
+        errorBanner.textContent = msg;
+        errorBanner.style.display = 'block';
+        addLog(`ERROR: ${msg}`);
+        setTimeout(() => {
+          errorBanner.style.display = 'none';
+        }, 5000);
+      };
+
+      const updateStatus = (el: HTMLSpanElement, text: string, type: 'active' | 'loading' | 'stopped' | '') => {
+        el.textContent = text;
+        el.className = 'status-badge ' + type;
       };
 
       // UI Toggling based on Strategy
@@ -109,6 +130,8 @@ window.customElements.define(
       // Plugin Init
       initBtn.addEventListener('click', async () => {
         try {
+          initBtn.disabled = true;
+          updateStatus(initStatus, 'Initializing...', 'loading');
           const strategy = strategySelect.value;
 
           if (strategy !== 'HTTP_SERVER') {
@@ -122,28 +145,41 @@ window.customElements.define(
           setupListeners();
 
           stopBtn.disabled = false;
+          updateStatus(initStatus, 'Ready', 'active');
           addLog(`Initialized with ${strategy}`);
         } catch (e: any) {
-          addLog(`Init Error: ${e.message}`);
+          initBtn.disabled = false;
+          updateStatus(initStatus, 'Failed', 'stopped');
+          showError(`Init Error: ${e.message}`);
         }
       });
 
       // Discovery & Advertising
       advertiseBtn.addEventListener('click', async () => {
         try {
+          advertiseBtn.disabled = true;
+          updateStatus(advertiseStatus, 'Starting...', 'loading');
           await OfflineTransfer.startAdvertising({ displayName: 'Device_' + Math.floor(Math.random() * 100) });
+          updateStatus(advertiseStatus, 'Advertising', 'active');
           addLog('Advertising started...');
         } catch (e: any) {
-          addLog(`Error: ${e.message}`);
+          advertiseBtn.disabled = false;
+          updateStatus(advertiseStatus, 'Failed', 'stopped');
+          showError(`Advertising Error: ${e.message}`);
         }
       });
 
       discoveryBtn.addEventListener('click', async () => {
         try {
+          discoveryBtn.disabled = true;
+          updateStatus(discoveryStatus, 'Starting...', 'loading');
           await OfflineTransfer.startDiscovery();
+          updateStatus(discoveryStatus, 'Discovering', 'active');
           addLog('Discovery started...');
         } catch (e: any) {
-          addLog(`Error: ${e.message}`);
+          discoveryBtn.disabled = false;
+          updateStatus(discoveryStatus, 'Failed', 'stopped');
+          showError(`Discovery Error: ${e.message}`);
         }
       });
 
@@ -151,14 +187,20 @@ window.customElements.define(
         try {
           const url = manualUrlInput.value.trim();
           if (!url) return;
+          manualConnectBtn.disabled = true;
+          updateStatus(manualConnectStatus, 'Connecting...', 'loading');
           addLog(`Manually connecting to ${url}...`);
           await OfflineTransfer.connectByAddress({ url });
+          updateStatus(manualConnectStatus, 'Connected', 'active');
         } catch (e: any) {
-          addLog(`Manual Connect Error: ${e.message}`);
+          manualConnectBtn.disabled = false;
+          updateStatus(manualConnectStatus, 'Failed', 'stopped');
+          showError(`Manual Connect Error: ${e.message}`);
         }
       });
 
       stopBtn.addEventListener('click', async () => {
+        updateStatus(initStatus, 'Stopping...', 'loading');
         await OfflineTransfer.stopAdvertising();
         await OfflineTransfer.stopDiscovery();
         await OfflineTransfer.stopServer();
@@ -166,9 +208,12 @@ window.customElements.define(
         endpoints = {};
         connectedEndpointId = null;
         updateDevicesUI();
+        initBtn.disabled = false;
         [advertiseBtn, discoveryBtn, serverBtn, manualConnectBtn, sendBtn, sendFileBtn].forEach(
           (b) => (b.disabled = true),
         );
+        [advertiseStatus, discoveryStatus, serverStatus, manualConnectStatus].forEach((el) => updateStatus(el, '', ''));
+        updateStatus(initStatus, 'Ready', 'active');
         addLog('Stopped all P2P and Server activities');
       });
 
@@ -222,10 +267,15 @@ window.customElements.define(
 
       serverBtn.addEventListener('click', async () => {
         try {
+          serverBtn.disabled = true;
+          updateStatus(serverStatus, 'Starting...', 'loading');
           const info = await OfflineTransfer.startServer({ port: 8080 });
+          updateStatus(serverStatus, `Running: ${info.url}`, 'active');
           addLog(`SERVER: ${info.url}`);
         } catch (e: any) {
-          addLog(`Server Error: ${e.message}`);
+          serverBtn.disabled = false;
+          updateStatus(serverStatus, 'Failed', 'stopped');
+          showError(`Server Error: ${e.message}`);
         }
       });
 

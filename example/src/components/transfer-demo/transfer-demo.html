@@ -3,6 +3,8 @@
     <h1>Offline Transfer</h1>
   </div>
   <main>
+    <div id="error-banner" class="error-banner"></div>
+
     <section>
       <h3>1. Setup</h3>
       <div class="field">
@@ -27,6 +29,7 @@
       </div>
       <div style="display: flex; flex-wrap: wrap">
         <button class="button" id="init-btn">Initialize</button>
+        <span id="init-status" class="status-badge"></span>
         <button class="button secondary" id="check-perms">Check Perms</button>
         <button class="button secondary" id="request-perms">Request Perms</button>
       </div>
@@ -39,7 +42,9 @@
       <div id="nearby-controls" style="display: block;">
         <div style="display: flex; flex-wrap: wrap">
           <button class="button" id="advertise-btn" disabled>Advertise</button>
+          <span id="advertise-status" class="status-badge"></span>
           <button class="button" id="discovery-btn" disabled>Discover</button>
+          <span id="discovery-status" class="status-badge"></span>
         </div>
       </div>
 
@@ -49,6 +54,7 @@
           <label style="font-size: 0.8em; color: #666;">Step A: Host Emulator (Server)</label>
           <br/>
           <button class="button secondary" id="server-btn" style="margin: 5px 0" disabled>Start Server</button>
+          <span id="server-status" class="status-badge"></span>
         </div>
         
         <div>
@@ -56,6 +62,7 @@
           <div style="display: flex; gap: 8px; margin-top: 5px;">
             <input type="text" id="manual-url-input" placeholder="http://localhost:8080" value="http://localhost:8080" />
             <button class="button secondary" id="manual-connect-btn" style="margin: 0" disabled>Manual Connect</button>
+            <span id="manual-connect-status" class="status-badge"></span>
           </div>
         </div>
       </div>
