@@ -206,36 +206,36 @@ Add these to your `Info.plist`:
 
 <docgen-index>
 
-- [`initialize(...)`](#initialize)
-- [`setStrategy(...)`](#setstrategy)
-- [`startAdvertising(...)`](#startadvertising)
-- [`stopAdvertising()`](#stopadvertising)
-- [`startDiscovery()`](#startdiscovery)
-- [`stopDiscovery()`](#stopdiscovery)
-- [`connect(...)`](#connect)
-- [`connectByAddress(...)`](#connectbyaddress)
-- [`acceptConnection(...)`](#acceptconnection)
-- [`rejectConnection(...)`](#rejectconnection)
-- [`disconnectFromEndpoint(...)`](#disconnectfromendpoint)
-- [`disconnect()`](#disconnect)
-- [`sendMessage(...)`](#sendmessage)
-- [`sendFile(...)`](#sendfile)
-- [`startLanServer(...)`](#startlanserver)
-- [`stopLanServer()`](#stoplanserver)
-- [`setLogLevel(...)`](#setloglevel)
-- [`addListener('connectionRequested', ...)`](#addlistenerconnectionrequested-)
-- [`addListener('connectionResult', ...)`](#addlistenerconnectionresult-)
-- [`addListener('endpointFound', ...)`](#addlistenerendpointfound-)
-- [`addListener('endpointLost', ...)`](#addlistenerendpointlost-)
-- [`addListener('messageReceived', ...)`](#addlistenermessagereceived-)
-- [`addListener('transferProgress', ...)`](#addlistenertransferprogress-)
-- [`addListener('fileReceived', ...)`](#addlistenerfilereceived-)
-- [`addListener('emulatorClientConnected', ...)`](#addlisteneremulatorclientconnected-)
-- [`checkPermissions()`](#checkpermissions)
-- [`requestPermissions()`](#requestpermissions)
-- [`removeAllListeners()`](#removealllisteners)
-- [Interfaces](#interfaces)
-- [Type Aliases](#type-aliases)
+* [`initialize(...)`](#initialize)
+* [`setStrategy(...)`](#setstrategy)
+* [`startAdvertising(...)`](#startadvertising)
+* [`stopAdvertising()`](#stopadvertising)
+* [`startDiscovery()`](#startdiscovery)
+* [`stopDiscovery()`](#stopdiscovery)
+* [`connect(...)`](#connect)
+* [`connectByAddress(...)`](#connectbyaddress)
+* [`acceptConnection(...)`](#acceptconnection)
+* [`rejectConnection(...)`](#rejectconnection)
+* [`disconnectFromEndpoint(...)`](#disconnectfromendpoint)
+* [`disconnect()`](#disconnect)
+* [`sendMessage(...)`](#sendmessage)
+* [`sendFile(...)`](#sendfile)
+* [`startLanServer(...)`](#startlanserver)
+* [`stopLanServer()`](#stoplanserver)
+* [`setLogLevel(...)`](#setloglevel)
+* [`addListener('connectionRequested', ...)`](#addlistenerconnectionrequested-)
+* [`addListener('connectionResult', ...)`](#addlistenerconnectionresult-)
+* [`addListener('endpointFound', ...)`](#addlistenerendpointfound-)
+* [`addListener('endpointLost', ...)`](#addlistenerendpointlost-)
+* [`addListener('messageReceived', ...)`](#addlistenermessagereceived-)
+* [`addListener('transferProgress', ...)`](#addlistenertransferprogress-)
+* [`addListener('fileReceived', ...)`](#addlistenerfilereceived-)
+* [`addListener('emulatorClientConnected', ...)`](#addlisteneremulatorclientconnected-)
+* [`checkPermissions()`](#checkpermissions)
+* [`requestPermissions()`](#requestpermissions)
+* [`removeAllListeners()`](#removealllisteners)
+* [Interfaces](#interfaces)
+* [Type Aliases](#type-aliases)
 
 </docgen-index>
 
@@ -257,7 +257,8 @@ Only devices using the same `serviceId` will be able to discover and connect to 
 | ------------- | ----------------------------------- | ---------------------- |
 | **`options`** | <code>{ serviceId: string; }</code> | Initialization options |
 
----
+--------------------
+
 
 ### setStrategy(...)
 
@@ -272,7 +273,8 @@ Defaults to P2P_CLUSTER for mesh support on Android.
 | ------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | **`options`** | <code>{ strategy: 'P2P_STAR' \| 'P2P_CLUSTER' \| 'P2P_POINT_TO_POINT'; }</code> | Strategy ("P2P_STAR", "P2P_CLUSTER", "P2P_POINT_TO_POINT") |
 
----
+--------------------
+
 
 ### startAdvertising(...)
 
@@ -286,7 +288,8 @@ Starts advertising the device to nearby peers.
 | ------------- | ------------------------------------- |
 | **`options`** | <code>{ displayName: string; }</code> |
 
----
+--------------------
+
 
 ### stopAdvertising()
 
@@ -296,7 +299,8 @@ stopAdvertising() => Promise<void>
 
 Stops advertising.
 
----
+--------------------
+
 
 ### startDiscovery()
 
@@ -306,7 +310,8 @@ startDiscovery() => Promise<void>
 
 Starts discovery of nearby peers.
 
----
+--------------------
+
 
 ### stopDiscovery()
 
@@ -316,7 +321,8 @@ stopDiscovery() => Promise<void>
 
 Stops discovery.
 
----
+--------------------
+
 
 ### connect(...)
 
@@ -330,7 +336,8 @@ Requests a connection to a discovered endpoint.
 | ------------- | --------------------------------------------------------- |
 | **`options`** | <code>{ endpointId: string; displayName: string; }</code> |
 
----
+--------------------
+
 
 ### connectByAddress(...)
 
@@ -345,7 +352,8 @@ Intended for emulator testing. Production use nearby P2P discovery instead.
 | ------------- | --------------------------------------------------- |
 | **`options`** | <code>{ url: string; displayName?: string; }</code> |
 
----
+--------------------
+
 
 ### acceptConnection(...)
 
@@ -359,7 +367,8 @@ Accepts an incoming connection request.
 | ------------- | ------------------------------------ |
 | **`options`** | <code>{ endpointId: string; }</code> |
 
----
+--------------------
+
 
 ### rejectConnection(...)
 
@@ -373,7 +382,8 @@ Rejects an incoming connection request.
 | ------------- | ------------------------------------ |
 | **`options`** | <code>{ endpointId: string; }</code> |
 
----
+--------------------
+
 
 ### disconnectFromEndpoint(...)
 
@@ -387,7 +397,8 @@ Disconnects from a specific endpoint.
 | ------------- | ------------------------------------ |
 | **`options`** | <code>{ endpointId: string; }</code> |
 
----
+--------------------
+
 
 ### disconnect()
 
@@ -397,7 +408,8 @@ disconnect() => Promise<void>
 
 Disconnects from all connected endpoints.
 
----
+--------------------
+
 
 ### sendMessage(...)
 
@@ -411,7 +423,8 @@ Sends a small text message to a connected endpoint.
 | ------------- | -------------------------------------------------- |
 | **`options`** | <code>{ endpointId: string; data: string; }</code> |
 
----
+--------------------
+
 
 ### sendFile(...)
 
@@ -426,7 +439,8 @@ Uses Payload.Type.FILE (Android) or Resource URLs (iOS) to avoid OOM.
 | ------------- | ------------------------------------------------------------------------ |
 | **`options`** | <code>{ endpointId: string; filePath: string; fileName: string; }</code> |
 
----
+--------------------
+
 
 ### startLanServer(...)
 
@@ -444,7 +458,8 @@ Not for production use.
 
 **Returns:** <code>Promise&lt;{ port: number; url: string; }&gt;</code>
 
----
+--------------------
+
 
 ### stopLanServer()
 
@@ -454,7 +469,8 @@ stopLanServer() => Promise<void>
 
 Android Only (Dev Tooling): Stops the LAN HTTP server.
 
----
+--------------------
+
 
 ### setLogLevel(...)
 
@@ -468,7 +484,8 @@ Sets the logging level.
 | ------------- | ---------------------------------- |
 | **`options`** | <code>{ logLevel: number; }</code> |
 
----
+--------------------
+
 
 ### addListener('connectionRequested', ...)
 
@@ -485,7 +502,8 @@ Event Listeners
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('connectionResult', ...)
 
@@ -500,7 +518,8 @@ addListener(eventName: 'connectionResult', listenerFunc: (event: ConnectionResul
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('endpointFound', ...)
 
@@ -515,7 +534,8 @@ addListener(eventName: 'endpointFound', listenerFunc: (event: EndpointFoundEvent
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('endpointLost', ...)
 
@@ -530,7 +550,8 @@ addListener(eventName: 'endpointLost', listenerFunc: (event: EndpointLostEvent) 
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('messageReceived', ...)
 
@@ -545,7 +566,8 @@ addListener(eventName: 'messageReceived', listenerFunc: (event: MessageReceivedE
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('transferProgress', ...)
 
@@ -560,7 +582,8 @@ addListener(eventName: 'transferProgress', listenerFunc: (event: TransferProgres
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('fileReceived', ...)
 
@@ -575,7 +598,8 @@ addListener(eventName: 'fileReceived', listenerFunc: (event: FileReceivedEvent) 
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('emulatorClientConnected', ...)
 
@@ -592,7 +616,8 @@ Android Only (Dev Tooling): Fired when an emulator or HTTP client connects to th
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### checkPermissions()
 
@@ -604,7 +629,8 @@ Check permission status
 
 **Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
 
----
+--------------------
+
 
 ### requestPermissions()
 
@@ -616,7 +642,8 @@ Request permissions
 
 **Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
 
----
+--------------------
+
 
 ### removeAllListeners()
 
@@ -626,15 +653,18 @@ removeAllListeners() => Promise<void>
 
 Removes all listeners added by the plugin
 
----
+--------------------
+
 
 ### Interfaces
+
 
 #### PluginListenerHandle
 
 | Prop         | Type                                      |
 | ------------ | ----------------------------------------- |
 | **`remove`** | <code>() =&gt; Promise&lt;void&gt;</code> |
+
 
 #### ConnectionRequestEvent
 
@@ -645,12 +675,14 @@ Removes all listeners added by the plugin
 | **`authenticationToken`**  | <code>string</code>  |
 | **`isIncomingConnection`** | <code>boolean</code> |
 
+
 #### ConnectionResultEvent
 
 | Prop             | Type                                              |
 | ---------------- | ------------------------------------------------- |
 | **`endpointId`** | <code>string</code>                               |
 | **`status`**     | <code>'SUCCESS' \| 'FAILURE' \| 'REJECTED'</code> |
+
 
 #### EndpointFoundEvent
 
@@ -661,11 +693,13 @@ Removes all listeners added by the plugin
 | **`serviceId`**    | <code>string</code> |
 | **`url`**          | <code>string</code> |
 
+
 #### EndpointLostEvent
 
 | Prop             | Type                |
 | ---------------- | ------------------- |
 | **`endpointId`** | <code>string</code> |
+
 
 #### MessageReceivedEvent
 
@@ -673,6 +707,7 @@ Removes all listeners added by the plugin
 | ---------------- | ------------------- |
 | **`endpointId`** | <code>string</code> |
 | **`data`**       | <code>string</code> |
+
 
 #### TransferProgressEvent
 
@@ -684,6 +719,7 @@ Removes all listeners added by the plugin
 | **`totalBytes`**       | <code>number</code>                                                 |
 | **`status`**           | <code>'SUCCESS' \| 'FAILURE' \| 'IN_PROGRESS' \| 'CANCELLED'</code> |
 
+
 #### FileReceivedEvent
 
 | Prop             | Type                |
@@ -693,6 +729,7 @@ Removes all listeners added by the plugin
 | **`fileName`**   | <code>string</code> |
 | **`path`**       | <code>string</code> |
 
+
 #### EmulatorClientConnectedEvent
 
 | Prop               | Type                |
@@ -700,13 +737,16 @@ Removes all listeners added by the plugin
 | **`endpointId`**   | <code>string</code> |
 | **`endpointName`** | <code>string</code> |
 
+
 #### PermissionStatus
 
 | Prop         | Type                                                        |
 | ------------ | ----------------------------------------------------------- |
 | **`nearby`** | <code><a href="#permissionstate">PermissionState</a></code> |
 
+
 ### Type Aliases
+
 
 #### PermissionState
 
