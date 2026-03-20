@@ -86,4 +86,17 @@ class ManualConnectionManagerTest : BaseTest() {
         // The output stream gets the metadata JSON string written to it
         verify { mockConnection.outputStream }
     }
+
+    @Test
+    fun `disconnect emits endpointLost event`() {
+        manualManager.disconnect("http://localhost:8080")
+
+        val lostSlot = slot<JSObject>()
+
+        verify(timeout = 1000) { 
+            plugin.emit("endpointLost", capture(lostSlot)) 
+        }
+
+        assert(lostSlot.captured.getString("endpointId") == "http://localhost:8080")
+    }
 }

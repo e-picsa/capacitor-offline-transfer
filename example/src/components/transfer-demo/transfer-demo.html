@@ -3,6 +3,7 @@
     <h1>Offline Transfer</h1>
   </div>
   <main>
+    <div id="notification-area"></div>
     <div id="error-banner" class="error-banner"></div>
 
     <section>
@@ -35,8 +36,9 @@
       </div>
     </section>
 
-    <section>
-      <h3>2. Connections</h3>
+    <div id="main-controls" style="display: none;">
+      <section>
+        <h3>2. Connections</h3>
       
       <!-- Nearby Controls -->
       <div id="nearby-controls" style="display: block;">
@@ -57,7 +59,7 @@
           <span id="server-status" class="status-badge"></span>
         </div>
         
-        <div>
+        <div id="manual-connect-area">
           <label style="font-size: 0.8em; color: #666;">Step B: Client Emulator (Connect)</label>
           <div style="display: flex; gap: 8px; margin-top: 5px;">
             <input type="text" id="manual-url-input" placeholder="http://localhost:8080" value="http://localhost:8080" />
@@ -105,6 +107,7 @@
         <button class="button danger" id="stop-t3-btn">Stop Tier 3</button>
       </div>
     </section>
+    </div>
 
     <label>Log Console</label>
     <div class="message-box" id="messages">Ready.</div>

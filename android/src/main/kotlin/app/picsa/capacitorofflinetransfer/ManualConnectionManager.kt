@@ -84,4 +84,13 @@ class ManualConnectionManager(private val context: Context, private val plugin: 
             }
         }
     }
+
+    fun disconnect(endpointId: String) {
+        executor.execute {
+            val lostEvent = JSObject().apply {
+                put("endpointId", endpointId)
+            }
+            plugin.emit("endpointLost", lostEvent)
+        }
+    }
 }

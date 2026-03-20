@@ -64,7 +64,11 @@ class CapacitorOfflineTransfer {
     }
 
     fun disconnectFromEndpoint(endpointId: String) {
-        nearbyManager.disconnectFromEndpoint(endpointId)
+        if (endpointId.startsWith("http")) {
+            manualConnectionManager.disconnect(endpointId)
+        } else {
+            nearbyManager.disconnectFromEndpoint(endpointId)
+        }
     }
 
     fun disconnect() {

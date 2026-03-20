@@ -50,6 +50,7 @@ window.customElements.define(
 
       const manualUrlInput = shadow.querySelector('#manual-url-input') as HTMLInputElement;
       const manualConnectBtn = shadow.querySelector('#manual-connect-btn') as HTMLButtonElement;
+      const manualConnectArea = shadow.querySelector('#manual-connect-area') as HTMLDivElement;
 
       const progressContainer = shadow.querySelector('#progress-container') as HTMLDivElement;
       const progressBar = shadow.querySelector('#progress-bar') as HTMLDivElement;
@@ -63,6 +64,9 @@ window.customElements.define(
       const discoveryStatus = shadow.querySelector('#discovery-status') as HTMLSpanElement;
       const serverStatus = shadow.querySelector('#server-status') as HTMLSpanElement;
       const manualConnectStatus = shadow.querySelector('#manual-connect-status') as HTMLSpanElement;
+
+      const mainControls = shadow.querySelector('#main-controls') as HTMLDivElement;
+      const notificationArea = shadow.querySelector('#notification-area') as HTMLDivElement;
 
       if (Capacitor.getPlatform() !== 'android') {
         tier3Section.style.display = 'none';
@@ -90,6 +94,21 @@ window.customElements.define(
       const updateStatus = (el: HTMLSpanElement, text: string, type: 'active' | 'loading' | 'stopped' | '') => {
         el.textContent = text;
         el.className = 'status-badge ' + type;
+      };
+
+      const showNotification = (msg: string, type: 'info' | 'success' = 'info') => {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.textContent = msg;
+        notificationArea.appendChild(toast);
+        addLog(`NOTIFICATION: ${msg}`);
+
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateX(20px)';
+          toast.style.transition = 'opacity 0.3s, transform 0.3s';
+          setTimeout(() => toast.remove(), 300);
+        }, 4000);
       };
 
       // UI Toggling based on Strategy
@@ -145,8 +164,10 @@ window.customElements.define(
           setupListeners();
 
           stopBtn.disabled = false;
+          mainControls.style.display = 'block';
           updateStatus(initStatus, 'Ready', 'active');
           addLog(`Initialized with ${strategy}`);
+          showNotification('System Initialized', 'success');
         } catch (e: any) {
           initBtn.disabled = false;
           updateStatus(initStatus, 'Failed', 'stopped');
@@ -209,10 +230,12 @@ window.customElements.define(
         connectedEndpointId = null;
         updateDevicesUI();
         initBtn.disabled = false;
+        mainControls.style.display = 'none';
         [advertiseBtn, discoveryBtn, serverBtn, manualConnectBtn, sendBtn, sendFileBtn].forEach(
           (b) => (b.disabled = true),
         );
         [advertiseStatus, discoveryStatus, serverStatus, manualConnectStatus].forEach((el) => updateStatus(el, '', ''));
+        if (manualConnectArea) manualConnectArea.style.display = 'block';
         updateStatus(initStatus, 'Ready', 'active');
         addLog('Stopped all P2P and Server activities');
       });
@@ -299,12 +322,14 @@ window.customElements.define(
           if (connectedEndpointId === ev.endpointId) {
             connectedEndpointId = null;
             [sendBtn, sendFileBtn].forEach((b) => (b.disabled = true));
+            if (manualConnectArea) manualConnectArea.style.display = 'block';
           }
           updateDevicesUI();
         });
 
         OfflineTransfer.addListener('connectionRequested', (ev) => {
           addLog(`Conn Request: ${ev.endpointName}. Accepting...`);
+          showNotification(`Connection requested from ${ev.endpointName}`);
           OfflineTransfer.acceptConnection({ endpointId: ev.endpointId });
         });
 
@@ -312,9 +337,13 @@ window.customElements.define(
           if (ev.status === 'SUCCESS') {
             connectedEndpointId = ev.endpointId;
             [sendBtn, sendFileBtn].forEach((b) => (b.disabled = false));
+            if (manualConnectArea) manualConnectArea.style.display = 'none';
+            updateDevicesUI();
             addLog(`Connected to ${ev.endpointId}`);
+            showNotification(`Connected to ${ev.endpointId}`, 'success');
           } else {
             addLog(`Connection failed/rejected: ${ev.status}`);
+            showError(`Connection failed: ${ev.status}`);
           }
         });
 
