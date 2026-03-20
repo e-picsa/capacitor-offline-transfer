@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import { execCmd } from './cli.utils';
 import { PATHS } from '../paths';
 
-const APP_PACKAGE = 'com.example.app'; // adjust to your actual package name
+const APP_ID = 'com.example.offlineTransfer'; // adjust to your actual package name
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1_000;
@@ -115,8 +115,8 @@ async function waitForBoot(emulatorId: string): Promise<boolean> {
 }
 
 async function adbUninstall(emulatorId: string): Promise<boolean> {
-  console.log(`\n    uninstalling ${APP_PACKAGE} from ${emulatorId}…`);
-  const { code } = await execCmd('adb', ['-s', emulatorId, 'uninstall', APP_PACKAGE]);
+  console.log(`\n    uninstalling ${APP_ID} from ${emulatorId}…`);
+  const { code } = await execCmd('adb', ['-s', emulatorId, 'uninstall', APP_ID]);
   return code === 0;
 }
 

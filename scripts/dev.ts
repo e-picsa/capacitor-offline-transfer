@@ -1,6 +1,6 @@
 export {};
 
-import { watch, readFileSync, existsSync } from 'fs';
+import { watch } from 'fs';
 import { resolve } from 'path';
 import { getEnv, saveEnv } from './utils/env.utils';
 import { PATHS } from './paths';
@@ -9,6 +9,7 @@ import { Emulator, getAvailableAVDs, getRunningEmulators, startEmulators } from 
 import { adbInstall, adbReverse } from './utils/adb.utils';
 
 const DEFAULT_PORT = '5173';
+const APP_ID = 'com.example.offlineTransfer';
 
 function parseMultiSelect(input: string): string[] {
   const parts = input
@@ -76,16 +77,8 @@ async function syncPluginAndNative(): Promise<boolean> {
   return await runInExample(['bun', 'run', 'sync:native'], 'cap sync');
 }
 
-function getAppId(): string {
-  const configPath = resolve(PATHS.EXAMPLE_APP, 'capacitor.config.ts');
-  if (!existsSync(configPath)) return 'com.example.plugin';
-  const content = readFileSync(configPath, 'utf-8');
-  const match = content.match(/appId:\s*['"]([^'"]+)['"]/);
-  return match ? match[1] : 'com.example.plugin';
-}
-
-async function adbLaunch(emulatorId: string, appId: string): Promise<void> {
-  await execCmd('adb', ['-s', emulatorId, 'shell', 'am', 'start', '-n', `${appId}/.MainActivity`]);
+async function adbLaunch(emulatorId: string): Promise<void> {
+  await execCmd('adb', ['-s', emulatorId, 'shell', 'am', 'start', '-n', `${APP_ID}/.MainActivity`]);
 }
 
 function startViteServer(): void {
@@ -140,7 +133,7 @@ async function deployToAllEmulators(port: string): Promise<void> {
     }
     console.log('✅');
     process.stdout.write(`  [${em.id}] launch app... `);
-    await adbLaunch(em.id, getAppId());
+    await adbLaunch(em.id);
     console.log('✅');
   }
 }

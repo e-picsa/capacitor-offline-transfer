@@ -26,7 +26,7 @@ const serverIp = env.CAPACITOR_SERVER_IP;
 const serverPort = env.CAPACITOR_SERVER_PORT || '5173';
 
 const config: CapacitorConfig = {
-  appId: 'com.example.plugin',
+  appId: 'com.example.offlineTransfer',
   appName: 'example',
   webDir: 'dist',
   plugins: {
