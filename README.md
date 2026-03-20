@@ -612,7 +612,6 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 | **`transferMethod`**   | <code><a href="#transfermethod">TransferMethod</a></code> |
 | **`supportsNearby`**   | <code>boolean</code>                                      |
 | **`isEmulator`**       | <code>boolean</code>                                      |
-| **`nearbyApiVersion`** | <code>string</code>                                       |
 | **`reason`**           | <code>string</code>                                       |
 
 

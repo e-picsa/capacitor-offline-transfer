@@ -9,7 +9,6 @@ data class PlatformCapabilities(
     val transferMethod: String,
     val supportsNearby: Boolean,
     val isEmulator: Boolean,
-    val nearbyApiVersion: String? = null,
     val reason: String? = null
 )
 
@@ -59,7 +58,6 @@ class CapacitorOfflineTransfer {
                 transferMethod = "nearby",
                 supportsNearby = true,
                 isEmulator = false,
-                nearbyApiVersion = "1.0"
             )
         }
     }

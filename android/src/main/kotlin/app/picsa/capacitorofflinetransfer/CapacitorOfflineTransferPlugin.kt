@@ -166,7 +166,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         result.put("transferMethod", capabilities.transferMethod)
         result.put("supportsNearby", capabilities.supportsNearby)
         result.put("isEmulator", capabilities.isEmulator)
-        capabilities.nearbyApiVersion?.let { result.put("nearbyApiVersion", it) }
         capabilities.reason?.let { result.put("reason", it) }
         call.resolve(result)
     }

@@ -15,7 +15,6 @@ export interface PlatformCapabilities {
   transferMethod: TransferMethod;
   supportsNearby: boolean;
   isEmulator: boolean;
-  nearbyApiVersion?: string;
   reason?: string;
 }
 
