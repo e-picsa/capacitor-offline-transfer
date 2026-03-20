@@ -2,48 +2,13 @@ export {};
 
 import { watch, readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { spawn } from 'child_process';
-import { getEnv, saveEnv } from './env.utils';
+import { getEnv, saveEnv } from './utils/env.utils';
 import { PATHS } from './paths';
-import { detectLocalIP, execCmd } from './utils/cli.utils';
+import { detectLocalIP, execCmd, prompt } from './utils/cli.utils';
+import { Emulator, getAvailableAVDs, getRunningEmulators, startEmulators } from './utils/emulator.utils';
+import { adbInstall, adbReverse } from './utils/adb.utils';
 
 const DEFAULT_PORT = '5173';
-
-interface Emulator {
-  id: string;
-  state: string;
-}
-
-async function getRunningEmulators(): Promise<Emulator[]> {
-  const { stdout } = await execCmd('adb', ['devices']);
-  const emulators: Emulator[] = [];
-  for (const line of stdout.split('\n')) {
-    const match = line.match(/^(emulator-\d+)\s+(\S+)/);
-    if (match) {
-      emulators.push({ id: match[1], state: match[2] });
-    }
-  }
-  return emulators;
-}
-
-async function getAvailableAVDs(): Promise<string[]> {
-  const { stdout } = await execCmd('emulator', ['-list-avds']);
-  return stdout
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-}
-
-async function prompt(question: string): Promise<string> {
-  const readline = await import('readline');
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolve) => {
-    rl.question(question, (ans) => {
-      rl.close();
-      resolve(ans);
-    });
-  });
-}
 
 function parseMultiSelect(input: string): string[] {
   const parts = input
@@ -111,23 +76,6 @@ async function syncPluginAndNative(): Promise<boolean> {
   return await runInExample(['bun', 'run', 'sync:native'], 'cap sync');
 }
 
-function getApkPath(): string {
-  return resolve(PATHS.EXAMPLE_APP, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
-}
-
-async function adbReverse(emulatorId: string, port: string): Promise<void> {
-  await execCmd('adb', ['-s', emulatorId, 'reverse', `tcp:${port}`, `tcp:${port}`]);
-}
-
-async function adbInstall(emulatorId: string): Promise<boolean> {
-  const apkPath = getApkPath();
-  if (!existsSync(apkPath)) {
-    return false;
-  }
-  const { code } = await execCmd('adb', ['-s', emulatorId, 'install', '-r', apkPath]);
-  return code === 0;
-}
-
 function getAppId(): string {
   const configPath = resolve(PATHS.EXAMPLE_APP, 'capacitor.config.ts');
   if (!existsSync(configPath)) return 'com.example.plugin';
@@ -138,39 +86,6 @@ function getAppId(): string {
 
 async function adbLaunch(emulatorId: string, appId: string): Promise<void> {
   await execCmd('adb', ['-s', emulatorId, 'shell', 'am', 'start', '-n', `${appId}/.MainActivity`]);
-}
-
-async function startEmulators(avdNames: string[]): Promise<void> {
-  console.log('\n🚀 Starting emulators...');
-  const promises: Promise<void>[] = [];
-
-  for (const name of avdNames) {
-    console.log(`  Starting ${name}...`);
-    spawn('emulator', ['-avd', name, '-no-snapshot-load', '-no-audio', '-gpu', 'swiftshader_indirect'], {
-      detached: true,
-      stdio: 'ignore',
-      shell: true,
-    }).unref();
-
-    const p = (async () => {
-      let booted = false;
-      for (let i = 0; i < 60; i++) {
-        await new Promise<void>((r) => setTimeout(r, 1000));
-        const ems = await getRunningEmulators();
-        if (ems.some((e) => e.state === 'device')) {
-          booted = true;
-          break;
-        }
-      }
-      if (!booted) {
-        console.log(`  ⚠️  ${name} may not have booted cleanly`);
-      }
-    })();
-    promises.push(p);
-  }
-
-  await Promise.all(promises);
-  console.log(`\n✅ ${avdNames.length} emulator(s) started`);
 }
 
 function startViteServer(): void {
@@ -218,9 +133,12 @@ async function deployToAllEmulators(port: string): Promise<void> {
 
   for (const em of runningEmulators) {
     process.stdout.write(`  [${em.id}] install APK... `);
-    const ok = await adbInstall(em.id);
-    console.log(ok ? '✅' : '❌');
-    if (!ok) continue;
+    const result = await adbInstall(em.id);
+    if (!result.success) {
+      console.log(`❌\n    ↳ ${result.error ?? 'Unknown error'}`);
+      continue;
+    }
+    console.log('✅');
     process.stdout.write(`  [${em.id}] launch app... `);
     await adbLaunch(em.id, getAppId());
     console.log('✅');
