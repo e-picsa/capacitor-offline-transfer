@@ -1,0 +1,131 @@
+:host {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #f4f7f9;
+  color: #333;
+}
+h1, h2, h3, h4, h5 {
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+.button {
+  display: inline-block;
+  padding: 10px 15px;
+  background-color: #007aff;
+  color: #fff;
+  font-size: 0.85em;
+  font-weight: 600;
+  border: 0;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  margin: 4px;
+  transition: opacity 0.2s;
+}
+.button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+.button.secondary {
+  background-color: #5856d6;
+}
+.button.danger {
+  background-color: #ff3b30;
+}
+.message-box {
+  background: #fff;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+  height: 250px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.8em;
+}
+.device-list {
+  background: #fff;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.device-item {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.device-item:last-child { border-bottom: 0; }
+.device-item:hover { background-color: #f9f9f9; }
+
+main {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+section {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.field { margin-bottom: 12px; }
+label {
+  display: block;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: #8e8e93;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+input, select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 1em;
+}
+.progress-container {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f0f0f5;
+  border-radius: 8px;
+}
+.progress-bg {
+  width: 100%;
+  height: 8px;
+  background: #e5e5ea;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #34c759;
+  transition: width 0.1s;
+}
+
+/* Titlebar Styles */
+.titlebar {
+  position: relative;
+  display: block;
+  padding: 15px;
+  text-align: center;
+  background-color: #73B5F6;
+}
+.titlebar h1 {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #fff;
+}

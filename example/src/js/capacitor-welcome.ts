@@ -15,126 +15,12 @@ window.customElements.define(
 
       root.innerHTML = `
     <style>
-      :host {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-        display: block;
-        width: 100%;
-        height: 100%;
-        background: #f4f7f9;
-        color: #333;
-      }
-      h1, h2, h3, h4, h5 {
-        text-transform: uppercase;
-        margin: 0 0 10px 0;
-      }
-      .button {
-        display: inline-block;
-        padding: 10px 15px;
-        background-color: #007aff;
-        color: #fff;
-        font-size: 0.85em;
-        font-weight: 600;
-        border: 0;
-        border-radius: 8px;
-        text-decoration: none;
-        cursor: pointer;
-        margin: 4px;
-        transition: opacity 0.2s;
-      }
-      .button:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-      }
-      .button.secondary {
-        background-color: #5856d6;
-      }
-      .button.danger {
-        background-color: #ff3b30;
-      }
-      .message-box {
-        background: #fff;
-        border: 1px solid #d1d1d6;
-        border-radius: 8px;
-        padding: 12px;
-        margin-top: 10px;
-        height: 250px;
-        overflow-y: auto;
-        font-family: monospace;
-        font-size: 0.8em;
-      }
-      .device-list {
-        background: #fff;
-        border: 1px solid #d1d1d6;
-        border-radius: 8px;
-        padding: 8px;
-        margin-top: 10px;
-        max-height: 120px;
-        overflow-y: auto;
-      }
-      .device-item {
-        padding: 10px;
-        border-bottom: 1px solid #f0f0f0;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .device-item:last-child { border-bottom: 0; }
-      .device-item:hover { background-color: #f9f9f9; }
-      
-      main {
-        padding: 20px;
-        max-width: 600px;
-        margin: 0 auto;
-      }
-      section {
-        background: #fff;
-        padding: 15px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      }
-      .field { margin-bottom: 12px; }
-      label {
-        display: block;
-        font-size: 0.75em;
-        font-weight: 700;
-        color: #8e8e93;
-        margin-bottom: 4px;
-        text-transform: uppercase;
-      }
-      input, select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #d1d1d6;
-        border-radius: 8px;
-        box-sizing: border-box;
-        font-size: 1em;
-      }
-      .progress-container {
-        margin-top: 15px;
-        padding: 10px;
-        background: #f0f0f5;
-        border-radius: 8px;
-      }
-      .progress-bg {
-        width: 100%;
-        height: 8px;
-        background: #e5e5ea;
-        border-radius: 4px;
-        overflow: hidden;
-      }
-      .progress-fill {
-        width: 0%;
-        height: 100%;
-        background: #34c759;
-        transition: width 0.1s;
-      }
+      @import url('./css/style.css');
     </style>
     <div>
-      <capacitor-welcome-titlebar>
+      <div class="titlebar">
         <h1>Offline Transfer</h1>
-      </capacitor-welcome-titlebar>
+      </div>
       <main>
         <section>
           <h3>1. Setup</h3>
@@ -228,47 +114,48 @@ window.customElements.define(
     connectedCallback() {
       const self = this;
       const shadow = self.shadowRoot;
+      if (!shadow) return;
 
       // Selectors
-      const initBtn = shadow.querySelector('#init-btn');
-      const checkPermsBtn = shadow.querySelector('#check-perms');
-      const requestPermsBtn = shadow.querySelector('#request-perms');
-      const strategySelect = shadow.querySelector('#strategy-select');
-      const logLevelSelect = shadow.querySelector('#log-level-select');
+      const initBtn = shadow.querySelector('#init-btn') as HTMLButtonElement;
+      const checkPermsBtn = shadow.querySelector('#check-perms') as HTMLButtonElement;
+      const requestPermsBtn = shadow.querySelector('#request-perms') as HTMLButtonElement;
+      const strategySelect = shadow.querySelector('#strategy-select') as HTMLSelectElement;
+      const logLevelSelect = shadow.querySelector('#log-level-select') as HTMLSelectElement;
 
-      const advertiseBtn = shadow.querySelector('#advertise-btn');
-      const discoveryBtn = shadow.querySelector('#discovery-btn');
-      const stopBtn = shadow.querySelector('#stop-btn');
+      const advertiseBtn = shadow.querySelector('#advertise-btn') as HTMLButtonElement;
+      const discoveryBtn = shadow.querySelector('#discovery-btn') as HTMLButtonElement;
+      const stopBtn = shadow.querySelector('#stop-btn') as HTMLButtonElement;
 
-      const messageInput = shadow.querySelector('#message-input');
-      const sendBtn = shadow.querySelector('#send-btn');
-      const sendFileBtn = shadow.querySelector('#send-file-btn');
+      const messageInput = shadow.querySelector('#message-input') as HTMLInputElement;
+      const sendBtn = shadow.querySelector('#send-btn') as HTMLButtonElement;
+      const sendFileBtn = shadow.querySelector('#send-file-btn') as HTMLButtonElement;
 
-      const hotspotBtn = shadow.querySelector('#hotspot-btn');
-      const serverBtn = shadow.querySelector('#server-btn');
-      const stopT3Btn = shadow.querySelector('#stop-t3-btn');
+      const hotspotBtn = shadow.querySelector('#hotspot-btn') as HTMLButtonElement;
+      const serverBtn = shadow.querySelector('#server-btn') as HTMLButtonElement;
+      const stopT3Btn = shadow.querySelector('#stop-t3-btn') as HTMLButtonElement;
 
-      const devicesList = shadow.querySelector('#devices-list');
-      const messagesBox = shadow.querySelector('#messages');
+      const devicesList = shadow.querySelector('#devices-list') as HTMLDivElement;
+      const messagesBox = shadow.querySelector('#messages') as HTMLDivElement;
 
-      const manualUrlInput = shadow.querySelector('#manual-url-input');
-      const manualConnectBtn = shadow.querySelector('#manual-connect-btn');
+      const manualUrlInput = shadow.querySelector('#manual-url-input') as HTMLInputElement;
+      const manualConnectBtn = shadow.querySelector('#manual-connect-btn') as HTMLButtonElement;
 
-      const progressContainer = shadow.querySelector('#progress-container');
-      const progressBar = shadow.querySelector('#progress-bar');
-      const progressText = shadow.querySelector('#progress-text');
-      const progressFilename = shadow.querySelector('#progress-filename');
-      const tier3Section = shadow.querySelector('#android-tier3');
+      const progressContainer = shadow.querySelector('#progress-container') as HTMLDivElement;
+      const progressBar = shadow.querySelector('#progress-bar') as HTMLDivElement;
+      const progressText = shadow.querySelector('#progress-text') as HTMLSpanElement;
+      const progressFilename = shadow.querySelector('#progress-filename') as HTMLSpanElement;
+      const tier3Section = shadow.querySelector('#android-tier3') as HTMLElement;
 
       if (Capacitor.getPlatform() !== 'android') {
         tier3Section.style.display = 'none';
       }
 
       // State
-      let endpoints = {};
-      let connectedEndpointId = null;
+      let endpoints: Record<string, any> = {};
+      let connectedEndpointId: string | null = null;
 
-      const addLog = (msg) => {
+      const addLog = (msg: string) => {
         const time = new Date().toLocaleTimeString();
         messagesBox.innerHTML += `<div style="margin-bottom:4px"><span style="color:#8e8e93">[${time}]</span> ${msg}</div>`;
         messagesBox.scrollTop = messagesBox.scrollHeight;
@@ -298,7 +185,7 @@ window.customElements.define(
       // Plugin Init
       initBtn.addEventListener('click', async () => {
         try {
-          const strategy = strategySelect.value;
+          const strategy = strategySelect.value as any;
           await OfflineTransfer.setStrategy({ strategy });
           await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
 
@@ -306,7 +193,7 @@ window.customElements.define(
 
           [advertiseBtn, discoveryBtn, stopBtn].forEach((b) => (b.disabled = false));
           addLog(`Initialized with ${strategy}`);
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Init Error: ${e.message}`);
         }
       });
@@ -316,7 +203,7 @@ window.customElements.define(
         try {
           await OfflineTransfer.startAdvertising({ displayName: 'Device_' + Math.floor(Math.random() * 100) });
           addLog('Advertising started...');
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Error: ${e.message}`);
         }
       });
@@ -325,7 +212,7 @@ window.customElements.define(
         try {
           await OfflineTransfer.startDiscovery();
           addLog('Discovery started...');
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Error: ${e.message}`);
         }
       });
@@ -336,7 +223,7 @@ window.customElements.define(
           if (!url) return;
           addLog(`Manually connecting to ${url}...`);
           await OfflineTransfer.connectByAddress({ url });
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Manual Connect Error: ${e.message}`);
         }
       });
@@ -360,7 +247,7 @@ window.customElements.define(
           await OfflineTransfer.sendMessage({ endpointId: connectedEndpointId, data: val });
           addLog(`SENT: ${val}`);
           messageInput.value = '';
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Send Error: ${e.message}`);
         }
       });
@@ -385,7 +272,7 @@ window.customElements.define(
               fileName: `photo_${Date.now()}.jpg`,
             });
           }
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Camera/File Error: ${e.message}`);
         }
       });
@@ -395,7 +282,7 @@ window.customElements.define(
         try {
           const info = await OfflineTransfer.startLocalHotspot();
           addLog(`HOTSPOT: SSID=${info.ssid}, PWD=${info.password}`);
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Hotspot Error: ${e.message}`);
         }
       });
@@ -404,7 +291,7 @@ window.customElements.define(
         try {
           const info = await OfflineTransfer.startServer({ port: 8080 });
           addLog(`SERVER: ${info.url}`);
-        } catch (e) {
+        } catch (e: any) {
           addLog(`Server Error: ${e.message}`);
         }
       });
@@ -488,46 +375,20 @@ window.customElements.define(
               ${isConn ? 'Disconnect' : 'Connect'}
             </button>
           `;
-          el.querySelector('button').onclick = async () => {
-            if (isConn) {
-              await OfflineTransfer.disconnectFromEndpoint({ endpointId: ep.endpointId });
-            } else {
-              addLog(`Connecting to ${ep.endpointName}...`);
-              await OfflineTransfer.connect({ endpointId: ep.endpointId, displayName: 'DemoUser' });
-            }
-          };
+          const btn = el.querySelector('button');
+          if (btn) {
+            btn.onclick = async () => {
+              if (isConn) {
+                await OfflineTransfer.disconnectFromEndpoint({ endpointId: ep.endpointId });
+              } else {
+                addLog(`Connecting to ${ep.endpointName}...`);
+                await OfflineTransfer.connect({ endpointId: ep.endpointId, displayName: 'DemoUser' });
+              }
+            };
+          }
           devicesList.appendChild(el);
         });
       };
-    }
-  },
-);
-
-window.customElements.define(
-  'capacitor-welcome-titlebar',
-  class extends HTMLElement {
-    constructor() {
-      super();
-      const root = this.attachShadow({ mode: 'open' });
-      root.innerHTML = `
-    <style>
-      :host {
-        position: relative;
-        display: block;
-        padding: 15px 15px 15px 15px;
-        text-align: center;
-        background-color: #73B5F6;
-      }
-      ::slotted(h1) {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-        font-size: 0.9em;
-        font-weight: 600;
-        color: #fff;
-      }
-    </style>
-    <slot></slot>
-    `;
     }
   },
 );
