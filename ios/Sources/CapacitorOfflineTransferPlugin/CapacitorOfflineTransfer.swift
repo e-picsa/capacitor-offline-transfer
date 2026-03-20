@@ -23,7 +23,7 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
     private var advertiser: MCNearbyServiceAdvertiser?
     private var browser: MCNearbyServiceBrowser?
     
-    private var peersDict = [String: MCPeerID]()
+    private var peersDict = [String: (peer: MCPeerID, connectedAt: Date)]()
     private var discoveryDict = [String: MCPeerID]()
     private var invitations = [String: (MCPeerID, (Bool, MCSession?) -> Void)]()
     private var peerIdToEndpointIdMap = [MCPeerID: String]()
@@ -130,11 +130,11 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
 
     func getConnectedEndpoints() -> [String: [String: Any]] {
         var result = [String: [String: Any]]()
-        for (endpointId, peer) in peersDict {
+        for (endpointId, tuple) in peersDict {
             result[endpointId] = [
                 "endpointId": endpointId,
-                "endpointName": peer.displayName,
-                "connectedAt": Int(Date().timeIntervalSince1970 * 1000)
+                "endpointName": tuple.peer.displayName,
+                "connectedAt": Int(tuple.connectedAt.timeIntervalSince1970 * 1000)
             ]
         }
         return result
@@ -153,7 +153,7 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
         
         switch state {
         case .connected:
-            peersDict[endpointId] = peerID
+            peersDict[endpointId] = (peerID, Date())
             delegate?.onConnectionResult(endpointId: endpointId, status: "SUCCESS")
         case .connecting:
             break

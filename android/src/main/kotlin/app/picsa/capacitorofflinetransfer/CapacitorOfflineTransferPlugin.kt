@@ -3,6 +3,7 @@ package app.picsa.capacitorofflinetransfer
 import android.Manifest
 import android.net.Uri
 import android.os.Build
+import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -34,6 +35,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
 
     private val implementation = CapacitorOfflineTransfer()
     private var pendingPermissionCall: PluginCall? = null
+    private var sessionStartTime: Long = 0
 
     @Suppress("DEPRECATION")
     override fun requestPermissions(call: PluginCall?) {
@@ -172,6 +174,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
 
     @PluginMethod
     fun startAdvertising(call: PluginCall) {
+        sessionStartTime = System.currentTimeMillis()
         val displayName = call.getString("displayName")
         implementation.startAdvertising(displayName)
         call.resolve()
@@ -179,18 +182,21 @@ class CapacitorOfflineTransferPlugin : Plugin() {
 
     @PluginMethod
     fun stopAdvertising(call: PluginCall) {
+        sessionStartTime = 0
         implementation.stopAdvertising()
         call.resolve()
     }
 
     @PluginMethod
     fun startDiscovery(call: PluginCall) {
+        sessionStartTime = System.currentTimeMillis()
         implementation.startDiscovery()
         call.resolve()
     }
 
     @PluginMethod
     fun stopDiscovery(call: PluginCall) {
+        sessionStartTime = 0
         implementation.stopDiscovery()
         call.resolve()
     }
@@ -268,8 +274,8 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         result.put("endpoints", endpoints)
         result.put("connectedEndpoints", connectedEndpoints)
         result.put("activeTransfers", JSObject())
-        result.put("transferHistory", JSObject().put("length", 0))
-        result.put("stats", JSObject().put("totalBytesTransferred", 0).put("filesTransferred", 0).put("sessionStart", System.currentTimeMillis()).put("currentSpeedBps", 0))
+        result.put("transferHistory", JSArray())
+        result.put("stats", JSObject().put("totalBytesTransferred", 0).put("filesTransferred", 0).put("sessionStart", sessionStartTime).put("currentSpeedBps", 0))
         call.resolve(result)
     }
 }

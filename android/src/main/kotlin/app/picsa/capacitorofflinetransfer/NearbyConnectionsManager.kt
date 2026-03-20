@@ -20,7 +20,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
     private val incomingPayloads = SimpleArrayMap<Long, Payload>()
     private val incomingFileMetadata = SimpleArrayMap<Long, String>()
     private val discoveredEndpoints = mutableMapOf<String, String>()
-    private val connectedEndpoints = mutableMapOf<String, String>()
+    private val connectedEndpoints = mutableMapOf<String, Pair<String, Long>>()
 
     fun initialize(serviceId: String) {
         this.serviceId = serviceId
@@ -53,7 +53,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
             }
             if (status == "SUCCESS") {
                 val name = discoveredEndpoints[endpointId] ?: endpointId
-                connectedEndpoints[endpointId] = name
+                connectedEndpoints[endpointId] = Pair(name, System.currentTimeMillis())
             } else {
                 connectedEndpoints.remove(endpointId)
             }
@@ -289,11 +289,11 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
 
     fun getConnectedEndpoints(): JSObject {
         val result = JSObject()
-        for ((id, name) in connectedEndpoints) {
+        for ((id, pair) in connectedEndpoints) {
             val endpoint = JSObject().apply {
                 put("endpointId", id)
-                put("endpointName", name)
-                put("connectedAt", System.currentTimeMillis())
+                put("endpointName", pair.first)
+                put("connectedAt", pair.second)
             }
             result.put(id, endpoint)
         }

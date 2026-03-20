@@ -24,6 +24,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     ]
 
     private let implementation = CapacitorOfflineTransfer()
+    private var sessionStartTime: Int = 0
 
     public override func load() {
         implementation.delegate = self
@@ -49,6 +50,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     }
 
     @objc func startAdvertising(_ call: CAPPluginCall) {
+        sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
         guard let displayName = call.getString("displayName") else {
             call.reject("displayName is required")
             return
@@ -58,16 +60,19 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     }
 
     @objc func stopAdvertising(_ call: CAPPluginCall) {
+        sessionStartTime = 0
         implementation.stopAdvertising()
         call.resolve()
     }
 
     @objc func startDiscovery(_ call: CAPPluginCall) {
+        sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
         implementation.startDiscovery()
         call.resolve()
     }
 
     @objc func stopDiscovery(_ call: CAPPluginCall) {
+        sessionStartTime = 0
         implementation.stopDiscovery()
         call.resolve()
     }
@@ -149,7 +154,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
             "stats": [
                 "totalBytesTransferred": 0,
                 "filesTransferred": 0,
-                "sessionStart": Int(Date().timeIntervalSince1970 * 1000),
+                "sessionStart": sessionStartTime,
                 "currentSpeedBps": 0
             ]
         ]
