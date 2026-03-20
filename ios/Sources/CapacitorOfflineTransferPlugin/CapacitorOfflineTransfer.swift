@@ -115,6 +115,30 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
             }
         }
     }
+
+    func getDiscoveredEndpoints() -> [String: [String: Any]] {
+        var result = [String: [String: Any]]()
+        for (endpointId, peer) in discoveryDict {
+            result[endpointId] = [
+                "endpointId": endpointId,
+                "endpointName": peer.displayName,
+                "serviceId": serviceType
+            ]
+        }
+        return result
+    }
+
+    func getConnectedEndpoints() -> [String: [String: Any]] {
+        var result = [String: [String: Any]]()
+        for (endpointId, peer) in peersDict {
+            result[endpointId] = [
+                "endpointId": endpointId,
+                "endpointName": peer.displayName,
+                "connectedAt": Int(Date().timeIntervalSince1970 * 1000)
+            ]
+        }
+        return result
+    }
 }
 
 extension CapacitorOfflineTransfer: MCSessionDelegate {

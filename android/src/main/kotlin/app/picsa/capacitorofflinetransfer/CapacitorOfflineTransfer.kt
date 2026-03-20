@@ -2,6 +2,7 @@ package app.picsa.capacitorofflinetransfer
 
 import android.content.Context
 import android.os.Build
+import com.getcapacitor.JSObject
 import com.getcapacitor.PluginCall
 
 data class PlatformCapabilities(
@@ -136,5 +137,13 @@ class CapacitorOfflineTransfer {
 
     fun sendFile(endpointId: String, filePath: String, fileName: String) {
         nearbyManager.sendFile(endpointId, filePath, fileName)
+    }
+
+    fun getDiscoveredEndpoints(): JSObject {
+        return nearbyManager.getDiscoveredEndpoints()
+    }
+
+    fun getConnectedEndpoints(): JSObject {
+        return nearbyManager.getConnectedEndpoints()
     }
 }

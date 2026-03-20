@@ -19,6 +19,8 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
 
     private val incomingPayloads = SimpleArrayMap<Long, Payload>()
     private val incomingFileMetadata = SimpleArrayMap<Long, String>()
+    private val discoveredEndpoints = mutableMapOf<String, String>()
+    private val connectedEndpoints = mutableMapOf<String, String>()
 
     fun initialize(serviceId: String) {
         this.serviceId = serviceId
@@ -49,6 +51,12 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> "REJECTED"
                 else -> "FAILURE"
             }
+            if (status == "SUCCESS") {
+                val name = discoveredEndpoints[endpointId] ?: endpointId
+                connectedEndpoints[endpointId] = name
+            } else {
+                connectedEndpoints.remove(endpointId)
+            }
             val event = JSObject().apply {
                 put("endpointId", endpointId)
                 put("status", status)
@@ -57,6 +65,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         }
 
         override fun onDisconnected(endpointId: String) {
+            connectedEndpoints.remove(endpointId)
             val event = JSObject().apply {
                 put("endpointId", endpointId)
             }
@@ -66,6 +75,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
 
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
+            discoveredEndpoints[endpointId] = info.endpointName
             val event = JSObject().apply {
                 put("endpointId", endpointId)
                 put("endpointName", info.endpointName)
@@ -75,6 +85,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         }
 
         override fun onEndpointLost(endpointId: String) {
+            discoveredEndpoints.remove(endpointId)
             val event = JSObject().apply {
                 put("endpointId", endpointId)
             }
@@ -261,5 +272,31 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
             Log.e(TAG, "Failed to copy payload to file", e)
             false
         }
+    }
+
+    fun getDiscoveredEndpoints(): JSObject {
+        val result = JSObject()
+        for ((id, name) in discoveredEndpoints) {
+            val endpoint = JSObject().apply {
+                put("endpointId", id)
+                put("endpointName", name)
+                put("serviceId", serviceId)
+            }
+            result.put(id, endpoint)
+        }
+        return result
+    }
+
+    fun getConnectedEndpoints(): JSObject {
+        val result = JSObject()
+        for ((id, name) in connectedEndpoints) {
+            val endpoint = JSObject().apply {
+                put("endpointId", id)
+                put("endpointName", name)
+                put("connectedAt", System.currentTimeMillis())
+            }
+            result.put(id, endpoint)
+        }
+        return result
     }
 }

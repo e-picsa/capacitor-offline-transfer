@@ -259,4 +259,17 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     fun setLogLevel(call: PluginCall) {
         call.resolve()
     }
+
+    @PluginMethod
+    fun getState(call: PluginCall) {
+        val result = JSObject()
+        val endpoints = implementation.getDiscoveredEndpoints()
+        val connectedEndpoints = implementation.getConnectedEndpoints()
+        result.put("endpoints", endpoints)
+        result.put("connectedEndpoints", connectedEndpoints)
+        result.put("activeTransfers", JSObject())
+        result.put("transferHistory", JSObject().put("length", 0))
+        result.put("stats", JSObject().put("totalBytesTransferred", 0).put("filesTransferred", 0).put("sessionStart", System.currentTimeMillis()).put("currentSpeedBps", 0))
+        call.resolve(result)
+    }
 }
