@@ -237,7 +237,7 @@ Add these to your `Info.plist`:
 * [`addListener('messageReceived', ...)`](#addlistenermessagereceived-)
 * [`addListener('transferProgress', ...)`](#addlistenertransferprogress-)
 * [`addListener('fileReceived', ...)`](#addlistenerfilereceived-)
-* [`addListener('clientConnected', ...)`](#addlistenerclientconnected-)
+* [`addListener('emulatorClientConnected', ...)`](#addlisteneremulatorclientconnected-)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
@@ -632,16 +632,16 @@ addListener(eventName: 'fileReceived', listenerFunc: (event: FileReceivedEvent) 
 --------------------
 
 
-### addListener('clientConnected', ...)
+### addListener('emulatorClientConnected', ...)
 
 ```typescript
-addListener(eventName: 'clientConnected', listenerFunc: (event: ClientConnectedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+addListener(eventName: 'emulatorClientConnected', listenerFunc: (event: emulatorClientConnectedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
 ```
 
-| Param              | Type                                                                                      |
-| ------------------ | ----------------------------------------------------------------------------------------- |
-| **`eventName`**    | <code>'clientConnected'</code>                                                            |
-| **`listenerFunc`** | <code>(event: <a href="#clientconnectedevent">ClientConnectedEvent</a>) =&gt; void</code> |
+| Param              | Type                                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'emulatorClientConnected'</code>                                                                    |
+| **`listenerFunc`** | <code>(event: <a href="#emulatorclientconnectedevent">emulatorClientConnectedEvent</a>) =&gt; void</code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
@@ -767,7 +767,7 @@ Removes all listeners added by the plugin
 | **`path`**       | <code>string</code> |
 
 
-#### ClientConnectedEvent
+#### emulatorClientConnectedEvent
 
 | Prop               | Type                |
 | ------------------ | ------------------- |

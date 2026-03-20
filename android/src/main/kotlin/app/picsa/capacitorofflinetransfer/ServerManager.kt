@@ -186,7 +186,7 @@ open class ServerManager(private val context: Context, private val plugin: Capac
             put("endpointId", clientIp)
             put("endpointName", displayName)
         }
-        plugin.emit("clientConnected", event)
+        plugin.emit("emulatorClientConnected", event)
 
         val out = client.getOutputStream()
         val header = "HTTP/1.1 200 OK\r\n" +

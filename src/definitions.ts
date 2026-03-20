@@ -158,8 +158,8 @@ export interface OfflineTransferPlugin {
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   addListener(
-    eventName: 'clientConnected',
-    listenerFunc: (event: ClientConnectedEvent) => void,
+    eventName: 'emulatorClientConnected',
+    listenerFunc: (event: emulatorClientConnectedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -183,7 +183,7 @@ export interface HotspotInfo {
   password: string;
 }
 
-export interface ClientConnectedEvent {
+export interface emulatorClientConnectedEvent {
   endpointId: string;
   endpointName: string;
 }

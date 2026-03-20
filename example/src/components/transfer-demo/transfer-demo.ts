@@ -375,7 +375,7 @@ window.customElements.define(
           }
         });
 
-        OfflineTransfer.addListener('clientConnected', (event) => {
+        OfflineTransfer.addListener('emulatorClientConnected', (event) => {
           console.log(`Client connected: ${event.endpointName} (${event.endpointId})`);
         });
       };
