@@ -26,13 +26,13 @@ export async function startDevLoop(ctx: DevContext): Promise<void> {
     clearDebounceTimer,
   };
 
-  const handler = (label: string) => {
-    onNativeChange(label, sharedCtx);
+  const handler = (label: string, filename: string | null) => {
+    onNativeChange(label, sharedCtx, filename);
   };
-  const debouncedOnNativeChange = debounce(handler as (...args: unknown[]) => void, 500) as (label: string) => void;
+  const debouncedOnNativeChange = debounce<(label: string, filename: string | null) => void>(handler, 500);
 
-  const watchers = watchNativeSources((label) => {
-    debouncedOnNativeChange(label);
+  const watchers = watchNativeSources((label, filename) => {
+    debouncedOnNativeChange(label, filename);
   });
 
   const abort = new AbortController();
@@ -68,11 +68,12 @@ export async function startDevLoop(ctx: DevContext): Promise<void> {
   });
 }
 
-async function onNativeChange(label: string, ctx: CommandContext): Promise<void> {
+async function onNativeChange(label: string, ctx: CommandContext, filename?: string | null): Promise<void> {
   ctx.clearDebounceTimer();
   if (ctx.isSyncing()) return;
   ctx.setSyncing(true);
   console.log(`\n📦 ${label} changed, rebuilding and redeploying...`);
+  if (filename) console.log(`  \x1b[90m(${filename})\x1b[0m`);
   const { fullRedeploy } = await import('../commands/deploy');
   await fullRedeploy(ctx.emulators, ctx.port);
   ctx.setSyncing(false);
