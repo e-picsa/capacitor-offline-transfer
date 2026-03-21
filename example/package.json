@@ -1,7 +1,7 @@
 {
-  "name": "capacitor-app",
+  "name": "capacitor-offline-transfer-example",
   "version": "1.0.0",
-  "description": "An Amazing Capacitor App",
+  "description": "Demo app of capacitor-offline-transfer plugin",
   "type": "module",
   "keywords": [
     "capacitor",
