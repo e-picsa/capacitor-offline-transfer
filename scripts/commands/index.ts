@@ -4,7 +4,6 @@ import { coldRebootAll, openAndroidStudio } from './emulator';
 
 export interface CommandContext {
   emulators: Emulator[];
-  port: string;
   isSyncing: () => boolean;
   setSyncing: (v: boolean) => void;
   clearDebounceTimer: () => void;
@@ -31,7 +30,7 @@ export const COMMANDS: Command[] = [
       ctx.clearDebounceTimer();
       if (ctx.isSyncing()) return;
       ctx.setSyncing(true);
-      fullRedeploy(ctx.emulators, ctx.port).finally(() => onDone(ctx));
+      fullRedeploy(ctx.emulators).finally(() => onDone(ctx));
     },
   },
   {
@@ -41,7 +40,7 @@ export const COMMANDS: Command[] = [
     action: (ctx) => {
       if (ctx.isSyncing()) return;
       ctx.setSyncing(true);
-      reinstallAll(ctx.emulators, ctx.port).finally(() => onDone(ctx));
+      reinstallAll(ctx.emulators).finally(() => onDone(ctx));
     },
   },
   {

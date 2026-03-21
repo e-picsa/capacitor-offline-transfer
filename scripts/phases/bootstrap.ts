@@ -5,6 +5,7 @@ import { detectLocalIP, selectPlatform, execCmd } from '../utils/cli.utils';
 import { ensureEmulatorsRunning } from '../commands/emulator';
 import { syncPluginAndNative } from '../commands/deploy';
 import { ensurePortFree, startViteServer } from '../commands/server';
+import { adbReverse } from '../utils/adb.utils';
 import { PATHS } from '../paths';
 import type { DevContext, Platform } from '../types';
 
@@ -51,6 +52,14 @@ export async function bootstrap(): Promise<DevContext> {
   }
 
   const emulators = platform === 'ios' ? [] : await ensureEmulatorsRunning(env.EMULATOR_AVDS);
+
+  if (emulators.length > 0) {
+    console.log('\n🔗 Setting up adb reverse...');
+    for (const em of emulators) {
+      await adbReverse(em.id, serverPort);
+    }
+    console.log('✅ All emulators connected');
+  }
 
   if (emulators.length === 0 && platform === 'android') {
     console.error('\n❌ No emulators available. Exiting.');

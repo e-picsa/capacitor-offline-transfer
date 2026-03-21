@@ -2,7 +2,7 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 
 import { Emulator } from '../utils/emulator.utils';
-import { adbInstall, adbLaunch, adbReverse } from '../utils/adb.utils';
+import { adbInstall, adbLaunch } from '../utils/adb.utils';
 import { PATHS } from '../paths';
 
 export async function syncPluginAndNative(): Promise<boolean> {
@@ -49,11 +49,7 @@ async function runGradleBuild(): Promise<boolean> {
   return true;
 }
 
-async function deployTo(em: Emulator, port: string): Promise<void> {
-  process.stdout.write(`  [${em.id}] adb reverse... `);
-  await adbReverse(em.id, port);
-  console.log('✅');
-
+async function deployTo(em: Emulator): Promise<void> {
   process.stdout.write(`  [${em.id}] install APK... `);
   const result = await adbInstall(em.id);
   if (!result.success) {
@@ -71,36 +67,27 @@ async function deployTo(em: Emulator, port: string): Promise<void> {
   console.log('✅');
 }
 
-export async function deployToAll(emulators: Emulator[], port: string): Promise<void> {
+async function deployToEmulators(emulators: Emulator[]): Promise<void> {
   if (emulators.length === 0) {
-    console.log('\n⚠️  No emulators to deploy to.');
+    console.log('\n⚠️  No emulators.');
     return;
   }
-
-  console.log('\n📦 Deploying to emulators...');
   for (const em of emulators) {
-    await deployTo(em, port);
+    await deployTo(em);
   }
 }
 
-export async function fullRedeploy(emulators: Emulator[], port: string): Promise<void> {
+export async function fullRedeploy(emulators: Emulator[]): Promise<void> {
   console.log('\n📦 Rebuilding and redeploying...');
   const ok = await syncPluginAndNative();
   if (!ok) {
     console.error('❌ Sync failed, skipping redeploy');
     return;
   }
-  await deployToAll(emulators, port);
+  await deployToEmulators(emulators);
 }
 
-export async function reinstallAll(emulators: Emulator[], port: string): Promise<void> {
-  if (emulators.length === 0) {
-    console.log('\n⚠️  No emulators to reinstall on.');
-    return;
-  }
-
+export async function reinstallAll(emulators: Emulator[]): Promise<void> {
   console.log('\n📦 Reinstalling app on emulators...');
-  for (const em of emulators) {
-    await deployTo(em, port);
-  }
+  await deployToEmulators(emulators);
 }

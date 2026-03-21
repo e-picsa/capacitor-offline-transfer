@@ -1,6 +1,6 @@
 import type { DevContext, KeyAction } from '../types';
 import { CommandContext } from '../commands';
-import { deployToAll } from '../commands/deploy';
+import { reinstallAll } from '../commands/deploy';
 import { COMMANDS } from '../commands';
 import { setupKeypress } from '../input';
 import { watchNativeSources } from '../watcher';
@@ -20,7 +20,6 @@ export async function startDevLoop(ctx: DevContext): Promise<void> {
 
   const sharedCtx: CommandContext = {
     emulators: ctx.emulators,
-    port: ctx.serverPort,
     isSyncing,
     setSyncing,
     clearDebounceTimer,
@@ -55,7 +54,7 @@ export async function startDevLoop(ctx: DevContext): Promise<void> {
     abort.abort();
   });
 
-  await deployToAll(ctx.emulators, ctx.serverPort);
+  await reinstallAll(ctx.emulators);
 
   await new Promise<void>((resolve) => {
     abort.signal.addEventListener(
@@ -75,7 +74,7 @@ async function onNativeChange(label: string, ctx: CommandContext, filename?: str
   console.log(`\n📦 ${label} changed, rebuilding and redeploying...`);
   if (filename) console.log(`  \x1b[90m(${filename})\x1b[0m`);
   const { fullRedeploy } = await import('../commands/deploy');
-  await fullRedeploy(ctx.emulators, ctx.port);
+  await fullRedeploy(ctx.emulators);
   ctx.setSyncing(false);
   console.log(`\n👀 Watching native changes...`);
 }
