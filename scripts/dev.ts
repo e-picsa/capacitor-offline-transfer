@@ -1,16 +1,40 @@
-export {};
-
 import { watch, existsSync, FSWatcher } from 'fs';
 import { resolve } from 'path';
+import readline from 'readline';
 import { getEnv, saveEnv } from './utils/env.utils';
 import { detectLocalIP, selectPlatform, execCmd } from './utils/cli.utils';
-import { ensureEmulatorsRunning, coldRebootAll, openAndroidStudio } from './commands/emulator';
-import { fullRedeploy, reinstallAll, syncPluginAndNative, deployToAll } from './commands/deploy';
+import { pad, boxLine } from './utils/string.utils';
+import { ensureEmulatorsRunning } from './commands/emulator';
+import { syncPluginAndNative, deployToAll } from './commands/deploy';
 import { startViteServer, ensurePortFree, viteProc } from './commands/server';
+import { COMMANDS } from './commands';
 import { PATHS } from './paths';
 import type { Emulator } from './utils/emulator.utils';
 
 const DEFAULT_PORT = '5173';
+
+function printBanner(serverPort: string, platform: string, emulators: Emulator[]): void {
+  const WIDTH = 62;
+  const borderTop = `╔${'═'.repeat(WIDTH)}╗`;
+  const borderMid = `╠${'═'.repeat(WIDTH)}╣`;
+  const borderBot = `╚${'═'.repeat(WIDTH)}╝`;
+
+  const emulatorList = emulators.length > 0 ? emulators.map((e) => e.id).join(', ') : 'None (iOS not yet supported)';
+
+  console.log(`
+${borderTop}
+${boxLine('LIVE-RELOAD READY', WIDTH, 20)}
+${borderMid}
+${boxLine(`Web server:  http://localhost:${pad(serverPort, 18)}`, WIDTH, 2)}
+${boxLine(`Emulators:   ${pad(emulatorList, 52)}`, WIDTH, 2)}
+${boxLine(`Platform:    ${pad(platform, 52)}`, WIDTH, 2)}
+${borderMid}
+${boxLine('Web/JS changes:  Auto-loaded via Vite HMR', WIDTH, 2)}
+${boxLine('Native changes:  Auto-rebuilds plugin + redeploys all', WIDTH, 2)}
+${COMMANDS.map((c) => boxLine(`${pad(c.label, 8)}${c.description}`, WIDTH, 2)).join('\n')}
+${borderBot}
+`);
+}
 
 async function main(): Promise<void> {
   const env = getEnv();
@@ -35,6 +59,10 @@ async function main(): Promise<void> {
   console.log('\n📱 Selecting platform...');
   const platform = await selectPlatform();
 
+  if (platform === 'ios') {
+    console.log('\n⚠️  iOS emulator/device support not yet implemented. Only web watching active.');
+  }
+
   const platformDir = resolve(PATHS.EXAMPLE_APP, platform);
   if (!existsSync(platformDir)) {
     console.log(`\n📦 Adding ${platform} platform...`);
@@ -48,10 +76,9 @@ async function main(): Promise<void> {
     console.log(`✅ ${platform} platform added`);
   }
 
-  console.log('\n🔍 Detecting emulators...');
-  const emulators = await ensureEmulatorsRunning(env.EMULATOR_AVDS);
+  const emulators = platform === 'ios' ? [] : await ensureEmulatorsRunning(env.EMULATOR_AVDS);
 
-  if (emulators.length === 0) {
+  if (emulators.length === 0 && platform === 'android') {
     console.error('\n❌ No emulators available. Exiting.');
     gracefulExit(1);
   }
@@ -68,25 +95,7 @@ async function main(): Promise<void> {
 
   await deployToAll(emulators, serverPort);
 
-  console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║                     LIVE-RELOAD READY                        ║
-╠══════════════════════════════════════════════════════════════╣
-║  Web server:  http://localhost:${serverPort.padEnd(18)}║
-║  Emulators:   ${emulators
-    .map((e) => e.id)
-    .join(', ')
-    .padEnd(52)}║
-║  Platform:    ${platform.padEnd(52)}║
-╠══════════════════════════════════════════════════════════════╣
-║  Web/JS changes:  Auto-loaded via Vite HMR                   ║
-║  Native changes:  Auto-rebuilds plugin + redeploys all      ║
-║  Press R:         Force rebuild & redeploy                   ║
-║  Press I:         Reinstall app (no rebuild)                  ║
-║  Press C:         Cold-reboot all emulators                  ║
-║  Press A:         Open Android Studio                        ║
-╚══════════════════════════════════════════════════════════════╝
-`);
+  printBanner(serverPort, platform, emulators);
 
   await watchLoop(emulators, serverPort);
 }
@@ -100,25 +109,40 @@ async function watchLoop(emulators: Emulator[], port: string): Promise<void> {
   let watchers: FSWatcher[] = [];
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let syncing = false;
-  let resolveLoop: () => void;
+
+  function isSyncing(): boolean {
+    return syncing;
+  }
+
+  function setSyncing(v: boolean): void {
+    syncing = v;
+  }
+
+  function clearDebounceTimer(): void {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+  }
 
   function onChange(label: string): void {
-    if (debounceTimer) clearTimeout(debounceTimer);
+    clearDebounceTimer();
     debounceTimer = setTimeout(async () => {
-      if (syncing) return;
-      syncing = true;
+      if (isSyncing()) return;
+      setSyncing(true);
       try {
+        const { fullRedeploy } = await import('./commands/deploy');
         console.log(`\n📦 ${label} changed, rebuilding and redeploying...`);
         await fullRedeploy(emulators, port);
         console.log(`\n👀 Watching native changes...`);
       } finally {
-        syncing = false;
+        setSyncing(false);
       }
     }, 1000);
   }
 
   function cleanup(): void {
-    if (debounceTimer) clearTimeout(debounceTimer);
+    clearDebounceTimer();
     watchers.forEach((w) => w.close());
     process.stdin.removeAllListeners('keypress');
     process.stdin.setRawMode?.(false);
@@ -126,56 +150,35 @@ async function watchLoop(emulators: Emulator[], port: string): Promise<void> {
     if (viteProc) viteProc.kill();
   }
 
+  const commandContext = { emulators, port, isSyncing, setSyncing, clearDebounceTimer };
+
+  readline.emitKeypressEvents(process.stdin);
   process.stdin.setRawMode?.(true);
   process.stdin.resume?.();
   process.stdin.on('keypress', (_ch: string, key: { name: string; ctrl: boolean }) => {
     if (key.ctrl && key.name === 'c') return;
-    if (key.name?.toLowerCase() === 'r') {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      if (syncing) return;
-      syncing = true;
-      fullRedeploy(emulators, port).finally(() => {
-        syncing = false;
-        console.log(`\n👀 Watching native changes...`);
-      });
-    }
-    if (key.name?.toLowerCase() === 'i') {
-      if (syncing) return;
-      syncing = true;
-      reinstallAll(emulators, port).finally(() => {
-        syncing = false;
-        console.log(`\n👀 Watching native changes...`);
-      });
-    }
-    if (key.name?.toLowerCase() === 'c') {
-      if (syncing) return;
-      syncing = true;
-      coldRebootAll(emulators).finally(() => {
-        syncing = false;
-        console.log(`\n👀 Watching native changes...`);
-      });
-    }
-    if (key.name?.toLowerCase() === 'a') {
-      openAndroidStudio();
+    const pressed = key.name?.toLowerCase();
+    for (const cmd of COMMANDS) {
+      if (cmd.key === pressed) {
+        cmd.action(commandContext);
+        break;
+      }
     }
   });
 
   watchers.push(
-    watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, (_evt, filename) => {
-      console.log(`\n📦 Plugin Android changed: ${filename}`);
+    watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, () => {
       onChange('Android');
     }),
   );
 
   watchers.push(
-    watch(resolve(PATHS.ROOT, 'ios', 'Sources'), { recursive: true }, (_evt, filename) => {
-      console.log(`\n📦 Plugin iOS changed: ${filename}`);
+    watch(resolve(PATHS.ROOT, 'ios', 'Sources'), { recursive: true }, () => {
       onChange('iOS');
     }),
   );
 
   await new Promise<void>((resolve) => {
-    resolveLoop = resolve;
     process.once('SIGINT', () => {
       console.log('\n👋 Shutting down...');
       cleanup();

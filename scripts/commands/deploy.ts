@@ -1,3 +1,6 @@
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+
 import { Emulator } from '../utils/emulator.utils';
 import { adbInstall, adbLaunch, adbReverse } from '../utils/adb.utils';
 import { PATHS } from '../paths';
@@ -5,7 +8,11 @@ import { PATHS } from '../paths';
 export async function syncPluginAndNative(): Promise<boolean> {
   const ok = await runInExample(['bun', 'run', 'sync:plugin'], 'sync plugin');
   if (!ok) return false;
-  return await runInExample(['bun', 'run', 'sync:native'], 'cap sync');
+  const webOk = await runInExample(['bun', 'run', 'build:web'], 'build web');
+  if (!webOk) return false;
+  const syncOk = await runInExample(['bun', 'run', 'sync:native'], 'cap sync');
+  if (!syncOk) return false;
+  return await runGradleBuild();
 }
 
 async function runInExample(cmd: string[], label: string): Promise<boolean> {
@@ -21,6 +28,24 @@ async function runInExample(cmd: string[], label: string): Promise<boolean> {
     return false;
   }
   console.log(`✅ ${label}`);
+  return true;
+}
+
+async function runGradleBuild(): Promise<boolean> {
+  const androidDir = resolve(PATHS.EXAMPLE_APP, 'android');
+  const gradlewBat = resolve(androidDir, 'gradlew.bat');
+  const gradlewScript = existsSync(gradlewBat) ? gradlewBat : resolve(androidDir, 'gradlew');
+  const proc = Bun.spawn([gradlewScript, 'assembleDebug'], {
+    cwd: resolve(PATHS.EXAMPLE_APP, 'android'),
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  const code = await proc.exited;
+  if (code !== 0) {
+    console.error(`❌ Gradle build failed with exit code ${code}`);
+    return false;
+  }
+  console.log('✅ Android APK built');
   return true;
 }
 
