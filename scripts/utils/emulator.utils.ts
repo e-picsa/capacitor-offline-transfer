@@ -54,12 +54,16 @@ export async function startEmulators(avdNames: string[]): Promise<Emulator[]> {
     const newlyBooted = (await getRunningEmulators()).filter((e) => !runningBefore.has(e.id) && e.state === 'device');
 
     if (newlyBooted.length >= avdNames.length) {
-      const result = avdNames.map((name, i) => {
+      const result: Emulator[] = [];
+      for (let i = 0; i < avdNames.length; i++) {
         const port = 5554 + i * 2;
         const serial = `emulator-${port}`;
-        const em = newlyBooted.find((e) => e.id === serial) ?? newlyBooted[avdNames.indexOf(name)];
-        return { id: em.id, state: em.state, avdName: name };
-      });
+        const em = newlyBooted.find((e) => e.id === serial);
+        if (!em) {
+          throw new Error(`Emulator with serial ${serial} not found among booted emulators`);
+        }
+        result.push({ id: em.id, state: em.state, avdName: avdNames[i] });
+      }
       console.log(`\n✅ All ${avdNames.length} new emulator(s) have booted.`);
       return result;
     }
