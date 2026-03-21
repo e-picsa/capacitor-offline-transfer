@@ -48,10 +48,12 @@ export async function startDevLoop(ctx: DevContext): Promise<void> {
   process.once('SIGINT', () => {
     console.log('\n👋 Shutting down...');
     abort.abort();
+    process.kill(process.pid, 'SIGINT');
   });
   process.once('SIGTERM', () => {
     console.log('\n👋 Shutting down...');
     abort.abort();
+    process.kill(process.pid, 'SIGTERM');
   });
 
   await reinstallAll(ctx.emulators);
