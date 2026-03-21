@@ -112,12 +112,11 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
     return transferState;
   }
 
-  async syncFromPlugin(): Promise<void> {
-    const listener = new Promise<any>((resolve) => {
-      this.addListener('stateSynced', (data) => resolve(data));
-    });
-    (this as any).bridge.call('syncFromPlugin');
-    const snapshot = await listener;
+  async syncFromPlugin(): Promise<any> {
+    const bridge = (window as any).__capacitorOfflineTransferBridge;
+    if (!bridge) return;
+    const snapshot = await bridge.call('syncFromPlugin');
     transferState.syncFromSnapshot(snapshot);
+    return snapshot;
   }
 }
