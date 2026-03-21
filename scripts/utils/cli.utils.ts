@@ -31,6 +31,19 @@ export async function prompt(question: string): Promise<string> {
   });
 }
 
+function parsePlatformArg(): 'android' | 'ios' | null {
+  const platform = process.argv[2]?.trim().toLowerCase();
+  if (platform === 'android' || platform === 'ios') return platform;
+  return null;
+}
+
+export async function selectPlatform(): Promise<'android' | 'ios'> {
+  const arg = parsePlatformArg();
+  if (arg) return arg;
+  const ans = (await prompt('Select platform (android/ios) [android]: ')).trim().toLowerCase();
+  return ans === 'ios' ? 'ios' : 'android';
+}
+
 export function detectLocalIP(): string | null {
   const interfaces = networkInterfaces();
   for (const [, addrs] of Object.entries(interfaces)) {

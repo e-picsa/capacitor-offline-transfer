@@ -4,7 +4,7 @@ import { PATHS } from '../paths';
 
 const ENV_FILE = resolve(PATHS.EXAMPLE_APP, '.env');
 
-const ENV_KEYS = ['CAPACITOR_SERVER_IP', 'CAPACITOR_SERVER_PORT', 'CAPACITOR_PLATFORM', 'EMULATOR_AVDS'] as const;
+const ENV_KEYS = ['CAPACITOR_SERVER_IP', 'CAPACITOR_SERVER_PORT', 'EMULATOR_AVDS'] as const;
 
 type EnvKey = (typeof ENV_KEYS)[number];
 export type EnvVars = Partial<Record<EnvKey, string>>;
