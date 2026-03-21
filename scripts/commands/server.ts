@@ -1,4 +1,3 @@
-import { ensurePortFree } from '../utils/cli.utils';
 import { PATHS } from '../paths';
 
 let viteProc: ReturnType<typeof Bun.spawn> | null = null;
@@ -17,6 +16,3 @@ export function startViteServer(): void {
     env: process.env,
   });
 }
-
-export { ensurePortFree };
-export { viteProc };

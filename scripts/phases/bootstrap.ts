@@ -1,10 +1,10 @@
 import { resolve } from 'path';
 import { existsSync } from 'fs';
 import { getEnv, saveEnv } from '../utils/env.utils';
-import { detectLocalIP, selectPlatform, execCmd } from '../utils/cli.utils';
+import { detectLocalIP, selectPlatform, execCmd, ensurePortFree } from '../utils/cli.utils';
 import { ensureEmulatorsRunning } from '../commands/emulator';
 import { syncPluginAndNative } from '../commands/deploy';
-import { ensurePortFree, startViteServer } from '../commands/server';
+import { startViteServer } from '../commands/server';
 import { adbReverse } from '../utils/adb.utils';
 import { PATHS } from '../paths';
 import type { DevContext, Platform } from '../types';
