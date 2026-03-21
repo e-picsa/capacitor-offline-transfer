@@ -1,4 +1,5 @@
-import type { OfflineTransferPlugin, PlatformCapabilities } from '@picsa/capacitor-offline-transfer';
+import type { PlatformCapabilities } from '@picsa/capacitor-offline-transfer';
+import { OfflineTransfer, transferState } from '@picsa/capacitor-offline-transfer';
 import { signal } from '@preact/signals';
 
 export interface EndpointInfo {
@@ -55,31 +56,54 @@ export const connectedEndpointId = signal<string | null>(null);
 
 let _setConnectedEndpointId: (id: string | null) => void = () => {};
 
-export function initPluginState(plugin: OfflineTransferPlugin): void {
-  const state = plugin.getState();
-
-  state.subscribe<Record<string, EndpointInfo>>('endpoints', (v) => {
+export function initPluginState(): () => void {
+  transferState.subscribe<Record<string, EndpointInfo>>('endpoints', (v) => {
     endpoints.value = v;
   });
-  state.subscribe<Record<string, ConnectedEndpoint>>('connectedEndpoints', (v) => {
+  transferState.subscribe<Record<string, ConnectedEndpoint>>('connectedEndpoints', (v) => {
     connectedEndpoints.value = v;
     const ids = Object.keys(v);
     _setConnectedEndpointId(ids[0] ?? null);
   });
-  state.subscribe<Record<string, TransferProgress>>('activeTransfers', (v) => {
+  transferState.subscribe<Record<string, TransferProgress>>('activeTransfers', (v) => {
     activeTransfers.value = v;
   });
-  state.subscribe<TransferRecord[]>('transferHistory', (v) => {
+  transferState.subscribe<TransferRecord[]>('transferHistory', (v) => {
     transferHistory.value = v;
   });
-  state.subscribe<Stats>('stats', (v) => {
+  transferState.subscribe<Stats>('stats', (v) => {
     stats.value = v;
   });
-  state.subscribe<PlatformCapabilities | null>('capabilities', (v) => {
+  transferState.subscribe<PlatformCapabilities | null>('capabilities', (v) => {
     capabilities.value = v;
   });
 
   _setConnectedEndpointId = (id: string | null) => {
     connectedEndpointId.value = id;
+  };
+
+  const unsubEndpointFound = OfflineTransfer.addListener('endpointFound', (ev) => {
+    transferState.onEndpointFound(ev);
+  });
+  const unsubEndpointLost = OfflineTransfer.addListener('endpointLost', (ev) => {
+    transferState.onEndpointLost(ev);
+    transferState.onDisconnected(ev.endpointId);
+  });
+  const unsubConnResult = OfflineTransfer.addListener('connectionResult', (ev) => {
+    transferState.onConnectionResult(ev);
+  });
+  const unsubFile = OfflineTransfer.addListener('fileReceived', (ev) => {
+    transferState.onFileReceived(ev);
+  });
+  const unsubProgress = OfflineTransfer.addListener('transferProgress', (ev) => {
+    transferState.onTransferProgress(ev);
+  });
+
+  return async () => {
+    (await unsubEndpointFound).remove();
+    (await unsubEndpointLost).remove();
+    (await unsubConnResult).remove();
+    (await unsubFile).remove();
+    (await unsubProgress).remove();
   };
 }

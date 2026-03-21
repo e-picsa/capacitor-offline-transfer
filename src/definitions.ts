@@ -160,6 +160,12 @@ export interface OfflineTransferPlugin {
    * Subscribe to state keys to receive updates on connection, transfer, and discovery events.
    */
   getState(): TransferState;
+
+  /**
+   * Syncs the reactive state from the native plugin's current snapshot.
+   * Call this after initialization to populate the reactive store with native state.
+   */
+  syncFromPlugin(): Promise<void>;
 }
 
 export interface ConnectionRequestEvent {

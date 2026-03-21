@@ -1,5 +1,5 @@
 import { SplashScreen } from '@capacitor/splash-screen';
-import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
+import { OfflineTransfer, transferState } from '@picsa/capacitor-offline-transfer';
 import { useSignal } from '@preact/signals';
 import { useEffect, useState } from 'preact/hooks';
 
@@ -23,11 +23,10 @@ export const AppShell = () => {
       try {
         await OfflineTransfer.initialize({ serviceId: 'picsa-offline' });
         await OfflineTransfer.setLogLevel({ logLevel: 3 });
-        initPluginState(OfflineTransfer);
 
         const caps = await OfflineTransfer.checkCapabilities();
-        const state = OfflineTransfer.getState();
-        state.onCapabilitiesDetected(caps);
+        await OfflineTransfer.syncFromPlugin();
+        transferState.onCapabilitiesDetected(caps);
 
         setIsLoading(false);
       } catch (e: unknown) {
@@ -36,14 +35,9 @@ export const AppShell = () => {
       }
     };
 
+    const unsubCleanup = initPluginState();
     setup();
 
-    const unsubEndpointFound = OfflineTransfer.addListener('endpointFound', (ev) => {
-      logService.info(`Found: ${ev.endpointName}`, 'discovery');
-    });
-    const unsubEndpointLost = OfflineTransfer.addListener('endpointLost', (ev) => {
-      logService.warn(`Lost device: ${ev.endpointId}`, 'discovery');
-    });
     const unsubConnRequested = OfflineTransfer.addListener('connectionRequested', (ev) => {
       logService.info(`Connection request from ${ev.endpointName}`, 'connection');
       OfflineTransfer.acceptConnection({ endpointId: ev.endpointId });
@@ -54,9 +48,6 @@ export const AppShell = () => {
       } else {
         logService.error(`Connection ${ev.status.toLowerCase()}: ${ev.endpointId}`, 'connection');
       }
-    });
-    const unsubMsg = OfflineTransfer.addListener('messageReceived', (ev) => {
-      logService.info(`MSG: ${ev.data}`, 'transfer');
     });
     const unsubFile = OfflineTransfer.addListener('fileReceived', (ev) => {
       logService.success(`FILE RECEIVED: ${ev.fileName}`, 'transfer');
@@ -69,11 +60,9 @@ export const AppShell = () => {
     });
 
     return () => {
-      unsubEndpointFound.then((u) => u.remove());
-      unsubEndpointLost.then((u) => u.remove());
+      unsubCleanup();
       unsubConnRequested.then((u) => u.remove());
       unsubConnResult.then((u) => u.remove());
-      unsubMsg.then((u) => u.remove());
       unsubFile.then((u) => u.remove());
       unsubProgress.then((u) => u.remove());
     };

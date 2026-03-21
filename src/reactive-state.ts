@@ -107,6 +107,23 @@ export class TransferState {
     this._notifyAll();
   }
 
+  syncFromSnapshot(snap: {
+    endpoints?: Record<string, EndpointFoundEvent>;
+    connectedEndpoints?: Record<string, ConnectedEndpoint>;
+    activeTransfers?: Record<string, TransferProgressEvent>;
+    transferHistory?: TransferRecord[];
+    stats?: StatsSnapshot;
+    capabilities?: PlatformCapabilities | null;
+  }): void {
+    if (snap.endpoints) this._endpoints = snap.endpoints;
+    if (snap.connectedEndpoints) this._connectedEndpoints = snap.connectedEndpoints;
+    if (snap.activeTransfers) this._activeTransfers = snap.activeTransfers;
+    if (snap.transferHistory) this._transferHistory = snap.transferHistory;
+    if (snap.stats) this._stats = snap.stats;
+    if (snap.capabilities !== undefined) this._capabilities = snap.capabilities;
+    this._notifyAll();
+  }
+
   private _notifyAll(): void {
     this._notify('endpoints', this.getSnapshot('endpoints'));
     this._notify('connectedEndpoints', this.getSnapshot('connectedEndpoints'));

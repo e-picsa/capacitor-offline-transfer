@@ -20,7 +20,8 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         CAPPluginMethod(name: "sendMessage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendFile", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setLogLevel", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getState", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "getState", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "syncFromPlugin", returnType: CAPPluginReturnPromise)
     ]
 
     private let implementation = CapacitorOfflineTransfer()
@@ -159,6 +160,25 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
             ]
         ]
         call.resolve(result)
+    }
+
+    @objc func syncFromPlugin(_ call: CAPPluginCall) {
+        let endpoints = implementation.getDiscoveredEndpoints()
+        let connectedEndpoints = implementation.getConnectedEndpoints()
+        let result: [String: Any] = [
+            "endpoints": endpoints,
+            "connectedEndpoints": connectedEndpoints,
+            "activeTransfers": [String: Any](),
+            "transferHistory": [[String: Any]](),
+            "stats": [
+                "totalBytesTransferred": 0,
+                "filesTransferred": 0,
+                "sessionStart": sessionStartTime,
+                "currentSpeedBps": 0
+            ]
+        ]
+        notifyListeners("stateSynced", data: result)
+        call.resolve()
     }
 
     public func onConnectionRequested(endpointId: String, endpointName: String, authToken: String) {

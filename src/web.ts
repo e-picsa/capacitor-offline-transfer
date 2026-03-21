@@ -111,4 +111,13 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
   getState(): TransferState {
     return transferState;
   }
+
+  async syncFromPlugin(): Promise<void> {
+    const listener = new Promise<any>((resolve) => {
+      this.addListener('stateSynced', (data) => resolve(data));
+    });
+    (this as any).bridge.call('syncFromPlugin');
+    const snapshot = await listener;
+    transferState.syncFromSnapshot(snapshot);
+  }
 }

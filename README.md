@@ -231,6 +231,7 @@ Add these to your `Info.plist`:
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
 * [`getState()`](#getstate)
+* [`syncFromPlugin()`](#syncfromplugin)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -597,6 +598,18 @@ Returns the shared reactive state instance for the plugin.
 Subscribe to state keys to receive updates on connection, transfer, and discovery events.
 
 **Returns:** <code>TransferState</code>
+
+--------------------
+
+
+### syncFromPlugin()
+
+```typescript
+syncFromPlugin() => Promise<void>
+```
+
+Syncs the reactive state from the native plugin's current snapshot.
+Call this after initialization to populate the reactive store with native state.
 
 --------------------
 
