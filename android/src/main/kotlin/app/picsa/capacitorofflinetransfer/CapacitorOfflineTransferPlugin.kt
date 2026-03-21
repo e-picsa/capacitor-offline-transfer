@@ -280,6 +280,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     }
 
     @PluginMethod
+    @PluginMethod
     fun syncFromPlugin(call: PluginCall) {
         val result = JSObject()
         val endpoints = implementation.getDiscoveredEndpoints()
@@ -289,7 +290,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         result.put("activeTransfers", JSObject())
         result.put("transferHistory", JSArray())
         result.put("stats", JSObject().put("totalBytesTransferred", 0).put("filesTransferred", 0).put("sessionStart", sessionStartTime).put("currentSpeedBps", 0))
-        notifyListeners("stateSynced", result)
-        call.resolve()
+        call.resolve(result)
     }
 }
