@@ -1,24 +1,23 @@
-import { bootstrap as bootstrapAndroid } from './phases/bootstrap.android';
-import { startDevLoop as startDevLoopAndroid } from './phases/dev-loop.android';
-import { bootstrap as bootstrapIOS } from './phases/bootstrap.ios';
-import { startDevLoop as startDevLoopIOS } from './phases/dev-loop.ios';
 import { pad, boxLine } from './utils/string.utils';
 import type { DevContext } from './types';
-import { bootstrapShared } from './phases/bootstrap.shared';
+import { startViteServer } from './utils/app.utils';
+import { BOOTSTRAP } from './bootstrap';
+import { runWatchers } from './watchers';
 
+/**
+ * TODO
+ * - tidy up banner
+ * - get watchers from bootstrap
+ */
 async function main(): Promise<void> {
-  let ctx = await bootstrapShared();
+  let ctx = await BOOTSTRAP.shared();
+  const { platform } = ctx;
+  ctx = await BOOTSTRAP[platform](ctx);
 
-  if (ctx.platform === 'android') {
-    ctx = await bootstrapAndroid(ctx);
-    printBanner(ctx);
-    await startDevLoopAndroid(ctx);
-  }
-  if (ctx.platform === 'ios') {
-    ctx = await bootstrapIOS(ctx);
-    printBanner(ctx);
-    await startDevLoopIOS(ctx);
-  }
+  printBanner(ctx);
+  startViteServer();
+
+  await runWatchers(ctx);
 }
 
 main().catch((err) => {

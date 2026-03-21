@@ -2,13 +2,12 @@ import { resolve } from 'path';
 import { existsSync } from 'fs';
 import { getEnv, saveEnv } from '../utils/env.utils';
 import { detectLocalIP, selectPlatform, execCmd, ensurePortFree } from '../utils/cli.utils';
-import { startViteServer } from '../commands/server';
 import { PATHS } from '../paths';
 import type { DevContext, Platform } from '../types';
 
 const DEFAULT_PORT = '5173';
 
-export async function bootstrapShared(): Promise<DevContext> {
+export default async (): Promise<DevContext> => {
   const env = getEnv();
   let serverIp = env.CAPACITOR_SERVER_IP || null;
   let serverPort = env.CAPACITOR_SERVER_PORT || DEFAULT_PORT;
@@ -49,10 +48,9 @@ export async function bootstrapShared(): Promise<DevContext> {
   }
 
   await ensurePortFree(serverPort);
-  startViteServer();
 
   return { platform, serverIp, serverPort, emulators: [] };
-}
+};
 
 function gracefulExit(code: number): never {
   process.exit(code);

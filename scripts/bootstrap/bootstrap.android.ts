@@ -1,9 +1,9 @@
-import { ensureEmulatorsRunning } from '../commands/emulator';
 import { adbReverse } from '../utils/adb.utils';
-import { syncAndroidNative } from '../commands/deploy';
 import { DevContext } from '../types';
+import { ensureEmulatorsRunning } from '../utils/emulator.utils';
+import { syncAndroidNative } from '../utils/android.utils';
 
-export async function bootstrap(ctx: DevContext) {
+export default async (ctx: DevContext) => {
   const env = require('../utils/env.utils').getEnv();
   const emulators = await ensureEmulatorsRunning(env.EMULATOR_AVDS);
 
@@ -26,7 +26,7 @@ export async function bootstrap(ctx: DevContext) {
     console.error('\n❌ Initial sync failed. Please fix errors and try again.');
     process.exit(1);
   }
-  ctx.emulators = emulators;
 
+  ctx.emulators = emulators;
   return ctx;
-}
+};

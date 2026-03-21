@@ -37,6 +37,16 @@ function parsePlatformArg(): 'android' | 'ios' | null {
   return null;
 }
 
+export function parseMultiSelect(input: string): string[] {
+  const parts = input
+    .split(/[,\s]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return [];
+  if (parts.length === 1 && (parts[0].toLowerCase() === 'all' || parts[0] === '*')) return ['*'];
+  return parts;
+}
+
 export async function selectPlatform(): Promise<'android' | 'ios'> {
   const arg = parsePlatformArg();
   if (arg) return arg;
