@@ -74,8 +74,6 @@ export async function startEmulators(avdNames: string[]): Promise<Emulator[]> {
 export async function coldBootEmulator(avdName: string, emulatorId: string): Promise<void> {
   console.log(`\n❄️  Cold-rebooting ${emulatorId} (${avdName})...`);
 
-  const before = new Set((await getRunningEmulators()).map((e) => e.id));
-
   await execCmd('adb', ['-s', emulatorId, 'emu', 'kill']);
 
   let disappeared = false;
@@ -93,8 +91,13 @@ export async function coldBootEmulator(avdName: string, emulatorId: string): Pro
     return;
   }
 
+  const portMatch = emulatorId.match(/^emulator-(\d+)$/);
+  const port = portMatch ? portMatch[1] : null;
+  const restartFlags = port
+    ? ['-avd', avdName, '-port', port, ...EMULATOR_FLAGS]
+    : ['-avd', avdName, ...EMULATOR_FLAGS];
   console.log(`    emulator shut down, restarting...`);
-  spawn('emulator', ['-avd', avdName, ...EMULATOR_FLAGS], {
+  spawn('emulator', restartFlags, {
     detached: true,
     stdio: 'ignore',
     shell: true,

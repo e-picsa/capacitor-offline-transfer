@@ -1,6 +1,10 @@
 import { spawn } from 'node:child_process';
 import { networkInterfaces, platform } from 'node:os';
 
+export function runDetached(cmd: string, args: string[]): void {
+  spawn(cmd, args, { detached: true, stdio: 'ignore', shell: true }).unref();
+}
+
 export function execCmd(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
   return new Promise((resolve) => {
     const proc = spawn(cmd, args, { shell: true });

@@ -5,7 +5,7 @@ import {
   startEmulators,
   coldBootEmulator,
 } from '../utils/emulator.utils';
-import { prompt } from '../utils/cli.utils';
+import { prompt, runDetached } from '../utils/cli.utils';
 
 function parseMultiSelect(input: string): string[] {
   const parts = input
@@ -76,6 +76,11 @@ export async function ensureEmulatorsRunning(envAvds?: string): Promise<Emulator
 
   const started = await startEmulators(toStart);
   return started;
+}
+
+export async function openAndroidStudio(): Promise<void> {
+  console.log('\n📦 Opening Android Studio...');
+  runDetached('npx', ['cap', 'open', 'android']);
 }
 
 export async function coldRebootAll(emulators: Emulator[]): Promise<void> {

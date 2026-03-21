@@ -4,7 +4,7 @@ import { watch } from 'fs';
 import { resolve } from 'path';
 import { getEnv, saveEnv } from './utils/env.utils';
 import { detectLocalIP, prompt } from './utils/cli.utils';
-import { ensureEmulatorsRunning, coldRebootAll } from './commands/emulator';
+import { ensureEmulatorsRunning, coldRebootAll, openAndroidStudio } from './commands/emulator';
 import { fullRedeploy, reinstallAll, syncPluginAndNative, deployToAll } from './commands/deploy';
 import { startViteServer, ensurePortFree, viteProc } from './commands/server';
 import { PATHS } from './paths';
@@ -79,6 +79,7 @@ async function main(): Promise<void> {
 ║  Press R:         Force rebuild & redeploy                   ║
 ║  Press I:         Reinstall app (no rebuild)                  ║
 ║  Press C:         Cold-reboot all emulators                   ║
+║  Press A:         Open Android Studio                         ║
 ╚══════════════════════════════════════════════════════════════╝
 `);
 
@@ -133,6 +134,9 @@ async function watchLoop(emulators: Emulator[], port: string): Promise<void> {
         console.log(`\n👀 Watching native changes...`);
       });
     }
+    if (key.name?.toLowerCase() === 'a') {
+      openAndroidStudio();
+    }
   });
 
   watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, (_evt, filename) => {
@@ -149,10 +153,12 @@ async function watchLoop(emulators: Emulator[], port: string): Promise<void> {
     process.on('SIGINT', () => {
       console.log('\n👋 Shutting down...');
       process.stdin.setRawMode?.(false);
+      process.stdin.pause?.();
       if (viteProc) viteProc.kill();
       resolve();
     }),
   );
+  process.exit(0);
 }
 
 console.log('\n👀 Watching for native changes...\n');
