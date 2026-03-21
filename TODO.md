@@ -1,7 +1,6 @@
 - [ ] Dev script deploy to physical devices
-- [ ] Separate bootstrap and watcher scripts for ios and android
-- [ ] Consider ios dev script integration (and code-separation for android)
 - [ ] Automated testing for older devices
+- [ ] Dev script ios support
 - [ ] Update core capacitor 8 (min sdk 24 -> 7.0)
 - [ ] Fallback for older devices API 24-30 (>=7, <12), using hotspot
 

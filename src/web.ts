@@ -1,6 +1,11 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { OfflineTransferPlugin, PermissionStatus, PlatformCapabilities } from './definitions';
+import type {
+  OfflineTransferPlugin,
+  PermissionStatus,
+  PlatformCapabilities,
+  TransferStateSnapshot,
+} from './definitions';
 import type { TransferState } from './reactive-state';
 import { transferState } from './reactive-state';
 
@@ -112,9 +117,12 @@ export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlug
     return transferState;
   }
 
-  async syncFromPlugin(): Promise<any> {
+  async syncFromPlugin(): Promise<TransferStateSnapshot> {
     const bridge = (window as any).__capacitorOfflineTransferBridge;
-    if (!bridge) return;
+    if (!bridge) {
+      console.warn('OfflineTransfer: Bridge not available for sync');
+      throw new Error('Bridge not available');
+    }
     const snapshot = await bridge.call('syncFromPlugin');
     transferState.syncFromSnapshot(snapshot);
     return snapshot;
