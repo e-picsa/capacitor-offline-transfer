@@ -1,10 +1,8 @@
-export interface Emulator {
-  id: string;
-  state: string;
-  avdName: string;
-}
+import type { Emulator } from './utils/emulator.utils';
 
 export type Platform = 'android' | 'ios';
+
+export type KeyAction = 'redeploy' | 'reinstall' | 'reboot' | 'studio' | 'xcode' | 'quit' | null;
 
 export interface DevContext {
   platform: Platform;
@@ -12,20 +10,3 @@ export interface DevContext {
   serverIp: string;
   serverPort: string;
 }
-
-export interface CommandContext {
-  emulators: Emulator[];
-  port: string;
-  isSyncing: () => boolean;
-  setSyncing: (v: boolean) => void;
-  clearDebounceTimer: () => void;
-}
-
-export interface Command {
-  key: string;
-  label: string;
-  description: string;
-  action: (ctx: CommandContext) => void | Promise<void>;
-}
-
-export type KeyAction = 'redeploy' | 'reinstall' | 'reboot' | 'studio' | 'quit' | null;

@@ -1,9 +1,15 @@
-import { bootstrap } from './phases/bootstrap';
-import { startDevLoop } from './phases/dev-loop';
 import { pad, boxLine } from './utils/string.utils';
 import type { DevContext } from './types';
 
 async function main(): Promise<void> {
+  const platform = process.argv[2]?.trim().toLowerCase() ?? 'android';
+  if (platform !== 'android' && platform !== 'ios') {
+    console.error(`Unknown platform: ${platform}. Use "android" or "ios".`);
+    process.exit(1);
+  }
+
+  const [{ bootstrap, startDevLoop }] = await Promise.all([import(`./phases/bootstrap.${platform}`)]);
+
   const ctx = await bootstrap();
   printBanner(ctx);
   await startDevLoop(ctx);
@@ -27,15 +33,15 @@ function printBanner(ctx: DevContext): void {
   const valueWidth = innerWidth - 'Emulators:   '.length;
 
   console.log(`
-${borderTop}
-${boxLine('LIVE-RELOAD READY', WIDTH, 20)}
-${borderMid}
-${boxLine(`Web server:  http://localhost:${pad(ctx.serverPort, 18)}`, WIDTH, 2)}
-${boxLine(`Emulators:   ${pad(emulatorList, valueWidth)}`, WIDTH, 2)}
-${boxLine(`Platform:    ${pad(ctx.platform, valueWidth)}`, WIDTH, 2)}
-${borderMid}
-${boxLine('Web/JS changes:  Auto-loaded via Vite HMR', WIDTH, 2)}
-${boxLine('Native changes:  Auto-rebuilds plugin + redeploys all', WIDTH, 2)}
-${borderBot}
+ ${borderTop}
+ ${boxLine('LIVE-RELOAD READY', WIDTH, 20)}
+ ${borderMid}
+ ${boxLine(`Web server:  http://localhost:${pad(ctx.serverPort, 18)}`, WIDTH, 2)}
+ ${boxLine(`Emulators:   ${pad(emulatorList, valueWidth)}`, WIDTH, 2)}
+ ${boxLine(`Platform:    ${pad(ctx.platform, valueWidth)}`, WIDTH, 2)}
+ ${borderMid}
+ ${boxLine('Web/JS changes:  Auto-loaded via Vite HMR', WIDTH, 2)}
+ ${boxLine('Native changes:  Auto-rebuilds plugin + redeploys all', WIDTH, 2)}
+ ${borderBot}
 `);
 }

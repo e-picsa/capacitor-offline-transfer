@@ -272,7 +272,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     }
 
     @PluginMethod
-    @PluginMethod
     fun syncFromPlugin(call: PluginCall) {
         call.resolve(buildStateSnapshot())
     }
@@ -286,6 +285,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         result.put("activeTransfers", JSObject())
         result.put("transferHistory", JSArray())
         result.put("stats", JSObject().put("totalBytesTransferred", 0).put("filesTransferred", 0).put("sessionStart", sessionStartTime).put("currentSpeedBps", 0))
-        call.resolve(result)
+        return result
     }
 }
