@@ -4,11 +4,6 @@ import { startViteServer } from './utils/app.utils';
 import { BOOTSTRAP } from './bootstrap';
 import { runWatchers } from './watchers';
 
-/**
- * TODO
- * - tidy up banner
- * - get watchers from bootstrap
- */
 async function main(): Promise<void> {
   let ctx = await BOOTSTRAP.shared();
   const { platform } = ctx;
