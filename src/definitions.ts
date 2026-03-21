@@ -1,7 +1,7 @@
 /// <reference lib="esnext" />
 import type { PermissionState, PluginListenerHandle } from '@capacitor/core';
 
-import type { TransferState } from './reactive-state';
+import type { ConnectedEndpoint, StatsSnapshot, TransferRecord, TransferState } from './reactive-state';
 
 export interface PermissionStatus {
   nearby: PermissionState;
@@ -160,6 +160,13 @@ export interface OfflineTransferPlugin {
    * Subscribe to state keys to receive updates on connection, transfer, and discovery events.
    */
   getState(): TransferState;
+
+  /**
+   * Syncs the reactive state from the native plugin's current snapshot.
+   * Call this after initialization to populate the reactive store with native state.
+   * Returns the state snapshot directly in the resolved promise.
+   */
+  syncFromPlugin(): Promise<TransferStateSnapshot>;
 }
 
 export interface ConnectionRequestEvent {
@@ -202,4 +209,12 @@ export interface FileReceivedEvent {
   payloadId: string;
   fileName: string;
   path: string;
+}
+
+export interface TransferStateSnapshot {
+  endpoints: Record<string, EndpointFoundEvent>;
+  connectedEndpoints: Record<string, ConnectedEndpoint>;
+  activeTransfers: Record<string, TransferProgressEvent>;
+  transferHistory: TransferRecord[];
+  stats: StatsSnapshot;
 }

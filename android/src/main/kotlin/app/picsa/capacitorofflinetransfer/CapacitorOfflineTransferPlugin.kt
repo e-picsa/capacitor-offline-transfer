@@ -268,6 +268,16 @@ class CapacitorOfflineTransferPlugin : Plugin() {
 
     @PluginMethod
     fun getState(call: PluginCall) {
+        call.resolve(buildStateSnapshot())
+    }
+
+    @PluginMethod
+    @PluginMethod
+    fun syncFromPlugin(call: PluginCall) {
+        call.resolve(buildStateSnapshot())
+    }
+
+    private fun buildStateSnapshot(): JSObject {
         val result = JSObject()
         val endpoints = implementation.getDiscoveredEndpoints()
         val connectedEndpoints = implementation.getConnectedEndpoints()

@@ -231,6 +231,7 @@ Add these to your `Info.plist`:
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
 * [`getState()`](#getstate)
+* [`syncFromPlugin()`](#syncfromplugin)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -601,6 +602,21 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 --------------------
 
 
+### syncFromPlugin()
+
+```typescript
+syncFromPlugin() => Promise<TransferStateSnapshot>
+```
+
+Syncs the reactive state from the native plugin's current snapshot.
+Call this after initialization to populate the reactive store with native state.
+Returns the state snapshot directly in the resolved promise.
+
+**Returns:** <code>Promise&lt;<a href="#transferstatesnapshot">TransferStateSnapshot</a>&gt;</code>
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -692,6 +708,52 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 | **`nearby`** | <code><a href="#permissionstate">PermissionState</a></code> |
 
 
+#### TransferStateSnapshot
+
+| Prop                     | Type                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| **`endpoints`**          | <code><a href="#record">Record</a>&lt;string, <a href="#endpointfoundevent">EndpointFoundEvent</a>&gt;</code>       |
+| **`connectedEndpoints`** | <code><a href="#record">Record</a>&lt;string, <a href="#connectedendpoint">ConnectedEndpoint</a>&gt;</code>         |
+| **`activeTransfers`**    | <code><a href="#record">Record</a>&lt;string, <a href="#transferprogressevent">TransferProgressEvent</a>&gt;</code> |
+| **`transferHistory`**    | <code>TransferRecord[]</code>                                                                                       |
+| **`stats`**              | <code><a href="#statssnapshot">StatsSnapshot</a></code>                                                             |
+
+
+#### ConnectedEndpoint
+
+| Prop               | Type                |
+| ------------------ | ------------------- |
+| **`endpointId`**   | <code>string</code> |
+| **`endpointName`** | <code>string</code> |
+| **`connectedAt`**  | <code>number</code> |
+
+
+#### TransferRecord
+
+| Prop                   | Type                                                                |
+| ---------------------- | ------------------------------------------------------------------- |
+| **`id`**               | <code>string</code>                                                 |
+| **`endpointId`**       | <code>string</code>                                                 |
+| **`fileName`**         | <code>string</code>                                                 |
+| **`totalBytes`**       | <code>number</code>                                                 |
+| **`bytesTransferred`** | <code>number</code>                                                 |
+| **`direction`**        | <code>'sent' \| 'received'</code>                                   |
+| **`status`**           | <code>'SUCCESS' \| 'FAILURE' \| 'CANCELLED' \| 'IN_PROGRESS'</code> |
+| **`startedAt`**        | <code>number</code>                                                 |
+| **`completedAt`**      | <code>number</code>                                                 |
+| **`speedBps`**         | <code>number</code>                                                 |
+
+
+#### StatsSnapshot
+
+| Prop                        | Type                |
+| --------------------------- | ------------------- |
+| **`totalBytesTransferred`** | <code>number</code> |
+| **`filesTransferred`**      | <code>number</code> |
+| **`sessionStart`**          | <code>number</code> |
+| **`currentSpeedBps`**       | <code>number</code> |
+
+
 ### Type Aliases
 
 
@@ -708,6 +770,13 @@ Subscribe to state keys to receive updates on connection, transfer, and discover
 #### PermissionState
 
 <code>'prompt' | 'prompt-with-rationale' | 'granted' | 'denied'</code>
+
+
+#### Record
+
+Construct a type with a set of properties K of type T
+
+<code>{ [P in K]: T; }</code>
 
 </docgen-api>
 
