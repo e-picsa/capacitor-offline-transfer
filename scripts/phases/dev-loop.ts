@@ -9,27 +9,36 @@ export async function startDevLoop(ctx: DevContext): Promise<void> {
     onNativeChange(label, ctx);
   });
 
+  const abort = new AbortController();
+
   const cleanup = setupKeypress((action: KeyAction) => {
-    onKeyAction(action, ctx);
+    onKeyAction(action, ctx, abort);
+  });
+
+  abort.signal.addEventListener('abort', () => {
+    cleanup();
+    watchers.forEach((w) => w.close());
+  });
+
+  process.once('SIGINT', () => {
+    console.log('\n👋 Shutting down...');
+    abort.abort();
+  });
+  process.once('SIGTERM', () => {
+    console.log('\n👋 Shutting down...');
+    abort.abort();
   });
 
   await deployToAll(ctx.emulators, ctx.serverPort);
 
   await new Promise<void>((resolve) => {
-    const abort = new AbortController();
-    abort.signal.addEventListener('abort', () => {
-      cleanup();
-      watchers.forEach((w) => w.close());
-      resolve();
-    });
-    process.once('SIGINT', () => {
-      console.log('\n👋 Shutting down...');
-      abort.abort();
-    });
-    process.once('SIGTERM', () => {
-      console.log('\n👋 Shutting down...');
-      abort.abort();
-    });
+    abort.signal.addEventListener(
+      'abort',
+      () => {
+        resolve();
+      },
+      { once: true },
+    );
   });
 }
 
@@ -42,8 +51,14 @@ async function onNativeChange(label: string, ctx: DevContext): Promise<void> {
 
 type KnownKeyAction = Exclude<KeyAction, null>;
 
-function onKeyAction(action: KeyAction, ctx: DevContext): void {
+function onKeyAction(action: KeyAction, ctx: DevContext, abort: AbortController): void {
   if (!action) return;
+
+  if (action === 'quit') {
+    console.log('\n👋 Shutting down...');
+    abort.abort();
+    return;
+  }
 
   const commandContext: CommandContext = {
     emulators: ctx.emulators,
@@ -58,6 +73,7 @@ function onKeyAction(action: KeyAction, ctx: DevContext): void {
     reinstall: 'i',
     reboot: 'c',
     studio: 'a',
+    quit: 'q',
   };
 
   const key = keyMap[action];

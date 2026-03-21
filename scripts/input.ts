@@ -11,10 +11,14 @@ export function setupKeypress(onAction: (action: KeyAction) => void): () => void
     i: 'reinstall',
     c: 'reboot',
     a: 'studio',
+    q: 'quit',
   };
 
   const handler = (_ch: string, key: { name: string; ctrl: boolean }) => {
-    if (key.ctrl && key.name === 'c') return;
+    if (key.ctrl && key.name === 'c') {
+      process.emit('SIGINT');
+      return;
+    }
     const action = map[key.name?.toLowerCase()] ?? null;
     if (action) onAction(action);
   };

@@ -1,5 +1,19 @@
+import { bootstrap } from './phases/bootstrap';
+import { startDevLoop } from './phases/dev-loop';
 import { pad, boxLine } from './utils/string.utils';
 import type { DevContext } from './types';
+
+async function main(): Promise<void> {
+  const ctx = await bootstrap();
+  printBanner(ctx);
+  await startDevLoop(ctx);
+}
+
+console.log('\n👀 Watching for native changes...\n');
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
 
 function printBanner(ctx: DevContext): void {
   const WIDTH = 62;
@@ -25,18 +39,3 @@ ${boxLine('Native changes:  Auto-rebuilds plugin + redeploys all', WIDTH, 2)}
 ${borderBot}
 `);
 }
-
-import { bootstrap } from './phases/bootstrap';
-import { startDevLoop } from './phases/dev-loop';
-
-async function main(): Promise<void> {
-  const ctx = await bootstrap();
-  printBanner(ctx);
-  await startDevLoop(ctx);
-}
-
-console.log('\n👀 Watching for native changes...\n');
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});

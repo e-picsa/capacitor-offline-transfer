@@ -28,4 +28,4 @@ export interface Command {
   action: (ctx: CommandContext) => void | Promise<void>;
 }
 
-export type KeyAction = 'redeploy' | 'reinstall' | 'reboot' | 'studio' | null;
+export type KeyAction = 'redeploy' | 'reinstall' | 'reboot' | 'studio' | 'quit' | null;
