@@ -1,0 +1,64 @@
+import type { Emulator } from '../utils/emulator.utils';
+import { fullRedeploy, reinstallAll } from './deploy';
+import { coldRebootAll, openAndroidStudio } from './emulator';
+
+export interface CommandContext {
+  emulators: Emulator[];
+  isSyncing: () => boolean;
+  setSyncing: (v: boolean) => void;
+  clearDebounceTimer: () => void;
+}
+
+export interface Command {
+  key: string;
+  label: string;
+  description: string;
+  action: (ctx: CommandContext) => void | Promise<void>;
+}
+
+const onDone = (ctx: CommandContext) => {
+  ctx.setSyncing(false);
+  console.log(`\n👀 Watching native changes...`);
+};
+
+export const COMMANDS: Command[] = [
+  {
+    key: 'r',
+    label: 'Press R:',
+    description: 'Force rebuild & redeploy',
+    action: (ctx) => {
+      ctx.clearDebounceTimer();
+      if (ctx.isSyncing()) return;
+      ctx.setSyncing(true);
+      fullRedeploy(ctx.emulators).finally(() => onDone(ctx));
+    },
+  },
+  {
+    key: 'i',
+    label: 'Press I:',
+    description: 'Reinstall app (no rebuild)',
+    action: (ctx) => {
+      if (ctx.isSyncing()) return;
+      ctx.setSyncing(true);
+      reinstallAll(ctx.emulators).finally(() => onDone(ctx));
+    },
+  },
+  {
+    key: 'c',
+    label: 'Press C:',
+    description: 'Cold-reboot all emulators',
+    action: (ctx) => {
+      if (ctx.isSyncing()) return;
+      ctx.setSyncing(true);
+      coldRebootAll(ctx.emulators).finally(() => onDone(ctx));
+    },
+  },
+  {
+    key: 'a',
+    label: 'Press A:',
+    description: 'Open Android Studio',
+    action: () => {
+      openAndroidStudio();
+    },
+  },
+];

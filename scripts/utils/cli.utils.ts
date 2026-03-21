@@ -1,9 +1,17 @@
 import { spawn } from 'node:child_process';
 import { networkInterfaces, platform } from 'node:os';
 
-export function execCmd(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
+export function runDetached(cmd: string, args: string[]): void {
+  spawn(cmd, args, { detached: true, stdio: 'ignore', shell: true }).unref();
+}
+
+export function execCmd(
+  cmd: string,
+  args: string[],
+  cwd?: string,
+): Promise<{ stdout: string; stderr: string; code: number }> {
   return new Promise((resolve) => {
-    const proc = spawn(cmd, args, { shell: true });
+    const proc = spawn(cmd, args, { shell: true, cwd });
     let stdout = '';
     let stderr = '';
     proc.stdout?.on('data', (d) => (stdout += d.toString()));
@@ -21,6 +29,19 @@ export async function prompt(question: string): Promise<string> {
       resolve(ans);
     });
   });
+}
+
+function parsePlatformArg(): 'android' | 'ios' | null {
+  const platform = process.argv[2]?.trim().toLowerCase();
+  if (platform === 'android' || platform === 'ios') return platform;
+  return null;
+}
+
+export async function selectPlatform(): Promise<'android' | 'ios'> {
+  const arg = parsePlatformArg();
+  if (arg) return arg;
+  const ans = (await prompt('Select platform (android/ios) [android]: ')).trim().toLowerCase();
+  return ans === 'ios' ? 'ios' : 'android';
 }
 
 export function detectLocalIP(): string | null {

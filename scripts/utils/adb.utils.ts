@@ -1,10 +1,18 @@
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
 import { execCmd } from './cli.utils';
 import { PATHS } from '../paths';
 
-const APP_ID = 'com.example.offlineTransfer'; // adjust to your actual package name
+function getAppId(): string {
+  const configPath = resolve(PATHS.EXAMPLE_APP, 'capacitor.config.ts');
+  const content = readFileSync(configPath, 'utf-8');
+  const match = content.match(/appId:\s*['"]([^'"]+)['"]/);
+  if (!match) throw new Error('Could not find appId in example/capacitor.config.ts');
+  return match[1];
+}
+
+const APP_ID = getAppId();
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1_000;
@@ -158,6 +166,75 @@ function getFatalMessage(errorOutput: string): string {
     if (matchesAny(lower, patterns)) return message;
   }
   return errorOutput.substring(0, 200);
+}
+
+const LAUNCH_PATTERNS = ['starting', 'started'];
+
+const LAUNCH_ERRORS: { patterns: string[]; message: string }[] = [
+  {
+    patterns: ['not found', 'unable to resolve'],
+    message: `Activity not found for ${APP_ID}/.MainActivity`,
+  },
+  {
+    patterns: ['app is not installed', 'package does not exist'],
+    message: `App ${APP_ID} is not installed on the emulator`,
+  },
+  {
+    patterns: ['device not ready', 'device offline'],
+    message: 'Emulator is not ready',
+  },
+  {
+    patterns: ['security exception', 'permission denied'],
+    message: 'Permission denied when launching app',
+  },
+];
+
+function getLaunchError(errorOutput: string): string | null {
+  const lower = errorOutput.toLowerCase();
+  for (const { patterns, message } of LAUNCH_ERRORS) {
+    if (patterns.some((p) => lower.includes(p))) return message;
+  }
+  return null;
+}
+
+export async function adbLaunch(emulatorId: string): Promise<{ success: boolean; error?: string }> {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 1) await retryDelay(attempt);
+
+    const { code, stdout, stderr } = await execCmd('adb', [
+      '-s',
+      emulatorId,
+      'shell',
+      'am',
+      'start',
+      '-n',
+      `${APP_ID}/.MainActivity`,
+    ]);
+
+    const output = (stdout || stderr).trim().toLowerCase();
+
+    if (code === 0 && LAUNCH_PATTERNS.some((p) => output.includes(p))) {
+      return { success: true };
+    }
+
+    const errorMsg = getLaunchError(output);
+    if (errorMsg) {
+      return { success: false, error: errorMsg };
+    }
+
+    if (attempt < MAX_RETRIES) {
+      const rawOutput = (stdout || stderr).trim().substring(0, 150);
+      console.error(`\n    ⚠️  adb launch warning (attempt ${attempt}): ${rawOutput}`);
+      continue;
+    }
+
+    return {
+      success: false,
+      error: `adb launch failed after ${MAX_RETRIES} attempts: ${(stdout || stderr).trim().substring(0, 200)}`,
+    };
+  }
+
+  return { success: false, error: 'Unknown launch error' };
 }
 
 export async function adbInstall(emulatorId: string): Promise<AdbInstallResult> {
