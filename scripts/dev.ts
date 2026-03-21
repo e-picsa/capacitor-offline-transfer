@@ -6,7 +6,7 @@ import { getEnv, saveEnv } from './utils/env.utils';
 import { PATHS } from './paths';
 import { detectLocalIP, execCmd, prompt } from './utils/cli.utils';
 import { Emulator, getAvailableAVDs, getRunningEmulators, startEmulators } from './utils/emulator.utils';
-import { adbInstall, adbReverse } from './utils/adb.utils';
+import { adbInstall, adbLaunch, adbReverse } from './utils/adb.utils';
 
 const DEFAULT_PORT = '5173';
 const APP_ID = 'com.example.offlineTransfer';
@@ -77,10 +77,6 @@ async function syncPluginAndNative(): Promise<boolean> {
   return await runInExample(['bun', 'run', 'sync:native'], 'cap sync');
 }
 
-async function adbLaunch(emulatorId: string): Promise<void> {
-  await execCmd('adb', ['-s', emulatorId, 'shell', 'am', 'start', '-n', `${APP_ID}/.MainActivity`]);
-}
-
 function startViteServer(): void {
   if (viteProc) {
     viteProc.kill();
@@ -133,7 +129,11 @@ async function deployToAllEmulators(port: string): Promise<void> {
     }
     console.log('✅');
     process.stdout.write(`  [${em.id}] launch app... `);
-    await adbLaunch(em.id);
+    const launchResult = await adbLaunch(em.id);
+    if (!launchResult.success) {
+      console.log(`❌\n    ↳ ${launchResult.error ?? 'Unknown error'}`);
+      continue;
+    }
     console.log('✅');
   }
 }
@@ -251,6 +251,7 @@ async function main(): Promise<void> {
 ╠══════════════════════════════════════════════════════════════╣
 ║  Web/JS changes:  Auto-loaded via Vite HMR                   ║
 ║  Native changes:  Auto-rebuilds plugin + redeploys all      ║
+║  Press R:         Force rebuild & redeploy                   ║
 ╚══════════════════════════════════════════════════════════════╝
 `);
 
@@ -276,6 +277,21 @@ async function watchNativeChanges(port: string): Promise<void> {
     }, 1000);
   }
 
+  process.stdin.setRawMode?.(true);
+  process.stdin.resume?.();
+  process.stdin.on('keypress', (_ch: string, key: { name: string; ctrl: boolean }) => {
+    if (key.ctrl && key.name === 'c') return;
+    if (key.name?.toLowerCase() === 'r') {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (syncing) return;
+      syncing = true;
+      redeployAll(port).finally(() => {
+        syncing = false;
+        console.log(`\n👀 Watching native changes...`);
+      });
+    }
+  });
+
   watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, (_evt, filename) => {
     console.log(`\n📦 Plugin Android changed: ${filename}`);
     onChange('Android');
@@ -288,7 +304,8 @@ async function watchNativeChanges(port: string): Promise<void> {
 
   await new Promise<void>((resolve) =>
     process.on('SIGINT', () => {
-      console.log('\n👋 Shutting down Vite...');
+      console.log('\n👋 Shutting down...');
+      process.stdin.setRawMode?.(false);
       if (viteProc) viteProc.kill();
       resolve();
     }),
