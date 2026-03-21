@@ -1,97 +1,131 @@
 import readline from 'readline';
 
-import { DevContext, KeyAction } from '../types.ts';
+import { DevContext, Platform } from '../types.ts';
 import android from './watchers.android';
 import ios from './watchers.ios.ts';
-import { Command, CommandContext } from '../commands/commands.types.ts';
-import { COMMANDS, createCommandCtx } from '../commands/index.ts';
+import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types.ts';
+import { FSWatcher, watch } from 'fs';
+import { debounce } from '../utils/debounce.ts';
 
-const WATCHERS = { android, ios };
-
-const onDone = (ctx: CommandContext) => {
-  ctx.setSyncing(false);
-  console.log(`\n👀 Watching for changes...`);
-};
+const WATCHERS: Record<Platform, { filePaths: FileWatcherDef[]; keyCommands: KeyWatcherDef[] }> = { android, ios };
 
 export async function runWatchers(ctx: DevContext): Promise<void> {
+  // Setup shared context
   const { platform } = ctx;
   const abort = new AbortController();
   const cmdCtx = createCommandCtx(ctx);
-  const watchers = WATCHERS[platform](cmdCtx);
-  const commands = COMMANDS[platform](cmdCtx);
 
-  const cleanup = setupKeypress((action: KeyAction) => {
-    onKeyAction(action, cmdCtx, abort, commands, () => onDone(cmdCtx));
+  // Setup key press and file watchers
+  const { filePaths, keyCommands } = WATCHERS[platform];
+
+  const cleanup = setupKeypress((key) => {
+    handleKeypress(key, cmdCtx, abort, keyCommands);
   });
+  const fsWatchers = startFileWatchers(filePaths, cmdCtx);
 
+  // Handle Signals
   abort.signal.addEventListener('abort', () => {
     cleanup();
-    watchers.forEach((w) => w.close());
+    fsWatchers.forEach((w) => w.close());
   });
 
-  process.once('SIGINT', () => {
+  const onSignal = (signal: NodeJS.Signals) => {
     console.log('\n👋 Shutting down...');
     abort.abort();
-    process.kill(process.pid, 'SIGINT');
-  });
-  process.once('SIGTERM', () => {
-    console.log('\n👋 Shutting down...');
-    abort.abort();
-    process.kill(process.pid, 'SIGTERM');
-  });
+    process.kill(process.pid, signal);
+  };
+  process.once('SIGINT', () => onSignal('SIGINT'));
+  process.once('SIGTERM', () => onSignal('SIGTERM'));
+
+  console.log(`\n👀 Watching for changes...`);
+  printHelp(keyCommands);
 
   await new Promise<void>((resolve) => {
     abort.signal.addEventListener('abort', () => resolve(), { once: true });
   });
 }
 
-function onKeyAction(
-  action: KeyAction,
-  ctx: CommandContext,
-  abort: AbortController,
-  commands: Command[],
-  onDone: () => void,
-): void {
-  if (!action) return;
+/**
+ * Create a comman context used to block file watch and keypress actions
+ * while existing actions are pending
+ */
+export function createCommandCtx(ctx: DevContext): WatchContext {
+  let syncing = false;
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  if (action === 'quit') {
+  return {
+    ...ctx,
+    isSyncing: () => syncing,
+    setSyncing: (v: boolean) => {
+      syncing = v;
+    },
+    clearDebounceTimer: () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+    },
+  };
+}
+
+/**
+ * Watch platform-specific file paths and trigger related actions
+ */
+function startFileWatchers(defs: FileWatcherDef[], ctx: WatchContext): FSWatcher[] {
+  return defs.map((def) => {
+    const onChange = debounce(async () => {
+      if (ctx.isSyncing()) return;
+      ctx.clearDebounceTimer();
+      ctx.setSyncing(true);
+      await def.action(ctx);
+      ctx.setSyncing(false);
+      console.log(`\n👀 Watching for changes...`);
+    }, 500);
+
+    return watch(def.path, { recursive: true }, (_evt, filename) => {
+      if (!filename) return;
+      if (!def.pattern.test(filename)) return;
+      onChange();
+    });
+  });
+}
+
+function handleKeypress(key: string, ctx: WatchContext, abort: AbortController, commands: KeyWatcherDef[]): void {
+  if (key === 'q') {
     console.log('\n👋 Shutting down...');
     abort.abort();
     return;
   }
 
-  ctx.clearDebounceTimer();
+  const cmd = commands.find((c) => c.key === key);
+  if (!cmd) return;
 
-  const cmd = commands.find((c) => c.key === action);
-  if (cmd) {
+  if (cmd.exclusive) {
+    if (ctx.isSyncing()) return;
+    ctx.clearDebounceTimer();
     ctx.setSyncing(true);
     Promise.resolve(cmd.action(ctx)).finally(() => {
       ctx.setSyncing(false);
-      onDone();
+      console.log(`\n👀 Watching for changes...`);
     });
+  } else {
+    cmd.action(ctx);
   }
 }
 
-function setupKeypress(onAction: (action: KeyAction) => void): () => void {
+function printHelp(commands: KeyWatcherDef[]): void {
+  commands.forEach((c) => console.log(`  ${c.label} ${c.description}`));
+  console.log('  Press Q: Quit');
+}
+
+function setupKeypress(onKey: (key: string) => void): () => void {
   readline.emitKeypressEvents(process.stdin);
   process.stdin.setRawMode?.(true);
   process.stdin.resume?.();
-
-  const map: Record<string, KeyAction> = {
-    r: 'redeploy',
-    i: 'reinstall',
-    c: 'reboot',
-    a: 'studio',
-    q: 'quit',
-  };
 
   const handler = (_ch: string, key: { name: string; ctrl: boolean }) => {
     if (key.ctrl && key.name === 'c') {
       process.emit('SIGINT');
       return;
     }
-    const action = map[key.name?.toLowerCase()] ?? null;
-    if (action) onAction(action);
+    if (key.name) onKey(key.name.toLowerCase());
   };
 
   process.stdin.on('keypress', handler);

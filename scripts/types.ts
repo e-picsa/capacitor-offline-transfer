@@ -2,8 +2,6 @@ import type { Emulator } from './utils/emulator.utils';
 
 export type Platform = 'android' | 'ios';
 
-export type KeyAction = 'redeploy' | 'reinstall' | 'reboot' | 'studio' | 'xcode' | 'quit' | null;
-
 export interface DevContext {
   platform: Platform;
   emulators: Emulator[];

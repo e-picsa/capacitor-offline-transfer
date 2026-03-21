@@ -1,31 +1,42 @@
-import { watch } from 'fs';
 import { resolve } from 'path';
+import { fullRedeployIOS, openXcode, syncIOSNative } from '../utils/ios.utils';
+import { FileWatcherDef, KeyWatcherDef } from './watchers.types';
 import { PATHS } from '../paths';
-import { CommandContext } from '../commands/commands.types';
-import { debounce } from '../utils/debounce';
-import { syncIOSNative } from '../utils/ios.utils';
 
-export default (ctx: CommandContext) => {
-  const onChange = debounce(async () => {
-    if (ctx.isSyncing()) return;
-    ctx.setSyncing(true);
-    console.log('\n📦 iOS native changed, syncing...');
-    await syncIOSNative();
-    ctx.setSyncing(false);
-    console.log(`\n👀 Watching iOS + plugin changes...`);
-  }, 500);
-
-  const iosSrcWatch = watch(resolve(PATHS.ROOT, 'ios', 'Sources'), { recursive: true }, (_evt, filename) => {
-    if (!filename) return;
-    if (!/\.(swift|m|h)$/.test(filename)) return;
-    onChange();
-  });
-
-  const tsSrcWatch = watch(resolve(PATHS.ROOT, 'src'), { recursive: true }, (_evt, filename) => {
-    if (!filename) return;
-    if (!/\.ts$/.test(filename)) return;
-    onChange();
-  });
-
-  return [iosSrcWatch, tsSrcWatch];
+const syncIOS = async () => {
+  console.log('\n📦 iOS native changed, syncing...');
+  await syncIOSNative();
 };
+
+const filePaths = [
+  {
+    path: resolve(PATHS.ROOT, 'ios', 'Sources'),
+    pattern: /\.(swift|m|h)$/,
+    label: 'iOS sources',
+    action: syncIOS,
+  },
+  {
+    path: resolve(PATHS.ROOT, 'src'),
+    pattern: /\.ts$/,
+    label: 'TypeScript sources',
+    action: syncIOS,
+  },
+] satisfies FileWatcherDef[];
+
+const keyCommands = [
+  {
+    key: 'r',
+    label: 'Press R:',
+    description: 'Force rebuild & redeploy',
+    exclusive: true,
+    action: (ctx) => fullRedeployIOS(ctx.serverPort),
+  },
+  {
+    key: 'x',
+    label: 'Press X:',
+    description: 'Open Xcode',
+    action: () => openXcode(),
+  },
+] satisfies KeyWatcherDef[];
+
+export default { filePaths, keyCommands };

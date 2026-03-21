@@ -5,9 +5,9 @@ import { BOOTSTRAP } from './bootstrap';
 import { runWatchers } from './watchers';
 
 async function main(): Promise<void> {
-  let ctx = await BOOTSTRAP.shared();
-  const { platform } = ctx;
-  ctx = await BOOTSTRAP[platform](ctx);
+  let baseCtx = await BOOTSTRAP.shared();
+  const { platform } = baseCtx;
+  const ctx = await BOOTSTRAP[platform](baseCtx);
 
   printBanner(ctx);
   startViteServer();
