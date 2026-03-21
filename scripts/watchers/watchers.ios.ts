@@ -15,9 +15,17 @@ export default (ctx: CommandContext) => {
     console.log(`\n👀 Watching iOS + plugin changes...`);
   }, 500);
 
-  return watch(resolve(PATHS.ROOT, 'ios', 'Sources'), { recursive: true }, (_evt, filename) => {
+  const iosSrcWatch = watch(resolve(PATHS.ROOT, 'ios', 'Sources'), { recursive: true }, (_evt, filename) => {
     if (!filename) return;
     if (!/\.(swift|m|h)$/.test(filename)) return;
     onChange();
   });
+
+  const tsSrcWatch = watch(resolve(PATHS.ROOT, 'src'), { recursive: true }, (_evt, filename) => {
+    if (!filename) return;
+    if (!/\.ts$/.test(filename)) return;
+    onChange();
+  });
+
+  return [iosSrcWatch, tsSrcWatch];
 };

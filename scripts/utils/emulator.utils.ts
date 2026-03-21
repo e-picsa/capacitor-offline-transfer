@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { execCmd, parseMultiSelect, prompt } from './cli.utils';
+import { adbInstall, adbLaunch } from './adb.utils';
 
 export interface Emulator {
   id: string;
@@ -89,6 +90,39 @@ export async function getAvailableAVDs(): Promise<string[]> {
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
+}
+
+async function deployTo(em: Emulator): Promise<void> {
+  process.stdout.write(`  [${em.id}] install APK... `);
+  const result = await adbInstall(em.id);
+  if (!result.success) {
+    console.log(`❌\n    ↳ ${result.error ?? 'Unknown error'}`);
+    return;
+  }
+  console.log('✅');
+
+  process.stdout.write(`  [${em.id}] launch app... `);
+  const launchResult = await adbLaunch(em.id);
+  if (!launchResult.success) {
+    console.log(`❌\n    ↳ ${launchResult.error ?? 'Unknown error'}`);
+    return;
+  }
+  console.log('✅');
+}
+
+export async function deployToEmulators(emulators: Emulator[]): Promise<void> {
+  if (emulators.length === 0) {
+    console.log('\n⚠️  No emulators.');
+    return;
+  }
+  for (const em of emulators) {
+    await deployTo(em);
+  }
+}
+
+export async function reinstallAll(emulators: Emulator[]): Promise<void> {
+  console.log('\n📦 Reinstalling app on emulators...');
+  await deployToEmulators(emulators);
 }
 
 export async function coldRebootEmulators(emulators: Emulator[]): Promise<void> {

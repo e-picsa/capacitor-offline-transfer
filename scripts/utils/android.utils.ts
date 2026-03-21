@@ -1,9 +1,8 @@
 import { resolve } from 'path';
 import { existsSync } from 'fs';
 
-import { deployToEmulators } from '../deploy';
 import { PATHS } from '../paths';
-import type { Emulator } from '../utils/emulator.utils';
+import { deployToEmulators, type Emulator } from '../utils/emulator.utils';
 import { runInExample } from './app.utils';
 import { runDetached } from './cli.utils';
 

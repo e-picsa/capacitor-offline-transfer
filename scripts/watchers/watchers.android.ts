@@ -4,7 +4,7 @@ import { PATHS } from '../paths';
 import { debounce } from '../utils/debounce';
 import { CommandContext } from '../commands/commands.types';
 import { syncAndroidNative } from '../utils/android.utils';
-import { deployToEmulators } from '../deploy';
+import { deployToEmulators } from '../utils/emulator.utils';
 
 export default (ctx: CommandContext) => {
   const onChange = debounce(async () => {
@@ -17,9 +17,17 @@ export default (ctx: CommandContext) => {
     console.log(`\n👀 Watching Android + plugin changes...`);
   }, 500);
 
-  return watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, (_evt, filename) => {
+  const androidSrcWatch = watch(resolve(PATHS.ROOT, 'android', 'src'), { recursive: true }, (_evt, filename) => {
     if (!filename) return;
     if (!/\.(kt|java)$/.test(filename)) return;
     onChange();
   });
+
+  const tsSrcWatch = watch(resolve(PATHS.ROOT, 'src'), { recursive: true }, (_evt, filename) => {
+    if (!filename) return;
+    if (!/\.ts$/.test(filename)) return;
+    onChange();
+  });
+
+  return [androidSrcWatch, tsSrcWatch];
 };

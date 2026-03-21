@@ -3,11 +3,10 @@ import readline from 'readline';
 import { DevContext, KeyAction } from '../types.ts';
 import android from './watchers.android';
 import ios from './watchers.ios.ts';
-import shared from './watchers.shared.ts';
 import { Command, CommandContext } from '../commands/commands.types.ts';
 import { COMMANDS, createCommandCtx } from '../commands/index.ts';
 
-const WATCHERS = { android, ios, shared };
+const WATCHERS = { android, ios };
 
 const onDone = (ctx: CommandContext) => {
   ctx.setSyncing(false);
@@ -16,10 +15,10 @@ const onDone = (ctx: CommandContext) => {
 
 export async function runWatchers(ctx: DevContext): Promise<void> {
   const { platform } = ctx;
-  const cmdCtx = createCommandCtx(ctx);
   const abort = new AbortController();
-  const watchers = [WATCHERS[platform](cmdCtx), WATCHERS.shared(cmdCtx)];
-  const commands = COMMANDS[platform];
+  const cmdCtx = createCommandCtx(ctx);
+  const watchers = WATCHERS[platform](cmdCtx);
+  const commands = COMMANDS[platform](cmdCtx);
 
   const cleanup = setupKeypress((action: KeyAction) => {
     onKeyAction(action, cmdCtx, abort, commands, () => onDone(cmdCtx));
