@@ -26,16 +26,21 @@ const filePaths = [
 const keyCommands = [
   {
     key: 'r',
-    label: 'Press R:',
     description: 'Force rebuild & redeploy',
     exclusive: true,
     action: (ctx) => fullRedeployIOS(ctx.serverPort),
   },
   {
     key: 'x',
-    label: 'Press X:',
     description: 'Open Xcode',
     action: () => openXcode(),
+  },
+  {
+    key: 'q',
+    description: 'Quit',
+    action: () => {
+      process.emit('SIGINT');
+    },
   },
 ] satisfies KeyWatcherDef[];
 

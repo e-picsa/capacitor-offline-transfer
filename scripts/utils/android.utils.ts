@@ -4,7 +4,6 @@ import { existsSync } from 'fs';
 import { PATHS } from '../paths';
 import { deployToEmulators, type Emulator } from '../utils/emulator.utils';
 import { runInExample } from './app.utils';
-import { runDetached } from './cli.utils';
 
 export async function fullRedeployAndroid(emulators: Emulator[]): Promise<void> {
   console.log('\n📦 Rebuilding and redeploying (Android)...');
@@ -18,7 +17,7 @@ export async function fullRedeployAndroid(emulators: Emulator[]): Promise<void> 
 
 export async function openAndroidStudio(): Promise<void> {
   console.log('\n📦 Opening Android Studio...');
-  runDetached('npx', ['cap', 'open', 'android']);
+  await runInExample(['bunx', 'cap', 'open', 'android'], 'cap open android');
 }
 
 export async function syncAndroidNative(): Promise<boolean> {

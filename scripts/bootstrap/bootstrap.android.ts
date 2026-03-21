@@ -1,9 +1,9 @@
 import { adbReverse } from '../utils/adb.utils';
-import { DevContext } from '../types';
+import { BootstrapContext } from './bootstrap.types';
 import { ensureEmulatorsRunning } from '../utils/emulator.utils';
 import { syncAndroidNative } from '../utils/android.utils';
 
-export default async (ctx: DevContext) => {
+export default async (ctx: BootstrapContext) => {
   const env = require('../utils/env.utils').getEnv();
   const emulators = await ensureEmulatorsRunning(env.EMULATOR_AVDS);
 

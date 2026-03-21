@@ -1,47 +1,50 @@
 import readline from 'readline';
 
-import { DevContext, Platform } from '../types.ts';
+import { Platform } from '../types.ts';
 import android from './watchers.android';
 import ios from './watchers.ios.ts';
 import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types.ts';
 import { FSWatcher, watch } from 'fs';
 import { debounce } from '../utils/debounce.ts';
+import { BootstrapContext } from '../bootstrap/bootstrap.types.ts';
 
-const WATCHERS: Record<Platform, { filePaths: FileWatcherDef[]; keyCommands: KeyWatcherDef[] }> = { android, ios };
+export const WATCHERS: Record<Platform, { filePaths: FileWatcherDef[]; keyCommands: KeyWatcherDef[] }> = {
+  android,
+  ios,
+};
 
-export async function runWatchers(ctx: DevContext): Promise<void> {
+export async function runWatchers(boostrapCtx: BootstrapContext): Promise<void> {
   // Setup shared context
-  const { platform } = ctx;
-  const abort = new AbortController();
-  const cmdCtx = createCommandCtx(ctx);
+
+  const cmdCtx = createCommandCtx(boostrapCtx);
 
   // Setup key press and file watchers
-  const { filePaths, keyCommands } = WATCHERS[platform];
+  const { filePaths, keyCommands } = WATCHERS[cmdCtx.platform];
 
   const cleanup = setupKeypress((key) => {
-    handleKeypress(key, cmdCtx, abort, keyCommands);
+    handleKeypress(key, cmdCtx, keyCommands);
   });
   const fsWatchers = startFileWatchers(filePaths, cmdCtx);
 
   // Handle Signals
-  abort.signal.addEventListener('abort', () => {
+  cmdCtx.abort.signal.addEventListener('abort', () => {
     cleanup();
     fsWatchers.forEach((w) => w.close());
   });
 
   const onSignal = (signal: NodeJS.Signals) => {
     console.log('\n👋 Shutting down...');
-    abort.abort();
+    cmdCtx.abort.abort();
     process.kill(process.pid, signal);
   };
   process.once('SIGINT', () => onSignal('SIGINT'));
   process.once('SIGTERM', () => onSignal('SIGTERM'));
 
   console.log(`\n👀 Watching for changes...`);
-  printHelp(keyCommands);
+  printHelp(cmdCtx);
 
   await new Promise<void>((resolve) => {
-    abort.signal.addEventListener('abort', () => resolve(), { once: true });
+    cmdCtx.abort.signal.addEventListener('abort', () => resolve(), { once: true });
   });
 }
 
@@ -49,7 +52,7 @@ export async function runWatchers(ctx: DevContext): Promise<void> {
  * Create a comman context used to block file watch and keypress actions
  * while existing actions are pending
  */
-export function createCommandCtx(ctx: DevContext): WatchContext {
+export function createCommandCtx(ctx: BootstrapContext): WatchContext {
   let syncing = false;
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -62,6 +65,7 @@ export function createCommandCtx(ctx: DevContext): WatchContext {
     clearDebounceTimer: () => {
       if (debounceTimer) clearTimeout(debounceTimer);
     },
+    abort: new AbortController(),
   };
 }
 
@@ -87,13 +91,7 @@ function startFileWatchers(defs: FileWatcherDef[], ctx: WatchContext): FSWatcher
   });
 }
 
-function handleKeypress(key: string, ctx: WatchContext, abort: AbortController, commands: KeyWatcherDef[]): void {
-  if (key === 'q') {
-    console.log('\n👋 Shutting down...');
-    abort.abort();
-    return;
-  }
-
+function handleKeypress(key: string, ctx: WatchContext, commands: KeyWatcherDef[]): void {
   const cmd = commands.find((c) => c.key === key);
   if (!cmd) return;
 
@@ -103,16 +101,16 @@ function handleKeypress(key: string, ctx: WatchContext, abort: AbortController, 
     ctx.setSyncing(true);
     Promise.resolve(cmd.action(ctx)).finally(() => {
       ctx.setSyncing(false);
-      console.log(`\n👀 Watching for changes...`);
+      printHelp(ctx);
     });
   } else {
     cmd.action(ctx);
   }
 }
 
-function printHelp(commands: KeyWatcherDef[]): void {
-  commands.forEach((c) => console.log(`  ${c.label} ${c.description}`));
-  console.log('  Press Q: Quit');
+function printHelp(ctx: WatchContext) {
+  const commands = WATCHERS[ctx.platform].keyCommands;
+  commands.forEach((c) => console.log(`  ${c.key}: ${c.description}`));
 }
 
 function setupKeypress(onKey: (key: string) => void): () => void {

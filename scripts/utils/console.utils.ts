@@ -1,3 +1,14 @@
+export const CONSOLE_WIDTH = 62;
+
+export const BOARDER_TOP = `╔${'═'.repeat(CONSOLE_WIDTH)}╗`;
+export const BOARDER_MID = `╠${'═'.repeat(CONSOLE_WIDTH)}╣`;
+export const BOARDER_BOTTOM = `╚${'═'.repeat(CONSOLE_WIDTH)}╝`;
+
+export function boxLine(content: string): string {
+  const innerWidth = CONSOLE_WIDTH - 3;
+  return `║${' '.repeat(2)}${pad(content, innerWidth)}║`;
+}
+
 export function pad(text: string, width: number, char = ' ', align: 'left' | 'right' | 'center' = 'left'): string {
   const len = text.length;
   if (len >= width) return text;
@@ -11,9 +22,4 @@ export function pad(text: string, width: number, char = ' ', align: 'left' | 'ri
     default:
       return text + char.repeat(padding);
   }
-}
-
-export function boxLine(content: string, width: number, leftPad = 2): string {
-  const innerWidth = width - leftPad - 1;
-  return `║${' '.repeat(leftPad)}${pad(content, innerWidth)}║`;
 }

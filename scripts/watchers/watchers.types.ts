@@ -1,9 +1,10 @@
-import { DevContext } from '../types';
+import { BootstrapContext } from '../bootstrap/bootstrap.types';
 
-export interface WatchContext extends DevContext {
+export interface WatchContext extends BootstrapContext {
   isSyncing: () => boolean;
   setSyncing: (v: boolean) => void;
   clearDebounceTimer: () => void;
+  abort: AbortController;
 }
 
 export interface FileWatcherDef {
@@ -15,7 +16,6 @@ export interface FileWatcherDef {
 
 export interface KeyWatcherDef {
   key: string;
-  label: string;
   description: string;
   /** When true, guards against concurrent runs and shows status on completion */
   exclusive?: boolean;

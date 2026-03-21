@@ -28,30 +28,33 @@ const filePaths = [
 const keyCommands = [
   {
     key: 'r',
-    label: 'Press R:',
     description: 'Force rebuild & redeploy',
     exclusive: true,
     action: (ctx) => fullRedeployAndroid(ctx.emulators),
   },
   {
     key: 'i',
-    label: 'Press I:',
     description: 'Reinstall app (no rebuild)',
     exclusive: true,
     action: (ctx) => reinstallAll(ctx.emulators),
   },
   {
     key: 'c',
-    label: 'Press C:',
     description: 'Cold-reboot all emulators',
     exclusive: true,
     action: (ctx) => coldRebootEmulators(ctx.emulators),
   },
   {
     key: 'a',
-    label: 'Press A:',
     description: 'Open Android Studio',
     action: () => openAndroidStudio(),
+  },
+  {
+    key: 'q',
+    description: 'Quit',
+    action: () => {
+      process.emit('SIGINT');
+    },
   },
 ] satisfies KeyWatcherDef[];
 
