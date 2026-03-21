@@ -7,6 +7,7 @@ import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types.ts
 import { FSWatcher, watch } from 'fs';
 import { debounce } from '../utils/debounce.ts';
 import { BootstrapContext } from '../bootstrap/bootstrap.types.ts';
+import { BOARDER_BOTTOM, BOARDER_TOP, boxLine } from '../utils/console.utils.ts';
 
 export const WATCHERS: Record<Platform, { filePaths: FileWatcherDef[]; keyCommands: KeyWatcherDef[] }> = {
   android,
@@ -110,7 +111,11 @@ function handleKeypress(key: string, ctx: WatchContext, commands: KeyWatcherDef[
 
 function printHelp(ctx: WatchContext) {
   const commands = WATCHERS[ctx.platform].keyCommands;
-  commands.forEach((c) => console.log(`  ${c.key}: ${c.description}`));
+  const lines = [BOARDER_TOP].concat(
+    commands.map((c) => boxLine(`${c.key}: ${c.description}`)),
+    BOARDER_BOTTOM,
+  );
+  console.log(lines.join('\n'));
 }
 
 function setupKeypress(onKey: (key: string) => void): () => void {

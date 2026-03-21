@@ -22,16 +22,17 @@ function printBanner(ctx: BootstrapContext): void {
   const emulatorList =
     ctx.emulators.length > 0 ? ctx.emulators.map((e) => e.id).join(', ') : 'None (emulator deploy not available)';
 
-  console.log(`
- ${BOARDER_TOP}
- ${boxLine('LIVE-RELOAD READY')}
- ${BOARDER_MID}
- ${boxLine(`Web server:  http://localhost:${pad(ctx.serverPort, 18)}`)}
- ${boxLine(`Emulators:   ${pad(emulatorList, CONSOLE_WIDTH)}`)}
- ${boxLine(`Platform:    ${pad(ctx.platform, CONSOLE_WIDTH)}`)}
- ${BOARDER_MID}
- ${boxLine('Web/JS changes:  Auto-loaded via Vite HMR')}
- ${boxLine('Native changes:  Auto-rebuilds plugin + redeploys all')}
- ${BOARDER_BOTTOM}
-`);
+  const lines = [
+    BOARDER_TOP,
+    boxLine('LIVE-RELOAD READY'),
+    BOARDER_MID,
+    boxLine(`Web server:  http://localhost:${ctx.serverPort}`),
+    boxLine(`Emulators:   ${emulatorList}`),
+    boxLine(`Platform:    ${ctx.platform}`),
+    BOARDER_MID,
+    boxLine('Web/JS changes:  Auto-loaded via Vite HMR'),
+    boxLine('Native changes:  Auto-rebuilds plugin + redeploys all'),
+    BOARDER_BOTTOM,
+  ];
+  console.log(lines.join('\n'));
 }

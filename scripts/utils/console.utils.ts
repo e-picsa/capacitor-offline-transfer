@@ -5,8 +5,8 @@ export const BOARDER_MID = `╠${'═'.repeat(CONSOLE_WIDTH)}╣`;
 export const BOARDER_BOTTOM = `╚${'═'.repeat(CONSOLE_WIDTH)}╝`;
 
 export function boxLine(content: string): string {
-  const innerWidth = CONSOLE_WIDTH - 3;
-  return `║${' '.repeat(2)}${pad(content, innerWidth)}║`;
+  const innerWidth = CONSOLE_WIDTH - 2;
+  return `║  ${pad(content, innerWidth)}║`;
 }
 
 export function pad(text: string, width: number, char = ' ', align: 'left' | 'right' | 'center' = 'left'): string {
