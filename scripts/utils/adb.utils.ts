@@ -1,10 +1,18 @@
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
 import { execCmd } from './cli.utils';
 import { PATHS } from '../paths';
 
-const APP_ID = 'com.example.offlineTransfer'; // adjust to your actual package name
+function getAppId(): string {
+  const configPath = resolve(PATHS.EXAMPLE_APP, 'capacitor.config.ts');
+  const content = readFileSync(configPath, 'utf-8');
+  const match = content.match(/appId:\s*['"]([^'"]+)['"]/);
+  if (!match) throw new Error('Could not find appId in example/capacitor.config.ts');
+  return match[1];
+}
+
+const APP_ID = getAppId();
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1_000;

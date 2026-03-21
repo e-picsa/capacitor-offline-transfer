@@ -1,9 +1,9 @@
 export {};
 
-import { watch } from 'fs';
+import { watch, existsSync } from 'fs';
 import { resolve } from 'path';
 import { getEnv, saveEnv } from './utils/env.utils';
-import { detectLocalIP, prompt } from './utils/cli.utils';
+import { detectLocalIP, prompt, execCmd } from './utils/cli.utils';
 import { ensureEmulatorsRunning, coldRebootAll, openAndroidStudio } from './commands/emulator';
 import { fullRedeploy, reinstallAll, syncPluginAndNative, deployToAll } from './commands/deploy';
 import { startViteServer, ensurePortFree, viteProc } from './commands/server';
@@ -42,6 +42,17 @@ async function main(): Promise<void> {
   const platform = await selectPlatform(env.CAPACITOR_PLATFORM);
   env.CAPACITOR_PLATFORM = platform;
   saveEnv(env);
+
+  const platformDir = resolve(PATHS.EXAMPLE_APP, platform);
+  if (!existsSync(platformDir)) {
+    console.log(`\n📦 Adding ${platform} platform...`);
+    const { code } = await execCmd('npx', ['cap', 'add', platform], PATHS.EXAMPLE_APP);
+    if (code !== 0) {
+      console.error(`❌ Failed to add ${platform} platform.`);
+      process.exit(1);
+    }
+    console.log(`✅ ${platform} platform added`);
+  }
 
   console.log('\n🔍 Detecting emulators...');
   const emulators = await ensureEmulatorsRunning(env.EMULATOR_AVDS);

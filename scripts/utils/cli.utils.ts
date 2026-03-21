@@ -5,9 +5,13 @@ export function runDetached(cmd: string, args: string[]): void {
   spawn(cmd, args, { detached: true, stdio: 'ignore', shell: true }).unref();
 }
 
-export function execCmd(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
+export function execCmd(
+  cmd: string,
+  args: string[],
+  cwd?: string,
+): Promise<{ stdout: string; stderr: string; code: number }> {
   return new Promise((resolve) => {
-    const proc = spawn(cmd, args, { shell: true });
+    const proc = spawn(cmd, args, { shell: true, cwd });
     let stdout = '';
     let stderr = '';
     proc.stdout?.on('data', (d) => (stdout += d.toString()));
