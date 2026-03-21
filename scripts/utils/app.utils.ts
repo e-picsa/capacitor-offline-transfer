@@ -32,11 +32,3 @@ export function startViteServer(): void {
     env: process.env,
   });
 }
-
-// export async function syncPluginTS(): Promise<boolean> {
-//   const webOk = await runInExample(['bun', 'run', 'build:web'], 'vite build');
-//   if (!webOk) return false;
-//   const syncOk = await runInExample(['bunx', 'cap', 'sync'], 'cap sync');
-//   if (!syncOk) return false;
-//   return await runGradleBuild();
-// }

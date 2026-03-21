@@ -1,12 +1,12 @@
 import readline from 'readline';
 
-import { Platform } from '../types.ts';
+import { Platform } from '../types';
 import android from './watchers.android';
 import ios from './watchers.ios.ts';
-import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types.ts';
+import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types';
 import { FSWatcher, watch } from 'fs';
 import { debounce } from '../utils/debounce.ts';
-import { BootstrapContext } from '../bootstrap/bootstrap.types.ts';
+import { BootstrapContext } from '../bootstrap/bootstrap.types';
 import { BOARDER_BOTTOM, BOARDER_TOP, boxLine } from '../utils/console.utils.ts';
 
 export const WATCHERS: Record<Platform, { filePaths: FileWatcherDef[]; keyCommands: KeyWatcherDef[] }> = {

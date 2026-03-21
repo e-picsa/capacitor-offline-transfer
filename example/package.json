@@ -9,10 +9,7 @@
   ],
   "scripts": {
     "start": "vite",
-    "build": "bun run sync:plugin && bun run build:web && bun run sync:native",
-    "build:web": "vite build",
-    "sync:plugin": "bun install",
-    "sync:native": "bunx cap sync",
+    "build": "vite build && bunx cap sync",
     "preview": "vite preview"
   },
   "dependencies": {

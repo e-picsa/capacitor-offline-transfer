@@ -44,7 +44,7 @@ async function handleCommonBootstrap(): Promise<BootstrapContext> {
 
   let platform: Platform = process.argv[2]?.trim().toLowerCase() as Platform;
 
-  if (!platform) {
+  if (!platform || !['android', 'ios'].includes(platform)) {
     console.log('\n📱 Selecting platform...');
     platform = await selectPlatform();
   }
