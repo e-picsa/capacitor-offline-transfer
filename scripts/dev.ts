@@ -1,21 +1,26 @@
+import { bootstrap as bootstrapAndroid } from './phases/bootstrap.android';
+import { startDevLoop as startDevLoopAndroid } from './phases/dev-loop.android';
+import { bootstrap as bootstrapIOS } from './phases/bootstrap.ios';
+import { startDevLoop as startDevLoopIOS } from './phases/dev-loop.ios';
 import { pad, boxLine } from './utils/string.utils';
 import type { DevContext } from './types';
+import { bootstrapShared } from './phases/bootstrap.shared';
 
 async function main(): Promise<void> {
-  const platform = process.argv[2]?.trim().toLowerCase() ?? 'android';
-  if (platform !== 'android' && platform !== 'ios') {
-    console.error(`Unknown platform: ${platform}. Use "android" or "ios".`);
-    process.exit(1);
+  let ctx = await bootstrapShared();
+
+  if (ctx.platform === 'android') {
+    ctx = await bootstrapAndroid(ctx);
+    printBanner(ctx);
+    await startDevLoopAndroid(ctx);
   }
-
-  const [{ bootstrap, startDevLoop }] = await Promise.all([import(`./phases/bootstrap.${platform}`)]);
-
-  const ctx = await bootstrap();
-  printBanner(ctx);
-  await startDevLoop(ctx);
+  if (ctx.platform === 'ios') {
+    ctx = await bootstrapIOS(ctx);
+    printBanner(ctx);
+    await startDevLoopIOS(ctx);
+  }
 }
 
-console.log('\n👀 Watching for native changes...\n');
 main().catch((err) => {
   console.error(err);
   process.exit(1);
