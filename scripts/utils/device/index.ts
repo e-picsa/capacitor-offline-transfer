@@ -76,7 +76,7 @@ export class DeviceOrchestrator {
       }
     }
 
-    console.log('\n⚡ Select devices (e.g. "1,2" or "all"):');
+    console.log('\n⚡ Select devices (e.g. "1,2"):');
     const input = (await prompt('  > ')).trim();
     const selection = parseMultiSelect(input);
 

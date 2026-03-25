@@ -17,7 +17,7 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
     if (avds.length > 0) {
       console.log('\n🖥️  Available AVDs:');
       avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
-      console.log('\n⚡ Select AVDs to start (e.g. "1" or "all"):');
+      console.log('\n⚡ Select AVDs to start (e.g. "1"):');
       const { prompt, parseMultiSelect } = await import('../utils/cli.utils');
       const input = (await prompt('  > ')).trim();
       const selection = parseMultiSelect(input);

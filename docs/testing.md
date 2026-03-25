@@ -117,7 +117,7 @@ The script will detect connected devices and prompt you to select:
   [2]  RF8N20XXXXX (Pixel 8)                [USB]
   [3]  192.168.1.100:5555 (Pixel 7 Pro)     [wireless]
 
-⚡ Select devices (e.g. "1,2" or "all"):
+⚡ Select devices (e.g. "1,2"):
 ```
 
 - **Select [0]** to pair a new wireless device — the script will guide you through the pairing process
