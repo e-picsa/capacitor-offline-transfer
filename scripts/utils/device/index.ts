@@ -75,7 +75,7 @@ export class DeviceOrchestrator {
       console.log('');
     }
 
-    console.log('\n⚡ Select devices or actions (e.g. "1,2" or "d,1"):');
+    console.log('\n⚡ Select devices (e.g. "1,2") or new device action ("d" or "e")');
     const input = (await prompt('  > ')).trim();
     const selection = parseMultiSelect(input);
 

@@ -7,7 +7,7 @@ import { EXAMPLE_APP_ID } from '../consts';
 
 const getAppInfo = (): AppInfo => ({
   appId: EXAMPLE_APP_ID,
-  apkPath: 'example/android/app/build/outputs/apk/debug/app-debug.apk',
+  apkPath: PATHS.EXAMPLE_APP_APK,
   activity: '.MainActivity',
 });
 

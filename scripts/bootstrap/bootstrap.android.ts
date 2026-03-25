@@ -2,6 +2,7 @@ import { BootstrapContext } from './bootstrap.types';
 import { syncAndroidNative } from '../utils/android.utils';
 import { DeviceOrchestrator, AppInfo, DeviceInfo, DeviceManager } from '../utils/device';
 import { EXAMPLE_APP_ID } from '../consts';
+import { PATHS } from '../paths';
 
 interface NewDeviceAction {
   letter: string;
@@ -16,16 +17,16 @@ function getNewDeviceActions(orchestrator: DeviceOrchestrator) {
     {
       letter: 'd',
       label: 'Pair new physical device (wireless debugging)',
-      action: async (): Promise<DeviceInfo | null> => {
-        const result = await orchestrator.androidDevice.pairWireless();
+      action: async () => {
+        await orchestrator.androidDevice.createNew();
         redetectTriggered = true;
-        return result;
+        return null;
       },
     },
     {
       letter: 'e',
       label: 'Create new emulator (open Android Studio)',
-      action: async (): Promise<DeviceInfo | null> => {
+      action: async () => {
         await orchestrator.androidEmulator.createNew();
         redetectTriggered = true;
         return null;
@@ -48,7 +49,6 @@ async function promptEmulatorBootOrAction(
 ): Promise<boolean> {
   const { androidEmulator } = orchestrator;
   const avds = await androidEmulator.list();
-  console.log({ avds });
 
   console.log('\n📱 Available devices:');
 
@@ -135,7 +135,7 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
 
   const appInfo: AppInfo = {
     appId: EXAMPLE_APP_ID,
-    apkPath: 'example/android/app/build/outputs/apk/debug/app-debug.apk',
+    apkPath: PATHS.EXAMPLE_APP_APK,
     activity: '.MainActivity',
   };
 

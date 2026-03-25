@@ -4,10 +4,12 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const EXAMPLE_APP = resolve(ROOT, 'example');
+const EXAMPLE_APP_APK = resolve(EXAMPLE_APP, 'android/app/build/outputs/apk/debug/app-debug.apk');
 const SCRIPTS = __dirname;
 
 export const PATHS = {
   ROOT,
   EXAMPLE_APP,
+  EXAMPLE_APP_APK,
   SCRIPTS,
 };
