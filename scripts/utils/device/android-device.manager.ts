@@ -115,6 +115,10 @@ export class AndroidDeviceManager extends DeviceManager {
     console.log('');
     console.log('  Make sure your device is on the same Wi-Fi network as this computer.');
 
+    console.log('');
+    console.log('If you do not see Developer Options see guide in');
+    console.log('https://developer.android.com/studio/debug/dev-options');
+
     const ip = (await prompt('\n  Device IP address: ')).trim();
     const port = (await prompt('  Port [5555]: ')).trim() || '5555';
     const code = (await prompt('  Pairing code: ')).trim();
@@ -125,11 +129,14 @@ export class AndroidDeviceManager extends DeviceManager {
     }
 
     console.log(`\n  Pairing with ${ip}:${port}...`);
-    const { code: pairCode } = await execCmd('adb', ['pair', `${ip}:${port}`, code]);
+    const { code: pairCode, stdout, stderr } = await execCmd('adb', ['pair', `${ip}:${port}`, code]);
+
+    console.log(stdout);
+    console.error(stderr);
 
     if (pairCode !== 0) {
       console.log('  ❌ Pairing failed. Check the pairing code and try again.');
-      return null;
+      return this.pairWireless();
     }
     console.log('  ✅ Pairing successful');
 

@@ -65,7 +65,7 @@ async function promptEmulatorBootOrAction(
     }
   }
 
-  console.log('\n⚡ Select emulators to start or action (e.g. "1,2" or "e"):');
+  console.log('\n⚡ Select emulators to start or action (e.g. "1", "1,2", "d", or "e"):');
   const { prompt, parseMultiSelect } = await import('../utils/cli.utils');
   const input = (await prompt('  > ')).trim();
   const selection = parseMultiSelect(input);
