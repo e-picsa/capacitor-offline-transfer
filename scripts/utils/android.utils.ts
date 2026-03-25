@@ -2,18 +2,7 @@ import { resolve } from 'path';
 import { existsSync } from 'fs';
 
 import { PATHS } from '../paths';
-import { deployToEmulators, type Emulator } from '../utils/emulator.utils';
 import { runInExample } from './app.utils';
-
-export async function fullRedeployAndroid(emulators: Emulator[]): Promise<void> {
-  console.log('\n📦 Rebuilding and redeploying (Android)...');
-  const ok = await syncAndroidNative();
-  if (!ok) {
-    console.error('❌ Sync failed, skipping redeploy');
-    return;
-  }
-  await deployToEmulators(emulators);
-}
 
 export async function openAndroidStudio(): Promise<void> {
   console.log('\n📦 Opening Android Studio...');
