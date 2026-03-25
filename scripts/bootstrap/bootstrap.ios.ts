@@ -1,6 +1,7 @@
 import { BootstrapContext } from './bootstrap.types';
 import { syncIOSNative } from '../utils/ios.utils';
 import { DeviceOrchestrator, AppInfo } from '../utils/device';
+import { EXAMPLE_APP_ID } from '../consts';
 
 export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   const orchestrator = new DeviceOrchestrator();
@@ -25,7 +26,7 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   }
 
   const appInfo: AppInfo = {
-    appId: 'com.picsa.capacitorofflinetransfer',
+    appId: EXAMPLE_APP_ID,
     ipaPath: 'example/ios/App/build/Debug-iphonesimulator/App.ipa',
   };
 

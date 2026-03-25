@@ -2,6 +2,8 @@ import { CapacitorConfig } from '@capacitor/cli';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
+export const EXAMPLE_APP_ID = 'com.picsa.capacitorofflinetransfer';
+
 function loadEnv(): Record<string, string> {
   const envPath = resolve(process.cwd(), '.env');
   if (existsSync(envPath)) {
@@ -26,8 +28,8 @@ const serverIp = env.CAPACITOR_SERVER_IP;
 const serverPort = env.CAPACITOR_SERVER_PORT || '5173';
 
 const config: CapacitorConfig = {
-  appId: 'com.example.offlineTransfer',
-  appName: 'example',
+  appId: EXAMPLE_APP_ID,
+  appName: 'Offline Transfer Demo',
   webDir: 'dist',
   plugins: {
     SplashScreen: {

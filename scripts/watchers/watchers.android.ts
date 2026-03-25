@@ -3,9 +3,10 @@ import { openAndroidStudio, syncAndroidNative } from '../utils/android.utils';
 import { DeviceOrchestrator, AppInfo } from '../utils/device';
 import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types';
 import { PATHS } from '../paths';
+import { EXAMPLE_APP_ID } from '../consts';
 
 const getAppInfo = (): AppInfo => ({
-  appId: 'com.picsa.capacitorofflinetransfer',
+  appId: EXAMPLE_APP_ID,
   apkPath: 'example/android/app/build/outputs/apk/debug/app-debug.apk',
   activity: '.MainActivity',
 });

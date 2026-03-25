@@ -1,6 +1,7 @@
 import { BootstrapContext } from './bootstrap.types';
 import { syncAndroidNative } from '../utils/android.utils';
 import { DeviceOrchestrator, AppInfo, DeviceInfo, DeviceManager } from '../utils/device';
+import { EXAMPLE_APP_ID } from '../consts';
 
 interface NewDeviceAction {
   letter: string;
@@ -133,7 +134,7 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   }
 
   const appInfo: AppInfo = {
-    appId: 'com.picsa.capacitorofflinetransfer',
+    appId: EXAMPLE_APP_ID,
     apkPath: 'example/android/app/build/outputs/apk/debug/app-debug.apk',
     activity: '.MainActivity',
   };
