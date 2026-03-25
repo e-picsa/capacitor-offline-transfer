@@ -4,7 +4,9 @@ export abstract class DeviceManager {
   abstract readonly platform: Platform;
   abstract readonly type: DeviceType;
 
+  /** List of available devices (may or may not be running) */
   abstract list(): Promise<DeviceInfo[]>;
+
   abstract start(deviceId: string): Promise<void>;
   abstract stop(deviceId: string): Promise<void>;
   abstract install(deviceId: string, app: AppInfo): Promise<void>;

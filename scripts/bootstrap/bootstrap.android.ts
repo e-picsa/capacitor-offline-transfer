@@ -1,7 +1,6 @@
 import { BootstrapContext } from './bootstrap.types';
 import { syncAndroidNative } from '../utils/android.utils';
-import { getEnv } from '../utils/env.utils';
-import { DeviceOrchestrator, AppInfo, DeviceInfo } from '../utils/device';
+import { DeviceOrchestrator, AppInfo, DeviceInfo, DeviceManager } from '../utils/device';
 
 interface NewDeviceAction {
   letter: string;
@@ -46,10 +45,9 @@ async function promptEmulatorBootOrAction(
   orchestrator: DeviceOrchestrator,
   newDeviceActions: NewDeviceAction[],
 ): Promise<boolean> {
-  const emulatorMgr = orchestrator.androidEmulator;
-  const avds = await emulatorMgr.getAvailableAvds();
-
-  if (avds.length === 0 && newDeviceActions.length === 0) return false;
+  const { androidEmulator } = orchestrator;
+  const avds = await androidEmulator.list();
+  console.log({ avds });
 
   console.log('\n📱 Available devices:');
 
@@ -71,7 +69,7 @@ async function promptEmulatorBootOrAction(
   const selection = parseMultiSelect(input);
 
   let actionTriggered = false;
-  const selectedAvds: string[] = [];
+  const selectedAvds: DeviceInfo[] = [];
 
   for (const s of selection) {
     const action = newDeviceActions.find((a) => a.letter.toLowerCase() === s.toLowerCase());
@@ -87,7 +85,7 @@ async function promptEmulatorBootOrAction(
   }
 
   for (const avd of selectedAvds) {
-    await emulatorMgr.start(avd);
+    await androidEmulator.start(avd.id);
   }
 
   return actionTriggered;
@@ -102,7 +100,7 @@ async function selectDevices(orchestrator: DeviceOrchestrator) {
     let devices = await orchestrator.detectAll('android');
 
     if (devices.length === 0) {
-      console.log('  No devices detected.');
+      console.log('  No running devices');
       const shouldRedetect = await promptEmulatorBootOrAction(orchestrator, actions);
       if (shouldRedetect || wasRedetectTriggered()) continue;
       devices = await orchestrator.detectAll('android');
@@ -143,6 +141,6 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   console.log('\n📦 Deploying to devices...');
   await orchestrator.deploy(selectedDevices, appInfo);
 
-  ctx.devices = selectedDevices as any;
+  ctx.devices = selectedDevices;
   return ctx;
 };

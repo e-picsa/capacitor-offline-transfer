@@ -8,7 +8,6 @@ export interface DeviceInfo {
   platform: Platform;
   type: DeviceType;
   status: DeviceStatus;
-  ip?: string;
   avdName?: string;
 }
 

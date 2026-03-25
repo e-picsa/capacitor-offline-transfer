@@ -15,9 +15,9 @@ export class DeviceOrchestrator {
   getManagers(platform: Platform): DeviceManager[] {
     switch (platform) {
       case 'android':
-        return [this.androidEmulator, this.androidDevice];
+        return [this.androidDevice, this.androidEmulator];
       case 'ios':
-        return [this.iosSimulator, this.iosDevice];
+        return [this.iosDevice, this.iosSimulator];
     }
   }
 
@@ -56,7 +56,6 @@ export class DeviceOrchestrator {
     },
   ): Promise<DeviceInfo[]> {
     const newDeviceActions = options?.newDeviceActions || [];
-    let numIndex = 1;
 
     console.log('\n📱 Available devices:');
 
@@ -65,15 +64,15 @@ export class DeviceOrchestrator {
       for (const action of newDeviceActions) {
         console.log(`  [${action.letter}] ${action.label}`);
       }
+      console.log('');
     }
 
     if (devices.length > 0) {
       console.log('  ─── Existing Devices ───');
-      for (const device of devices) {
-        const statusLabel = device.status === 'online' ? 'online' : device.status === 'booting' ? 'booting' : 'offline';
-        const typeLabel = device.type === 'emulator' ? '[emulator]' : device.ip ? '[wireless]' : '[USB]';
-        console.log(`  [${numIndex++}] ${device.id} (${device.name}) ${typeLabel} [${statusLabel}]`);
-      }
+      const blankEntry: DeviceInfo = { id: '', name: '', platform: 'android', status: '' as any, type: '' as any };
+      const merged = [blankEntry].concat(devices);
+      console.table(merged.map(({ name, type, status }, i) => ({ name, type, status })));
+      console.log('');
     }
 
     console.log('\n⚡ Select devices or actions (e.g. "1,2" or "d,1"):');

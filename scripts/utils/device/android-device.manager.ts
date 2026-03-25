@@ -1,6 +1,7 @@
 import { DeviceManager } from './manager';
 import type { DeviceInfo, AppInfo } from './types';
-import { execCmd, prompt } from '../cli.utils';
+import { execCmd, prompt, waitForKeypress } from '../cli.utils';
+import { openAndroidStudio } from '../android.utils';
 
 export class AndroidDeviceManager extends DeviceManager {
   readonly platform = 'android' as const;
@@ -16,13 +17,12 @@ export class AndroidDeviceManager extends DeviceManager {
     const devices: DeviceInfo[] = [];
 
     for (const line of stdout.split('\n')) {
-      const match = line.match(/^([A-Za-z0-9:.-]+)\s+(device|unauthorized|offline)\s*(.*)$/);
+      // Match serial (allow underscores for mDNS/TLS serials)
+      const match = line.match(/^([A-Za-z0-9_:.\-]+)\s+(device|unauthorized|offline)\s*(.*)/);
       if (!match) continue;
       if (match[1].startsWith('emulator-')) continue;
-      if (match[2] !== 'device') continue;
 
       const serial = match[1];
-      const isWireless = serial.includes('.');
 
       const kv: Record<string, string> = {};
       for (const pair of match[3].trim().split(/\s+/)) {
@@ -30,19 +30,20 @@ export class AndroidDeviceManager extends DeviceManager {
         if (eq > 0) kv[pair.slice(0, eq)] = pair.slice(eq + 1);
       }
 
-      const [host, port] = isWireless ? serial.split(':') : [undefined, undefined];
-
       devices.push({
         id: serial,
         name: kv['model']?.replace(/_/g, ' ') || serial,
         platform: 'android',
         type: 'physical',
         status: 'online',
-        ip: isWireless ? host : undefined,
       });
     }
-
     return devices;
+  }
+
+  async listAvailable(): Promise<DeviceInfo[]> {
+    // TODO - verify if possible to detect previously connected devices
+    return [];
   }
 
   async start(_deviceId: string): Promise<void> {
@@ -104,6 +105,23 @@ export class AndroidDeviceManager extends DeviceManager {
     }
   }
 
+  async createNew() {
+    console.log('\n📱  Pairing new device:');
+    console.log('  Opening Android Studio...');
+    await openAndroidStudio();
+
+    console.log('\n📖 Learn how to pair device:');
+    console.log('  https://developer.android.com/studio/run/device');
+    console.log("\n  Press any key once you've successfully paired...");
+
+    await waitForKeypress();
+  }
+
+  /**
+   * @deprecated - seems to be quite inconsistent, could try again in future.
+   * Prefer `createNew()` instead
+   * @returns
+   */
   async pairWireless(): Promise<DeviceInfo | null> {
     console.log('\n📡 Connect new physical device via wireless debugging:');
     console.log('');
@@ -155,7 +173,6 @@ export class AndroidDeviceManager extends DeviceManager {
       platform: 'android',
       type: 'physical',
       status: 'online',
-      ip,
     };
   }
 

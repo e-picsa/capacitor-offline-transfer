@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { DeviceManager } from './manager';
-import type { DeviceInfo, AppInfo } from './types';
-import { execCmd, prompt, parseMultiSelect, waitForKeypress } from '../cli.utils';
+import type { DeviceInfo, AppInfo, DeviceType } from './types';
+import { execCmd, waitForKeypress } from '../cli.utils';
 import { openAndroidStudio } from '../android.utils';
 
 const EMULATOR_FLAGS = ['-no-snapshot-load', '-no-audio', '-gpu', 'swiftshader_indirect'];
@@ -11,31 +11,50 @@ export class AndroidEmulatorManager extends DeviceManager {
   readonly platform = 'android' as const;
   readonly type = 'emulator' as const;
 
-  async list(): Promise<DeviceInfo[]> {
-    const { stdout } = await execCmd('adb', ['devices']);
-    const emulators: DeviceInfo[] = [];
+  private onlineDevices: DeviceInfo[] = [];
+  private offlineDevices: DeviceInfo[] = [];
 
+  async list(): Promise<DeviceInfo[]> {
+    await this.refreshDevices();
+    return [...this.onlineDevices, ...this.offlineDevices];
+  }
+
+  private async refreshDevices() {
+    this.onlineDevices = await this.listOnlineDevices();
+    this.offlineDevices = await this.listOfflineDevices();
+  }
+
+  private async listOnlineDevices(): Promise<DeviceInfo[]> {
+    const devices: DeviceInfo[] = [];
+    const { stdout } = await execCmd('adb', ['devices']);
     for (const line of stdout.split('\n')) {
       const match = line.match(/^(emulator-\d+)\s+(\S+)/);
       if (match) {
         const id = match[1];
         const state = match[2];
         const status = state === 'device' ? 'online' : 'offline';
-
         const avdName = await this.getAvdName(id);
-
-        emulators.push({
-          id,
-          name: avdName || id,
-          platform: 'android',
-          type: 'emulator',
-          status,
-          avdName,
-        });
+        devices.push({ id, name: avdName || id, platform: 'android', type: 'emulator', status, avdName });
       }
     }
+    return devices;
+  }
 
-    return emulators;
+  private async listOfflineDevices(): Promise<DeviceInfo[]> {
+    const { stdout } = await execCmd('emulator', ['-list-avds']);
+    const runningAvds = this.onlineDevices.filter((v) => v.type === 'emulator').map((v) => v.avdName as string);
+    return stdout
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((avdName) => Boolean(avdName) && !runningAvds.includes(avdName))
+      .map((avdName) => ({
+        id: avdName,
+        name: avdName,
+        platform: 'android',
+        status: 'offline',
+        type: 'emulator',
+        avdName,
+      }));
   }
 
   private async getAvdName(emulatorId: string): Promise<string | undefined> {
@@ -46,14 +65,6 @@ export class AndroidEmulatorManager extends DeviceManager {
     } catch {
       return undefined;
     }
-  }
-
-  async getAvailableAvds(): Promise<string[]> {
-    const { stdout } = await execCmd('emulator', ['-list-avds']);
-    return stdout
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
   }
 
   async createNew(): Promise<void> {
@@ -69,7 +80,7 @@ export class AndroidEmulatorManager extends DeviceManager {
   }
 
   async start(avdName: string): Promise<void> {
-    const running = await this.list();
+    const running = await this.listOnlineDevices();
     const existing = running.find((e) => e.avdName === avdName);
     if (existing) {
       console.log(`  Emulator ${avdName} is already running`);
@@ -113,7 +124,8 @@ export class AndroidEmulatorManager extends DeviceManager {
     let disappeared = false;
     for (let i = 0; i < 30; i++) {
       await new Promise((r) => setTimeout(r, 1000));
-      const stillRunning = (await this.list()).some((e) => e.id === deviceId);
+      await this.refreshDevices();
+      const stillRunning = this.onlineDevices.some((e) => e.id === deviceId);
       if (!stillRunning) {
         disappeared = true;
         break;
@@ -125,8 +137,7 @@ export class AndroidEmulatorManager extends DeviceManager {
       return;
     }
 
-    const running = await this.list();
-    const device = running.find((e) => e.id === deviceId);
+    const device = this.onlineDevices.find((e) => e.id === deviceId);
     if (device?.avdName) {
       await this.start(device.avdName);
     }
