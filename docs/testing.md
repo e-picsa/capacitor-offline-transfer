@@ -141,18 +141,6 @@ During development, you can press:
 - `a` — Open Android Studio
 - `q` — Quit
 
-### Environment Variables
-
-You can pre-configure devices in `example/.env`:
-
-```bash
-# Comma-separated list of device serials to auto-select
-ANDROID_DEVICES=emulator-5554,RF8N20XXXXX
-
-# Or specify emulators only
-EMULATOR_AVDS=Pixel_6_API_34,Pixel_7_API_35
-```
-
 ## 3. iOS + Mac (via Catalyst)
 
 If you have a Mac, you can test Multipeer Connectivity between an iPhone/iPad and the Mac running the app via Mac Catalyst.
