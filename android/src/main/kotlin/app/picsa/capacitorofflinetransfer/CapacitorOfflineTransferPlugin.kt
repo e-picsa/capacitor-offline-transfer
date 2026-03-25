@@ -17,7 +17,6 @@ import com.getcapacitor.annotation.Permission
         Permission(
             alias = "nearby",
             strings = [
-                Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_WIFI_STATE,
                 Manifest.permission.CHANGE_WIFI_STATE,
@@ -37,7 +36,7 @@ import com.getcapacitor.annotation.Permission
  * ## Permission Handling
  *
  * Android requires different permissions based on API level:
- * - API 21+ (Lollipop): Location permissions for Wi-Fi scanning
+     * - API 21+ (Lollipop): ACCESS_COARSE_LOCATION for Wi-Fi scanning
  * - API 31+ (Android 12): BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT
  * - API 32+ (Android 12L): NEARBY_WIFI_DEVICES for Wi-Fi Aware/SoftAP
  *
@@ -74,11 +73,10 @@ class CapacitorOfflineTransferPlugin : Plugin() {
      * - API < 31: BLUETOOTH, BLUETOOTH_ADMIN (legacy)
      * - API 31+: BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT
      * - API 32+: NEARBY_WIFI_DEVICES (replaces some location permissions)
-     * - All: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, WIFI permissions
+     * - All: ACCESS_COARSE_LOCATION (approximate only), WIFI permissions
      */
     private fun requestPermissionsWithCall(call: PluginCall) {
         val permissionsToRequest = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_WIFI_STATE,
             Manifest.permission.CHANGE_WIFI_STATE
