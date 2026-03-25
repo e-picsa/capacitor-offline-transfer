@@ -175,9 +175,6 @@ class CapacitorOfflineTransferPlugin : Plugin() {
      */
     @PluginMethod
     override fun requestPermissions(call: PluginCall) {
-        if (call == null) {
-            return
-        }
         requestPermissionsWithCall(call)
     }
 
