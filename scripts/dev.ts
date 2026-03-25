@@ -19,18 +19,21 @@ main().catch((err) => {
 });
 
 function printBanner(ctx: BootstrapContext): void {
-  const emulators = ctx.devices.filter((d) => d.kind === 'emulator').map((d) => d.id);
-  const physicalDevices = ctx.devices.filter((d) => d.kind === 'physical');
-  const iosSimulators = ctx.devices.filter((d) => d.kind === 'ios-simulator');
+  const devices = ctx.devices as any[];
+  const emulators = devices.filter((d) => d.type === 'emulator' && d.platform === 'android');
+  const physicalDevices = devices.filter((d) => d.type === 'physical' && d.platform === 'android');
+  const iosSimulators = devices.filter((d) => d.type === 'emulator' && d.platform === 'ios');
+  const iosDevices = devices.filter((d) => d.type === 'physical' && d.platform === 'ios');
 
-  const formatDevices = (devices: typeof ctx.devices) => {
-    if (devices.length === 0) return 'None';
-    return devices.map((d) => d.name || d.id).join(', ');
+  const formatDevices = (devs: typeof devices) => {
+    if (devs.length === 0) return 'None';
+    return devs.map((d) => d.name || d.id).join(', ');
   };
 
-  const emulatorLine = emulators.length > 0 ? emulators.join(', ') : 'None';
-  const deviceLine = formatDevices(physicalDevices);
-  const iosLine = formatDevices(iosSimulators);
+  const emulatorLine = formatDevices(emulators);
+  const androidDeviceLine = formatDevices(physicalDevices);
+  const iosSimLine = formatDevices(iosSimulators);
+  const iosDevLine = formatDevices(iosDevices);
 
   const lines = [
     BOARDER_TOP,
@@ -42,9 +45,12 @@ function printBanner(ctx: BootstrapContext): void {
 
   if (ctx.platform === 'android') {
     lines.push(boxLine(`Emulators:     ${emulatorLine}`));
-    lines.push(boxLine(`Devices:       ${deviceLine}`));
+    lines.push(boxLine(`Devices:       ${androidDeviceLine}`));
   } else if (ctx.platform === 'ios') {
-    lines.push(boxLine(`Simulators:    ${iosLine}`));
+    lines.push(boxLine(`Simulators:    ${iosSimLine}`));
+    if (iosDevLine !== 'None') {
+      lines.push(boxLine(`Devices:       ${iosDevLine}`));
+    }
   }
 
   lines.push(

@@ -1,11 +1,21 @@
 import { resolve } from 'path';
-import { fullRedeployIOS, openXcode, syncIOSNative } from '../utils/ios.utils';
-import { FileWatcherDef, KeyWatcherDef } from './watchers.types';
+import { openXcode, syncIOSNative } from '../utils/ios.utils';
+import { DeviceOrchestrator, AppInfo } from '../utils/device';
+import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types';
 import { PATHS } from '../paths';
 
-const syncIOS = async () => {
+const getAppInfo = (): AppInfo => ({
+  appId: 'com.picsa.capacitorofflinetransfer',
+  ipaPath: 'example/ios/App/build/Debug-iphonesimulator/App.ipa',
+});
+
+const syncAndDeployIOS = async (ctx: WatchContext) => {
   console.log('\n📦 iOS native changed, syncing...');
-  await syncIOSNative();
+  const ok = await syncIOSNative();
+  if (ok) {
+    const orchestrator = new DeviceOrchestrator();
+    await orchestrator.deploy(ctx.devices as any, getAppInfo());
+  }
 };
 
 const filePaths = [
@@ -13,13 +23,13 @@ const filePaths = [
     path: resolve(PATHS.ROOT, 'ios', 'Sources'),
     pattern: /\.(swift|m|h)$/,
     label: 'iOS sources',
-    action: syncIOS,
+    action: syncAndDeployIOS,
   },
   {
     path: resolve(PATHS.ROOT, 'src'),
     pattern: /\.ts$/,
     label: 'TypeScript sources',
-    action: syncIOS,
+    action: syncAndDeployIOS,
   },
 ] satisfies FileWatcherDef[];
 
@@ -28,7 +38,13 @@ const keyCommands = [
     key: 'r',
     description: 'Force rebuild & redeploy',
     exclusive: true,
-    action: (ctx) => fullRedeployIOS(ctx.serverPort),
+    action: async (ctx) => {
+      const ok = await syncIOSNative();
+      if (ok) {
+        const orchestrator = new DeviceOrchestrator();
+        await orchestrator.deploy(ctx.devices as any, getAppInfo());
+      }
+    },
   },
   {
     key: 'x',

@@ -1,9 +1,9 @@
 import { Platform } from '../types';
-import { DeviceTarget } from '../utils/device.types';
+import { DeviceInfo } from '../utils/device';
 
 export interface BootstrapContext {
   platform: Platform;
-  devices: DeviceTarget[];
+  devices: DeviceInfo[];
   serverIp: string;
   serverPort: string;
 }

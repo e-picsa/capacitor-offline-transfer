@@ -1,24 +1,18 @@
 import { BootstrapContext } from './bootstrap.types';
-import {
-  getRunningIOSSimulators,
-  promptIOSSimulatorSelection,
-  syncIOSNative,
-  ensureSimulatorBooted,
-} from '../utils/ios.utils';
+import { syncIOSNative } from '../utils/ios.utils';
+import { DeviceOrchestrator, AppInfo } from '../utils/device';
 
-export default async (ctx: BootstrapContext) => {
+export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
+  const orchestrator = new DeviceOrchestrator();
+
   console.log('\n🔍 Detecting iOS simulators...');
-  const simulators = await getRunningIOSSimulators();
+  const devices = await orchestrator.detectAll('ios');
 
-  let selectedDevices = await promptIOSSimulatorSelection(simulators);
+  const selectedDevices = await orchestrator.promptSelection(devices);
 
   if (selectedDevices.length === 0) {
     console.error('\n❌ No iOS simulators selected. Exiting.');
     process.exit(1);
-  }
-
-  for (const sim of selectedDevices) {
-    await ensureSimulatorBooted(sim);
   }
 
   console.log('\n🔗 Live-reload uses localhost (iOS simulator)');
@@ -30,6 +24,14 @@ export default async (ctx: BootstrapContext) => {
     process.exit(1);
   }
 
-  ctx.devices = selectedDevices;
+  const appInfo: AppInfo = {
+    appId: 'com.picsa.capacitorofflinetransfer',
+    ipaPath: 'example/ios/App/build/Debug-iphonesimulator/App.ipa',
+  };
+
+  console.log('\n📦 Deploying to simulators...');
+  await orchestrator.deploy(selectedDevices, appInfo);
+
+  ctx.devices = selectedDevices as any;
   return ctx;
 };

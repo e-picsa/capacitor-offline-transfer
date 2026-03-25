@@ -1,46 +1,51 @@
-import { adbSetupLiveReload } from '../utils/adb.utils';
 import { BootstrapContext } from './bootstrap.types';
-import { ensureEmulatorsRunning, getRunningEmulators } from '../utils/emulator.utils';
-import { getPhysicalDevices, promptDeviceSelection } from '../utils/device.utils';
 import { syncAndroidNative } from '../utils/android.utils';
 import { getEnv } from '../utils/env.utils';
-import { deploy } from '../utils/deploy.utils';
-import { DeviceTarget, isWirelessDevice } from '../utils/device.types';
+import { DeviceOrchestrator, DeviceInfo, AppInfo } from '../utils/device';
 
-export default async (ctx: BootstrapContext) => {
+export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   const env = getEnv();
+  const orchestrator = new DeviceOrchestrator();
 
   console.log('\n🔍 Detecting devices...');
-  const runningEmulators = await getRunningEmulators();
-  const connectedDevices = await getPhysicalDevices();
+  let devices = await orchestrator.detectAll('android');
 
-  let selectedDevices: DeviceTarget[] = [];
-
-  if (runningEmulators.length === 0 && connectedDevices.length === 0) {
-    console.log('  No emulators or physical devices detected.');
-    const emulators = await ensureEmulatorsRunning(env.EMULATOR_AVDS);
-    const devices = await getPhysicalDevices();
-    selectedDevices = await promptDeviceSelection(emulators, devices);
-  } else {
-    selectedDevices = await promptDeviceSelection(runningEmulators, connectedDevices);
+  if (devices.length === 0) {
+    console.log('  No devices detected.');
+    const emulatorMgr = orchestrator.androidEmulator;
+    const avds = await emulatorMgr.getAvailableAvds();
+    if (avds.length > 0) {
+      console.log('\n🖥️  Available AVDs:');
+      avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
+      console.log('\n⚡ Select AVDs to start (e.g. "1" or "all"):');
+      const { prompt, parseMultiSelect } = await import('../utils/cli.utils');
+      const input = (await prompt('  > ')).trim();
+      const selection = parseMultiSelect(input);
+      if (selection[0] === '*' || selection[0] === 'all') {
+        for (const avd of avds) {
+          await emulatorMgr.start(avd);
+        }
+      } else {
+        const indices = selection.map((s) => parseInt(s, 10) - 1).filter((i) => i >= 0 && i < avds.length);
+        for (const i of indices) {
+          await emulatorMgr.start(avds[i]);
+        }
+      }
+      devices = await orchestrator.detectAll('android');
+    }
   }
+
+  const selectedDevices = await orchestrator.promptSelection(devices, {
+    showPairOption: true,
+    onPairDevice: async () => {
+      return await orchestrator.androidDevice.pairWireless();
+    },
+  });
 
   if (selectedDevices.length === 0) {
     console.error('\n❌ No devices selected. Exiting.');
     process.exit(1);
   }
-
-  console.log('\n🔗 Setting up live-reload...');
-  for (const device of selectedDevices) {
-    if (device.kind === 'emulator') {
-      await adbSetupLiveReload(device.id, ctx.serverPort);
-    } else if (device.kind === 'physical' && !isWirelessDevice(device)) {
-      await adbSetupLiveReload(device.id, ctx.serverPort);
-    } else if (device.kind === 'physical' && isWirelessDevice(device)) {
-      console.log(`  ${device.id} (wireless) - live-reload via LAN IP`);
-    }
-  }
-  console.log('✅ Live-reload configured');
 
   console.log(`\n🔨 Initial build and sync...`);
   const ok = await syncAndroidNative();
@@ -49,9 +54,15 @@ export default async (ctx: BootstrapContext) => {
     process.exit(1);
   }
 
-  console.log('\n📦 Deploying to devices...');
-  await deploy(selectedDevices, ctx.serverPort);
+  const appInfo: AppInfo = {
+    appId: 'com.picsa.capacitorofflinetransfer',
+    apkPath: 'example/android/app/build/outputs/apk/debug/app-debug.apk',
+    activity: '.MainActivity',
+  };
 
-  ctx.devices = selectedDevices;
+  console.log('\n📦 Deploying to devices...');
+  await orchestrator.deploy(selectedDevices, appInfo);
+
+  ctx.devices = selectedDevices as any;
   return ctx;
 };
