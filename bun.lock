@@ -35,7 +35,7 @@
       },
     },
     "example": {
-      "name": "capacitor-app",
+      "name": "capacitor-offline-transfer-example",
       "version": "1.0.0",
       "dependencies": {
         "@capacitor/android": "^8.0.0",
@@ -472,7 +472,7 @@
 
     "caniuse-lite": ["caniuse-lite@1.0.30001780", "", {}, "sha512-llngX0E7nQci5BPJDqoZSbuZ5Bcs9F5db7EtgfwBerX9XGtkkiO4NwfDDIRzHTTwcYC8vC7bmeUEPGrKlR/TkQ=="],
 
-    "capacitor-app": ["capacitor-app@workspace:example"],
+    "capacitor-offline-transfer-example": ["capacitor-offline-transfer-example@workspace:example"],
 
     "chalk": ["chalk@4.1.2", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="],
 

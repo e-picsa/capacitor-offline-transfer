@@ -1,13 +1,34 @@
 import { resolve } from 'path';
-import { fullRedeployAndroid, openAndroidStudio, syncAndroidNative } from '../utils/android.utils';
-import { coldRebootEmulators, deployToEmulators, reinstallAll } from '../utils/emulator.utils';
+import { openAndroidStudio, syncAndroidNative } from '../utils/android.utils';
+import { DeviceOrchestrator, AppInfo } from '../utils/device';
 import { FileWatcherDef, KeyWatcherDef, WatchContext } from './watchers.types';
 import { PATHS } from '../paths';
+import { EXAMPLE_APP_ID } from '../consts';
+
+const getAppInfo = (): AppInfo => ({
+  appId: EXAMPLE_APP_ID,
+  apkPath: PATHS.EXAMPLE_APP_APK,
+  activity: '.MainActivity',
+});
 
 const syncAndDeployAndroid = async (ctx: WatchContext) => {
   console.log('\n📦 Android native changed, rebuilding...');
   const ok = await syncAndroidNative();
-  if (ok) await deployToEmulators(ctx.emulators);
+  if (ok) {
+    const orchestrator = new DeviceOrchestrator();
+    await orchestrator.deploy(ctx.devices, getAppInfo());
+  }
+};
+
+const pairNewDevice = async (ctx: WatchContext) => {
+  console.log('\n📡 Pairing new wireless device...');
+  const orchestrator = new DeviceOrchestrator();
+  const newDevice = await orchestrator.androidDevice.pairWireless();
+  if (newDevice) {
+    ctx.devices.push(newDevice);
+    console.log(`\n✅ Added new device: ${newDevice.id}`);
+    await orchestrator.deploy([newDevice], getAppInfo());
+  }
 };
 
 const filePaths = [
@@ -30,19 +51,41 @@ const keyCommands = [
     key: 'r',
     description: 'Force rebuild & redeploy',
     exclusive: true,
-    action: (ctx) => fullRedeployAndroid(ctx.emulators),
+    action: async (ctx) => {
+      const ok = await syncAndroidNative();
+      if (ok) {
+        const orchestrator = new DeviceOrchestrator();
+        await orchestrator.deploy(ctx.devices, getAppInfo());
+      }
+    },
   },
   {
     key: 'i',
     description: 'Reinstall app (no rebuild)',
     exclusive: true,
-    action: (ctx) => reinstallAll(ctx.emulators),
+    action: async (ctx) => {
+      const orchestrator = new DeviceOrchestrator();
+      await orchestrator.reinstall(ctx.devices, getAppInfo());
+    },
   },
   {
     key: 'c',
-    description: 'Cold-reboot all emulators',
+    description: 'Cold-reboot emulators',
     exclusive: true,
-    action: (ctx) => coldRebootEmulators(ctx.emulators),
+    action: async (ctx) => {
+      const orchestrator = new DeviceOrchestrator();
+      for (const device of ctx.devices) {
+        if (device.type === 'emulator') {
+          await orchestrator.coldReboot(device);
+        }
+      }
+    },
+  },
+  {
+    key: 'p',
+    description: 'Pair new wireless device',
+    exclusive: true,
+    action: pairNewDevice,
   },
   {
     key: 'a',

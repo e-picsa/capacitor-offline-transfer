@@ -1,23 +1,130 @@
-import { adbReverse } from '../utils/adb.utils';
 import { BootstrapContext } from './bootstrap.types';
-import { ensureEmulatorsRunning } from '../utils/emulator.utils';
 import { syncAndroidNative } from '../utils/android.utils';
-import { getEnv } from '../utils/env.utils';
+import { DeviceOrchestrator, AppInfo, DeviceInfo, DeviceManager } from '../utils/device';
+import { EXAMPLE_APP_ID } from '../consts';
+import { PATHS } from '../paths';
 
-export default async (ctx: BootstrapContext) => {
-  const env = getEnv();
-  const emulators = await ensureEmulatorsRunning(env.EMULATOR_AVDS);
+interface NewDeviceAction {
+  letter: string;
+  label: string;
+  action: () => Promise<DeviceInfo | null>;
+}
 
-  if (emulators.length === 0) {
-    console.error('\n❌ No emulators available. Exiting.');
+function getNewDeviceActions(orchestrator: DeviceOrchestrator) {
+  let redetectTriggered = false;
+
+  const actions: NewDeviceAction[] = [
+    {
+      letter: 'd',
+      label: 'Pair new physical device (wireless debugging)',
+      action: async () => {
+        await orchestrator.androidDevice.createNew();
+        redetectTriggered = true;
+        return null;
+      },
+    },
+    {
+      letter: 'e',
+      label: 'Create new emulator (open Android Studio)',
+      action: async () => {
+        await orchestrator.androidEmulator.createNew();
+        redetectTriggered = true;
+        return null;
+      },
+    },
+  ];
+
+  return {
+    actions,
+    wasRedetectTriggered: () => redetectTriggered,
+    reset: () => {
+      redetectTriggered = false;
+    },
+  };
+}
+
+async function promptEmulatorBootOrAction(
+  orchestrator: DeviceOrchestrator,
+  newDeviceActions: NewDeviceAction[],
+): Promise<boolean> {
+  const { androidEmulator } = orchestrator;
+  const avds = await androidEmulator.list();
+
+  console.log('\n📱 Available devices:');
+
+  if (avds.length > 0) {
+    console.log('  ─── Existing Emulators ───');
+    avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
+  }
+
+  if (newDeviceActions.length > 0) {
+    console.log('\n', '  ─── New Device ───');
+    for (const action of newDeviceActions) {
+      console.log(`  [${action.letter}] ${action.label}`);
+    }
+  }
+
+  console.log('\n⚡ Select emulators to start or action (e.g. "1", "1,2", "d", or "e"):');
+  const { prompt, parseMultiSelect } = await import('../utils/cli.utils');
+  const input = (await prompt('  > ')).trim();
+  const selection = parseMultiSelect(input);
+
+  let actionTriggered = false;
+  const selectedAvds: DeviceInfo[] = [];
+
+  for (const s of selection) {
+    const action = newDeviceActions.find((a) => a.letter.toLowerCase() === s.toLowerCase());
+    if (action) {
+      await action.action();
+      actionTriggered = true;
+    } else {
+      const idx = parseInt(s, 10) - 1;
+      if (idx >= 0 && idx < avds.length) {
+        selectedAvds.push(avds[idx]);
+      }
+    }
+  }
+
+  for (const avd of selectedAvds) {
+    await androidEmulator.start(avd.id);
+  }
+
+  return actionTriggered;
+}
+
+async function selectDevices(orchestrator: DeviceOrchestrator) {
+  while (true) {
+    const { actions, wasRedetectTriggered, reset } = getNewDeviceActions(orchestrator);
+    reset();
+
+    console.log('\n🔍 Detecting devices...');
+    let devices = await orchestrator.detectAll('android');
+
+    if (devices.length === 0) {
+      console.log('  No running devices');
+      const shouldRedetect = await promptEmulatorBootOrAction(orchestrator, actions);
+      if (shouldRedetect || wasRedetectTriggered()) continue;
+      devices = await orchestrator.detectAll('android');
+    }
+
+    const selectedDevices = await orchestrator.promptSelection(devices, {
+      newDeviceActions: actions,
+    });
+
+    if (wasRedetectTriggered()) continue;
+
+    return selectedDevices;
+  }
+}
+
+export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
+  const orchestrator = new DeviceOrchestrator();
+  const selectedDevices = await selectDevices(orchestrator);
+
+  if (selectedDevices.length === 0) {
+    console.error('\n❌ No devices selected. Exiting.');
     process.exit(1);
   }
-
-  console.log('\n🔗 Setting up adb reverse...');
-  for (const em of emulators) {
-    await adbReverse(em.id, ctx.serverPort);
-  }
-  console.log('✅ All emulators connected');
 
   console.log(`\n🔨 Initial build and sync...`);
   const ok = await syncAndroidNative();
@@ -26,6 +133,15 @@ export default async (ctx: BootstrapContext) => {
     process.exit(1);
   }
 
-  ctx.emulators = emulators;
+  const appInfo: AppInfo = {
+    appId: EXAMPLE_APP_ID,
+    apkPath: PATHS.EXAMPLE_APP_APK,
+    activity: '.MainActivity',
+  };
+
+  console.log('\n📦 Deploying to devices...');
+  await orchestrator.deploy(selectedDevices, appInfo);
+
+  ctx.devices = selectedDevices;
   return ctx;
 };
