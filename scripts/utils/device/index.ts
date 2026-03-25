@@ -69,9 +69,9 @@ export class DeviceOrchestrator {
 
     if (devices.length > 0) {
       console.log('  ─── Existing Devices ───');
-      const blankEntry: DeviceInfo = { id: '', name: '', platform: 'android', status: '' as any, type: '' as any };
-      const merged = [blankEntry].concat(devices);
-      console.table(merged.map(({ name, type, status }, i) => ({ name, type, status })));
+      // convert to entries to allow logging 1-indexed table instead of 0-indexed
+      const tableEntries = devices.map(({ name, type, status }, i) => [i + 1, { name, type, status }]);
+      console.table(Object.fromEntries(tableEntries));
       console.log('');
     }
 

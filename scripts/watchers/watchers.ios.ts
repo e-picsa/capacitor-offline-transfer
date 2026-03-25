@@ -7,7 +7,7 @@ import { EXAMPLE_APP_ID } from '../consts';
 
 const getAppInfo = (): AppInfo => ({
   appId: EXAMPLE_APP_ID,
-  ipaPath: 'example/ios/App/build/Debug-iphonesimulator/App.ipa',
+  ipaPath: PATHS.EXAMPLE_APP_IPA,
 });
 
 const syncAndDeployIOS = async (ctx: WatchContext) => {
@@ -15,7 +15,7 @@ const syncAndDeployIOS = async (ctx: WatchContext) => {
   const ok = await syncIOSNative();
   if (ok) {
     const orchestrator = new DeviceOrchestrator();
-    await orchestrator.deploy(ctx.devices as any, getAppInfo());
+    await orchestrator.deploy(ctx.devices, getAppInfo());
   }
 };
 
@@ -43,7 +43,7 @@ const keyCommands = [
       const ok = await syncIOSNative();
       if (ok) {
         const orchestrator = new DeviceOrchestrator();
-        await orchestrator.deploy(ctx.devices as any, getAppInfo());
+        await orchestrator.deploy(ctx.devices, getAppInfo());
       }
     },
   },

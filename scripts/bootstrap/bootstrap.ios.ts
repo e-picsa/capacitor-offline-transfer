@@ -2,6 +2,7 @@ import { BootstrapContext } from './bootstrap.types';
 import { syncIOSNative } from '../utils/ios.utils';
 import { DeviceOrchestrator, AppInfo } from '../utils/device';
 import { EXAMPLE_APP_ID } from '../consts';
+import { PATHS } from '../paths';
 
 export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   const orchestrator = new DeviceOrchestrator();
@@ -27,12 +28,12 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
 
   const appInfo: AppInfo = {
     appId: EXAMPLE_APP_ID,
-    ipaPath: 'example/ios/App/build/Debug-iphonesimulator/App.ipa',
+    ipaPath: PATHS.EXAMPLE_APP_IPA,
   };
 
   console.log('\n📦 Deploying to simulators...');
   await orchestrator.deploy(selectedDevices, appInfo);
 
-  ctx.devices = selectedDevices as any;
+  ctx.devices = selectedDevices;
   return ctx;
 };

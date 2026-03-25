@@ -19,7 +19,7 @@ main().catch((err) => {
 });
 
 function printBanner(ctx: BootstrapContext): void {
-  const devices = ctx.devices as any[];
+  const devices = ctx.devices;
   const emulators = devices.filter((d) => d.type === 'emulator' && d.platform === 'android');
   const physicalDevices = devices.filter((d) => d.type === 'physical' && d.platform === 'android');
   const iosSimulators = devices.filter((d) => d.type === 'emulator' && d.platform === 'ios');

@@ -16,7 +16,7 @@ const syncAndDeployAndroid = async (ctx: WatchContext) => {
   const ok = await syncAndroidNative();
   if (ok) {
     const orchestrator = new DeviceOrchestrator();
-    await orchestrator.deploy(ctx.devices as any, getAppInfo());
+    await orchestrator.deploy(ctx.devices, getAppInfo());
   }
 };
 
@@ -25,7 +25,7 @@ const pairNewDevice = async (ctx: WatchContext) => {
   const orchestrator = new DeviceOrchestrator();
   const newDevice = await orchestrator.androidDevice.pairWireless();
   if (newDevice) {
-    (ctx.devices as any).push(newDevice);
+    ctx.devices.push(newDevice);
     console.log(`\n✅ Added new device: ${newDevice.id}`);
     await orchestrator.deploy([newDevice], getAppInfo());
   }
@@ -55,7 +55,7 @@ const keyCommands = [
       const ok = await syncAndroidNative();
       if (ok) {
         const orchestrator = new DeviceOrchestrator();
-        await orchestrator.deploy(ctx.devices as any, getAppInfo());
+        await orchestrator.deploy(ctx.devices, getAppInfo());
       }
     },
   },
@@ -65,7 +65,7 @@ const keyCommands = [
     exclusive: true,
     action: async (ctx) => {
       const orchestrator = new DeviceOrchestrator();
-      await orchestrator.reinstall(ctx.devices as any, getAppInfo());
+      await orchestrator.reinstall(ctx.devices, getAppInfo());
     },
   },
   {
@@ -74,7 +74,7 @@ const keyCommands = [
     exclusive: true,
     action: async (ctx) => {
       const orchestrator = new DeviceOrchestrator();
-      for (const device of ctx.devices as any) {
+      for (const device of ctx.devices) {
         if (device.type === 'emulator') {
           await orchestrator.coldReboot(device);
         }
