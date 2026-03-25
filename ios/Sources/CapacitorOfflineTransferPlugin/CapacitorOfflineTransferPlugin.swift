@@ -8,6 +8,8 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "checkCapabilities", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "checkPermissions", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestPermissions", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startAdvertising", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopAdvertising", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startDiscovery", returnType: CAPPluginReturnPromise),
@@ -50,14 +52,36 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         call.resolve(capabilities)
     }
 
+    @objc func checkPermissions(_ call: CAPPluginCall) {
+        let result: [String: Any] = [
+            "nearby": "granted"
+        ]
+        call.resolve(result)
+    }
+
+    @objc func requestPermissions(_ call: CAPPluginCall) {
+        let result: [String: Any] = [
+            "nearby": "granted"
+        ]
+        call.resolve(result)
+    }
+
+    private func ensurePermissions(call: CAPPluginCall, onGranted: @escaping () -> Void) {
+        // iOS permissions are declared in Info.plist, not runtime
+        // Always proceed - if permissions are missing, the system will handle it
+        onGranted()
+    }
+
     @objc func startAdvertising(_ call: CAPPluginCall) {
-        sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
-        guard let displayName = call.getString("displayName") else {
-            call.reject("displayName is required")
-            return
+        ensurePermissions(call: call) {
+            self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
+            guard let displayName = call.getString("displayName") else {
+                call.reject("displayName is required")
+                return
+            }
+            self.implementation.startAdvertising(displayName: displayName)
+            call.resolve()
         }
-        implementation.startAdvertising(displayName: displayName)
-        call.resolve()
     }
 
     @objc func stopAdvertising(_ call: CAPPluginCall) {
@@ -67,9 +91,11 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     }
 
     @objc func startDiscovery(_ call: CAPPluginCall) {
-        sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
-        implementation.startDiscovery()
-        call.resolve()
+        ensurePermissions(call: call) {
+            self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
+            self.implementation.startDiscovery()
+            call.resolve()
+        }
     }
 
     @objc func stopDiscovery(_ call: CAPPluginCall) {
