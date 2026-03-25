@@ -66,27 +66,6 @@ export class AndroidEmulatorManager extends DeviceManager {
     console.log("\n  Press any key once you've created the emulator...");
 
     await prompt('');
-
-    const avds = await this.getAvailableAvds();
-    if (avds.length > 0) {
-      console.log('\n🖥️  Available AVDs:');
-      avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
-      console.log('\n⚡ Select AVDs to start (e.g. "1" or "1,2"):');
-      const input = (await prompt('  > ')).trim();
-      const selection = parseMultiSelect(input);
-      if (selection[0] === '*' || selection[0] === 'all') {
-        for (const avd of avds) {
-          await this.start(avd);
-        }
-      } else {
-        const indices = selection.map((s) => parseInt(s, 10) - 1).filter((i) => i >= 0 && i < avds.length);
-        for (const i of indices) {
-          await this.start(avds[i]);
-        }
-      }
-    } else {
-      console.log('\n⚠️  No AVDs found. Please create one in Android Studio and try again.');
-    }
   }
 
   async start(avdName: string): Promise<void> {
