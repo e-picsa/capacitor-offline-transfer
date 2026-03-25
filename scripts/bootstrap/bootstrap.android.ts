@@ -3,6 +3,30 @@ import { syncAndroidNative } from '../utils/android.utils';
 import { getEnv } from '../utils/env.utils';
 import { DeviceOrchestrator, DeviceInfo, AppInfo } from '../utils/device';
 
+async function promptNewDeviceMenu(): Promise<'pair' | 'emulator' | 'skip'> {
+  const { prompt } = await import('../utils/cli.utils');
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('  📱 Pair New Device');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('  [p] Pair new physical device (wireless debugging)');
+  console.log('  [e] Create new emulator (open Android Studio)');
+  console.log('  [Enter] Skip / Continue with existing devices');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  const input = (await prompt('  > ')).trim().toLowerCase();
+  if (input === 'p') return 'pair';
+  if (input === 'e') return 'emulator';
+  return 'skip';
+}
+
+async function handleCreateEmulator(orchestrator: DeviceOrchestrator): Promise<void> {
+  await orchestrator.androidEmulator.createNew();
+}
+
+async function handlePairDevice(orchestrator: DeviceOrchestrator): Promise<DeviceInfo | null> {
+  return await orchestrator.androidDevice.pairWireless();
+}
+
 export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   const env = getEnv();
   const orchestrator = new DeviceOrchestrator();
@@ -17,7 +41,7 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
     if (avds.length > 0) {
       console.log('\n🖥️  Available AVDs:');
       avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
-      console.log('\n⚡ Select AVDs to start (e.g. "1"):');
+      console.log('\n⚡ Select AVDs to start (e.g. "1" or "1,2"):');
       const { prompt, parseMultiSelect } = await import('../utils/cli.utils');
       const input = (await prompt('  > ')).trim();
       const selection = parseMultiSelect(input);
@@ -31,6 +55,17 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
           await emulatorMgr.start(avds[i]);
         }
       }
+      devices = await orchestrator.detectAll('android');
+    }
+  }
+
+  const newDeviceAction = await promptNewDeviceMenu();
+  if (newDeviceAction === 'emulator') {
+    await handleCreateEmulator(orchestrator);
+    devices = await orchestrator.detectAll('android');
+  } else if (newDeviceAction === 'pair') {
+    const newDevice = await handlePairDevice(orchestrator);
+    if (newDevice) {
       devices = await orchestrator.detectAll('android');
     }
   }

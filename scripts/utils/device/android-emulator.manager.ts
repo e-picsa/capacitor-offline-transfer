@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
 import { DeviceManager } from './manager';
 import type { DeviceInfo, AppInfo } from './types';
-import { execCmd } from '../cli.utils';
+import { execCmd, prompt, parseMultiSelect } from '../cli.utils';
+import { openAndroidStudio } from '../android.utils';
 
 const EMULATOR_FLAGS = ['-no-snapshot-load', '-no-audio', '-gpu', 'swiftshader_indirect'];
 const BOOT_TIMEOUT_SECS = 120;
@@ -53,6 +54,39 @@ export class AndroidEmulatorManager extends DeviceManager {
       .split('\n')
       .map((l) => l.trim())
       .filter((l) => l.length > 0);
+  }
+
+  async createNew(): Promise<void> {
+    console.log('\n🖥️  Creating new emulator:');
+    console.log('  Opening Android Studio...');
+    await openAndroidStudio();
+
+    console.log('\n📖 Learn how to create AVDs:');
+    console.log('  https://developer.android.com/studio/run/managing-avds');
+    console.log("\n  Press any key once you've created the emulator...");
+
+    await prompt('');
+
+    const avds = await this.getAvailableAvds();
+    if (avds.length > 0) {
+      console.log('\n🖥️  Available AVDs:');
+      avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
+      console.log('\n⚡ Select AVDs to start (e.g. "1" or "1,2"):');
+      const input = (await prompt('  > ')).trim();
+      const selection = parseMultiSelect(input);
+      if (selection[0] === '*' || selection[0] === 'all') {
+        for (const avd of avds) {
+          await this.start(avd);
+        }
+      } else {
+        const indices = selection.map((s) => parseInt(s, 10) - 1).filter((i) => i >= 0 && i < avds.length);
+        for (const i of indices) {
+          await this.start(avds[i]);
+        }
+      }
+    } else {
+      console.log('\n⚠️  No AVDs found. Please create one in Android Studio and try again.');
+    }
   }
 
   async start(avdName: string): Promise<void> {
