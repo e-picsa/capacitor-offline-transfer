@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { DeviceManager } from './manager';
 import type { DeviceInfo, AppInfo } from './types';
-import { execCmd, prompt, parseMultiSelect } from '../cli.utils';
+import { execCmd, prompt, parseMultiSelect, waitForKeypress } from '../cli.utils';
 import { openAndroidStudio } from '../android.utils';
 
 const EMULATOR_FLAGS = ['-no-snapshot-load', '-no-audio', '-gpu', 'swiftshader_indirect'];
@@ -65,7 +65,7 @@ export class AndroidEmulatorManager extends DeviceManager {
     console.log('  https://developer.android.com/studio/run/managing-avds');
     console.log("\n  Press any key once you've created the emulator...");
 
-    await prompt('');
+    await waitForKeypress();
   }
 
   async start(avdName: string): Promise<void> {

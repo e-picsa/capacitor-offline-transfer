@@ -1,7 +1,7 @@
 import { BootstrapContext } from './bootstrap.types';
 import { syncAndroidNative } from '../utils/android.utils';
 import { getEnv } from '../utils/env.utils';
-import { DeviceOrchestrator, DeviceInfo, AppInfo } from '../utils/device';
+import { DeviceOrchestrator, AppInfo } from '../utils/device';
 
 export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   const env = getEnv();
@@ -14,43 +14,83 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
     console.log('  No devices detected.');
     const emulatorMgr = orchestrator.androidEmulator;
     const avds = await emulatorMgr.getAvailableAvds();
-    if (avds.length > 0) {
-      console.log('\n🖥️  Available AVDs:');
-      avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
-      console.log('\n⚡ Select AVDs to start (e.g. "1" or "1,2"):');
+
+    const newDeviceActions = [
+      {
+        letter: 'd',
+        label: 'Pair new physical device (wireless debugging)',
+        action: async () => {
+          return await orchestrator.androidDevice.pairWireless();
+        },
+      },
+      {
+        letter: 'e',
+        label: 'Create new emulator (open Android Studio)',
+        action: async () => {
+          await orchestrator.androidEmulator.createNew();
+          return null;
+        },
+      },
+    ];
+
+    if (avds.length > 0 || newDeviceActions.length > 0) {
+      console.log('\n📱 Available devices:');
+
+      if (avds.length > 0) {
+        console.log('  ─── Existing Emulators ───');
+        avds.forEach((avd, i) => console.log(`  [${i + 1}] ${avd}`));
+      }
+
+      if (newDeviceActions.length > 0) {
+        console.log('\n', '  ─── New Device ───');
+        for (const action of newDeviceActions) {
+          console.log(`  [${action.letter}] ${action.label}`);
+        }
+      }
+
+      console.log('\n⚡ Select emulators to start or action (e.g. "1,2" or "e"):');
       const { prompt, parseMultiSelect } = await import('../utils/cli.utils');
       const input = (await prompt('  > ')).trim();
       const selection = parseMultiSelect(input);
-      if (selection[0] === '*' || selection[0] === 'all') {
-        for (const avd of avds) {
-          await emulatorMgr.start(avd);
-        }
-      } else {
-        const indices = selection.map((s) => parseInt(s, 10) - 1).filter((i) => i >= 0 && i < avds.length);
-        for (const i of indices) {
-          await emulatorMgr.start(avds[i]);
+
+      const selectedAvds: string[] = [];
+      for (const s of selection) {
+        const action = newDeviceActions.find((a) => a.letter.toLowerCase() === s.toLowerCase());
+        if (action) {
+          await action.action();
+        } else {
+          const idx = parseInt(s, 10) - 1;
+          if (idx >= 0 && idx < avds.length) {
+            selectedAvds.push(avds[idx]);
+          }
         }
       }
-      devices = await orchestrator.detectAll('android');
-    }
-  }
 
-  const newDeviceAction = await promptNewDeviceMenu();
-  if (newDeviceAction === 'emulator') {
-    await handleCreateEmulator(orchestrator);
-    devices = await orchestrator.detectAll('android');
-  } else if (newDeviceAction === 'pair') {
-    const newDevice = await handlePairDevice(orchestrator);
-    if (newDevice) {
-      devices = await orchestrator.detectAll('android');
+      for (const avd of selectedAvds) {
+        await emulatorMgr.start(avd);
+      }
     }
+    devices = await orchestrator.detectAll('android');
   }
 
   const selectedDevices = await orchestrator.promptSelection(devices, {
-    showPairOption: true,
-    onPairDevice: async () => {
-      return await orchestrator.androidDevice.pairWireless();
-    },
+    newDeviceActions: [
+      {
+        letter: 'd',
+        label: 'Pair new physical device (wireless debugging)',
+        action: async () => {
+          return await orchestrator.androidDevice.pairWireless();
+        },
+      },
+      {
+        letter: 'e',
+        label: 'Create new emulator (open Android Studio)',
+        action: async () => {
+          await orchestrator.androidEmulator.createNew();
+          return null;
+        },
+      },
+    ],
   });
 
   if (selectedDevices.length === 0) {
@@ -77,27 +117,3 @@ export default async (ctx: BootstrapContext): Promise<BootstrapContext> => {
   ctx.devices = selectedDevices as any;
   return ctx;
 };
-
-async function promptNewDeviceMenu(): Promise<'pair' | 'emulator' | 'skip'> {
-  const { prompt } = await import('../utils/cli.utils');
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  📱 Pair New Device');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  [p] Pair new physical device (wireless debugging)');
-  console.log('  [e] Create new emulator (open Android Studio)');
-  console.log('  [Enter] Skip / Continue with existing devices');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-  const input = (await prompt('  > ')).trim().toLowerCase();
-  if (input === 'p') return 'pair';
-  if (input === 'e') return 'emulator';
-  return 'skip';
-}
-
-async function handleCreateEmulator(orchestrator: DeviceOrchestrator): Promise<void> {
-  await orchestrator.androidEmulator.createNew();
-}
-
-async function handlePairDevice(orchestrator: DeviceOrchestrator): Promise<DeviceInfo | null> {
-  return await orchestrator.androidDevice.pairWireless();
-}

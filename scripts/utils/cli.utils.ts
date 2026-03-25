@@ -31,6 +31,18 @@ export async function prompt(question: string): Promise<string> {
   });
 }
 
+export async function waitForKeypress(): Promise<void> {
+  return new Promise((resolve) => {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.once('data', () => {
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      resolve();
+    });
+  });
+}
+
 function parsePlatformArg(): 'android' | 'ios' | null {
   const platform = process.argv[2]?.trim().toLowerCase();
   if (platform === 'android' || platform === 'ios') return platform;

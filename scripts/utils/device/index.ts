@@ -48,35 +48,35 @@ export class DeviceOrchestrator {
     options?: {
       showPairOption?: boolean;
       onPairDevice?: () => Promise<DeviceInfo | null>;
+      newDeviceActions?: {
+        letter: string;
+        label: string;
+        action: () => Promise<DeviceInfo | null>;
+      }[];
     },
   ): Promise<DeviceInfo[]> {
-    const allItems: { index: number; device?: DeviceInfo; isAction?: boolean; label: string }[] = [];
-    let index = 0;
-
-    if (options?.showPairOption) {
-      allItems.push({ index: index++, isAction: true, label: 'Connect new device...' });
-    }
-
-    for (const device of devices) {
-      const statusLabel = device.status === 'online' ? 'online' : device.status === 'booting' ? 'booting' : 'offline';
-      const typeLabel = device.type === 'emulator' ? '[emulator]' : device.ip ? '[wireless]' : '[USB]';
-      allItems.push({
-        index: index++,
-        device,
-        label: `${device.id} (${device.name}) ${typeLabel} [${statusLabel}]`,
-      });
-    }
+    const newDeviceActions = options?.newDeviceActions || [];
+    let numIndex = 1;
 
     console.log('\n📱 Available devices:');
-    for (const item of allItems) {
-      if (item.isAction) {
-        console.log(`  [${item.index}] ${item.label}`);
-      } else if (item.device) {
-        console.log(`  [${item.index}] ${item.label}`);
+
+    if (newDeviceActions.length > 0) {
+      console.log('  ─── New Device ───');
+      for (const action of newDeviceActions) {
+        console.log(`  [${action.letter}] ${action.label}`);
       }
     }
 
-    console.log('\n⚡ Select devices (e.g. "1,2"):');
+    if (devices.length > 0) {
+      console.log('  ─── Existing Devices ───');
+      for (const device of devices) {
+        const statusLabel = device.status === 'online' ? 'online' : device.status === 'booting' ? 'booting' : 'offline';
+        const typeLabel = device.type === 'emulator' ? '[emulator]' : device.ip ? '[wireless]' : '[USB]';
+        console.log(`  [${numIndex++}] ${device.id} (${device.name}) ${typeLabel} [${statusLabel}]`);
+      }
+    }
+
+    console.log('\n⚡ Select devices or actions (e.g. "1,2" or "d,1"):');
     const input = (await prompt('  > ')).trim();
     const selection = parseMultiSelect(input);
 
@@ -84,36 +84,36 @@ export class DeviceOrchestrator {
       return [];
     }
 
-    if (selection[0] === '*') {
-      return devices;
-    }
+    const selectedDevices: DeviceInfo[] = [];
+    let newDeviceAdded = false;
 
-    const indices = selection.map((s) => parseInt(s, 10));
-
-    if (options?.showPairOption && indices.includes(0)) {
-      const newDevice = await options.onPairDevice?.();
-      if (newDevice) {
-        const rest = indices.filter((i) => i !== 0);
-        if (rest.length === 0) {
-          return [newDevice];
+    for (const s of selection) {
+      const action = newDeviceActions.find((a) => a.letter.toLowerCase() === s.toLowerCase());
+      if (action) {
+        const newDevice = await action.action();
+        if (newDevice) {
+          selectedDevices.push(newDevice);
+          newDeviceAdded = true;
         }
-        const refreshed = await this.detectAll(devices[0]?.platform || 'android');
-        const selected = rest
-          .map((i) => {
-            const item = allItems.find((item) => item.index === i);
-            return item?.device;
-          })
-          .filter(Boolean) as DeviceInfo[];
-        return [...selected, newDevice];
+      } else {
+        const idx = parseInt(s, 10) - 1;
+        if (idx >= 0 && idx < devices.length) {
+          selectedDevices.push(devices[idx]);
+        }
       }
     }
 
-    return indices
-      .map((i) => {
-        const item = allItems.find((item) => item.index === i);
-        return item?.device;
-      })
-      .filter(Boolean) as DeviceInfo[];
+    if (newDeviceAdded) {
+      const refreshed = await this.detectAll(devices[0]?.platform || 'android');
+
+      const existingByNumber = selectedDevices.filter((d) => refreshed.some((r) => r.id === d.id && r.name === d.name));
+
+      const newDevices = selectedDevices.filter((d) => !refreshed.some((r) => r.id === d.id && r.name === d.name));
+
+      return [...existingByNumber, ...newDevices];
+    }
+
+    return selectedDevices;
   }
 
   async deploy(devices: DeviceInfo[], app: AppInfo): Promise<void> {
