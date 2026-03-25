@@ -17,7 +17,6 @@ import com.getcapacitor.annotation.Permission
         Permission(
             alias = "nearby",
             strings = [
-                Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_WIFI_STATE,
                 Manifest.permission.CHANGE_WIFI_STATE,
@@ -31,29 +30,70 @@ import com.getcapacitor.annotation.Permission
         )
     ]
 )
+/**
+ * Capacitor plugin for offline file transfer using Android Nearby Connections API.
+ *
+ * ## Permission Handling
+ *
+ * Android requires different permissions based on API level:
+     * - API 21+ (Lollipop): ACCESS_COARSE_LOCATION for Wi-Fi scanning
+ * - API 31+ (Android 12): BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT
+ * - API 32+ (Android 12L): NEARBY_WIFI_DEVICES for Wi-Fi Aware/SoftAP
+ *
+ * The plugin automatically checks and requests permissions before starting
+ * advertising or discovery to ensure a smooth user experience.
+ *
+ * ## Auto-Permission Flow
+ *
+ * 1. User calls startAdvertising() or startDiscovery()
+ * 2. checkAndRequestPermissions() checks if "nearby" permission is already granted
+ * 3. If granted → proceed immediately
+ * 4. If not granted → request permissions from user
+ * 5. If user denies → reject the call with "Permissions denied"
+ * 6. If user grants → proceed with the native operation
+ */
 class CapacitorOfflineTransferPlugin : Plugin() {
 
     private val implementation = CapacitorOfflineTransfer()
+    /** Holds the pending plugin call while waiting for permission result */
     private var pendingPermissionCall: PluginCall? = null
+    /** Callback to execute after permissions are granted */
+    private var pendingPermissionOnGranted: (() -> Unit)? = null
     private var sessionStartTime: Long = 0
 
-    @Suppress("DEPRECATION")
-    override fun requestPermissions(call: PluginCall?) {
-        if (call == null) return
+    companion object {
+        /** Request code for permission result callback */
+        private const val PERMISSION_REQUEST_CODE = 1001
+    }
 
+    /**
+     * Builds the permission list based on Android API level.
+     *
+     * Required permissions by API level:
+     * - API < 31: BLUETOOTH, BLUETOOTH_ADMIN (legacy)
+     * - API 31+: BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT
+     * - API 32+: NEARBY_WIFI_DEVICES (replaces some location permissions)
+     * - All: ACCESS_COARSE_LOCATION (approximate only), WIFI permissions
+     */
+    private fun requestPermissionsWithCall(call: PluginCall) {
         val permissionsToRequest = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_WIFI_STATE,
             Manifest.permission.CHANGE_WIFI_STATE
         )
 
+        // API 31+ (Android 12): New Bluetooth permissions model
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_SCAN)
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_ADVERTISE)
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
-            permissionsToRequest.add(Manifest.permission.NEARBY_WIFI_DEVICES)
+
+            // API 32+ (Android 12L): NEARBY_WIFI_DEVICES replaces some legacy permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
+                permissionsToRequest.add(Manifest.permission.NEARBY_WIFI_DEVICES)
+            }
         } else {
+            // API < 31: Legacy Bluetooth permissions
             permissionsToRequest.add(Manifest.permission.BLUETOOTH)
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_ADMIN)
         }
@@ -63,6 +103,12 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         pluginRequestPermissions(permissionStrings, PERMISSION_REQUEST_CODE)
     }
 
+    /**
+     * Handles the result of permission request.
+     *
+     * This override is deprecated in Capacitor 4+ but kept for compatibility.
+     * For Capacitor 4+, use getPermissionStates() instead.
+     */
     @Deprecated("Use Capacitor 4+ permission APIs")
     @Suppress("DEPRECATION")
     override fun handleRequestPermissionsResult(
@@ -73,20 +119,63 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         super.handleRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             val savedCall = pendingPermissionCall
+            val onGranted = pendingPermissionOnGranted
+            pendingPermissionCall = null
+            pendingPermissionOnGranted = null
+
             if (savedCall != null) {
                 val allGranted = grantResults.all { it == android.content.pm.PackageManager.PERMISSION_GRANTED }
-                if (allGranted) {
-                    savedCall.resolve()
+                if (allGranted && onGranted != null) {
+                    // Permission granted - execute the pending operation
+                    onGranted()
                 } else {
+                    // Permission denied - reject the call
                     savedCall.reject("Permissions denied")
                 }
-                pendingPermissionCall = null
             }
         }
     }
 
-    companion object {
-        private const val PERMISSION_REQUEST_CODE = 1001
+    /**
+     * Checks if permissions are granted and requests them if needed.
+     * This is called automatically before startAdvertising/startDiscovery.
+     *
+     * @param call The plugin call to reject if permissions denied
+     * @param onGranted Callback to execute when permissions are granted
+     */
+    private fun checkAndRequestPermissions(call: PluginCall, onGranted: () -> Unit) {
+        val permStates = getPermissionStates()
+        val nearbyStatus = permStates["nearby"]
+
+        if (nearbyStatus != null && nearbyStatus.toString() == "granted") {
+            onGranted()
+            return
+        }
+
+        pendingPermissionCall = call
+        pendingPermissionOnGranted = onGranted
+        requestPermissionsWithCall(call)
+    }
+
+    /**
+     * JS-callable method to check permission status.
+     * Returns: { nearby: "granted" | "denied" | "prompt" }
+     */
+    @PluginMethod
+    override fun checkPermissions(call: PluginCall) {
+        val permStates = getPermissionStates()
+        val result = JSObject()
+        result.put("nearby", permStates["nearby"]?.toString() ?: "denied")
+        call.resolve(result)
+    }
+
+    /**
+     * JS-callable method to request permissions explicitly.
+     * Use this if you want to request permissions before advertising/discovery.
+     */
+    @PluginMethod
+    override fun requestPermissions(call: PluginCall) {
+        requestPermissionsWithCall(call)
     }
 
     private fun getFileExtension(filePath: String): String {
@@ -172,12 +261,20 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         call.resolve(result)
     }
 
+    /**
+     * Starts advertising to nearby devices using Nearby Connections API.
+     *
+     * Automatically checks and requests permissions before starting.
+     * If permissions are denied, rejects with "Permissions denied".
+     */
     @PluginMethod
     fun startAdvertising(call: PluginCall) {
-        sessionStartTime = System.currentTimeMillis()
-        val displayName = call.getString("displayName")
-        implementation.startAdvertising(displayName)
-        call.resolve()
+        checkAndRequestPermissions(call) {
+            sessionStartTime = System.currentTimeMillis()
+            val displayName = call.getString("displayName")
+            implementation.startAdvertising(displayName)
+            call.resolve()
+        }
     }
 
     @PluginMethod
@@ -187,11 +284,19 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         call.resolve()
     }
 
+    /**
+     * Starts discovering nearby devices using Nearby Connections API.
+     *
+     * Automatically checks and requests permissions before starting.
+     * If permissions are denied, rejects with "Permissions denied".
+     */
     @PluginMethod
     fun startDiscovery(call: PluginCall) {
-        sessionStartTime = System.currentTimeMillis()
-        implementation.startDiscovery()
-        call.resolve()
+        checkAndRequestPermissions(call) {
+            sessionStartTime = System.currentTimeMillis()
+            implementation.startDiscovery()
+            call.resolve()
+        }
     }
 
     @PluginMethod

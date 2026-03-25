@@ -141,13 +141,17 @@ To ensure the transfer engine survives the constraints of rural deployments, man
 
 #### Requesting Permissions
 
-For Android 6.0+ and especially Android 12+, you must request these permissions at runtime before using the plugin functions. You can use the built-in Capacitor permission methods:
+The plugin **automatically requests permissions** when you call `startAdvertising()` or `startDiscovery()`. If the user denies permissions, the call will reject with an error.
+
+If you prefer to check or request permissions explicitly (e.g., at app startup), you can use the built-in methods:
 
 ```typescript
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 
+// Optional: Check permission status at startup
 const check = await OfflineTransfer.checkPermissions();
 if (check.nearby !== 'granted') {
+  // Requesting is optional - the plugin will prompt automatically on first use
   await OfflineTransfer.requestPermissions();
 }
 ```
@@ -177,7 +181,9 @@ Add these to your `Info.plist`:
 | API Method               | Android | iOS | Web |
 | ------------------------ | ------- | --- | --- |
 | `initialize`             | ✅      | ✅  | -   |
-| `setStrategy`            | ✅      | ✅  | -   |
+| `checkCapabilities`      | ✅      | ✅  | -   |
+| `checkPermissions`       | ✅      | ✅  | -   |
+| `requestPermissions`     | ✅      | ✅  | -   |
 | `startAdvertising`       | ✅      | ✅  | -   |
 | `stopAdvertising`        | ✅      | ✅  | -   |
 | `startDiscovery`         | ✅      | ✅  | -   |
@@ -193,6 +199,8 @@ Add these to your `Info.plist`:
 | `startLanServer`         | ✅      | ❌  | -   |
 | `stopLanServer`          | ✅      | ❌  | -   |
 | `setLogLevel`            | ✅      | ✅  | -   |
+| `getState`               | ✅      | ✅  | -   |
+| `syncFromPlugin`         | ✅      | ✅  | -   |
 
 - **✅** = Supported
 - **❌** = Not available (rejects with error)

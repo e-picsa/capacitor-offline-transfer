@@ -88,7 +88,7 @@ export const AppShell = () => {
     <div class="min-h-screen bg-white font-sans flex flex-col">
       <ToastContainer />
 
-      <header class="bg-blue-600 text-white px-4 py-3 flex items-center justify-between">
+      <header class="bg-blue-600 text-white px-4 pt-3 pb-3 flex items-center justify-between pt-[env(safe-area-inset-top)]">
         <h1 class="text-xl font-semibold">Offline Transfer</h1>
         <button
           class="bg-blue-500 hover:bg-blue-400 text-white font-medium py-1 px-3 rounded text-sm"
