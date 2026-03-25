@@ -87,11 +87,11 @@ class CapacitorOfflineTransferPlugin : Plugin() {
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_SCAN)
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_ADVERTISE)
             permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
-        }
 
-        // API 32+ (Android 12L): NEARBY_WIFI_DEVICES replaces some legacy permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
-            permissionsToRequest.add(Manifest.permission.NEARBY_WIFI_DEVICES)
+            // API 32+ (Android 12L): NEARBY_WIFI_DEVICES replaces some legacy permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
+                permissionsToRequest.add(Manifest.permission.NEARBY_WIFI_DEVICES)
+            }
         } else {
             // API < 31: Legacy Bluetooth permissions
             permissionsToRequest.add(Manifest.permission.BLUETOOTH)
