@@ -63,3 +63,14 @@ This updates the API section in `README.md` automatically.
 - If you encounter a build error in the Android or iOS projects, search for the specific error in the respective native subfolders.
 - If you need to debug native logic, look into `OfflineTransferPlugin.kt` (Android) or `OfflineTransferPlugin.swift` (iOS).
 - Always ensure `ios/Package.swift` and `.podspec` files are updated if you add new native dependencies.
+
+---
+
+## 🧠 Context & Tool Management
+
+> [!WARNING]
+> **Conserve Context Tokens:** Terminal output can be exceptionally bloated. Use specific workspace tools over terminal commands for context gathering.
+
+- When asked to read, inspect, or review files, **ALWAYS** prefer your built-in, native workspace/file-reading tools (e.g., `view_file`, `read_file`, `search_files`, `grep_search`, depending on your specific agent environment like Google Antigravity, Gemini, Cursor, Windsurf, Copilot, etc.).
+- **DO NOT** use terminal commands like `cat`, `less`, `head`, `tail`, or `git show` to read file contents unless explicitly instructed to do so by the user. These commands bypass context management systems and consume excessive tokens.
+- When reviewing uncommitted or staged work, **ALWAYS** use `git diff` or your native equivalent instead of dumping full file contents.

@@ -15,17 +15,17 @@ This is the most reliable way to test all Tiers of discovery and transfer.
 1. **Configure Strategy**: First, configure the underlying network topology on both devices by calling `setStrategy` (e.g., `OfflineTransfer.setStrategy({ strategy: 'P2P_CLUSTER' })`). Supported standard strategies are `P2P_CLUSTER`, `P2P_STAR`, or `P2P_POINT_TO_POINT`.
 2. **Setup Host/Advertiser**: One device starts the advertising process by calling `OfflineTransfer.startAdvertising({ displayName: 'Device A' })`.
 3. **Setup Client/Discoverer**: The other device starts listening by calling `OfflineTransfer.startDiscovery()`.
-4. **Discover and Connect**: 
+4. **Discover and Connect**:
    - Once the host is found, the client receives an `endpointFound` event.
    - The client then explicitly attempts a connection using `OfflineTransfer.connect({ endpointId: '<id>', displayName: 'Device B' })`.
-5. **Accept Connection**: 
+5. **Accept Connection**:
    - The host receives a `connectionRequested` event with the client's information.
    - The host finalizes the connection by calling `OfflineTransfer.acceptConnection({ endpointId: '<id>' })`.
 6. **Data Transfer**: After both devices emit a `connectionResult` indicating success, they can exchange messages (`sendMessage`) and files (`sendFile`) using the established `endpointId`.
 
 ## 2. Two Android Emulators
 
-Since the Android Emulator does not support real Bluetooth or Wi-Fi Direct hardware, standard P2P discovery will not work between two emulators. **Note:** Standard strategies (`P2P_CLUSTER`, `P2P_STAR`, `P2P_POINT_TO_POINT`) require physical radios and cannot be used here. 
+Since the Android Emulator does not support real Bluetooth or Wi-Fi Direct hardware, standard P2P discovery will not work between two emulators. **Note:** Standard strategies (`P2P_CLUSTER`, `P2P_STAR`, `P2P_POINT_TO_POINT`) require physical radios and cannot be used here.
 
 Instead, emulator communication utilizes a manual connection over the "Tier 3" HTTP bridge, bypassing the Nearby Connections API entirely. You can test the plugin's data transfer and messaging events by creating a TCP bridge.
 
@@ -75,10 +75,83 @@ The example app provides a specialized mode for emulators that simplifies this p
 - In the **Step B: Client Emulator** section, ensure the URL is `http://localhost:8080` (must match your `adb forward` port).
 - Tap **Manual Connect**.
 
-The emulators will now behave as if they connected naturally. Both sides can use the server's URL as the `endpointId` to exchange files (`sendFile`) and messages (`sendMessage`). 
+The emulators will now behave as if they connected naturally. Both sides can use the server's URL as the `endpointId` to exchange files (`sendFile`) and messages (`sendMessage`).
 
 **Note for Developers:** Behind the scenes, the example app bypasses the Nearby `setStrategy` call and directly uses `startServer` and `connectByAddress`. `connectByAddress` automatically simulates the `endpointFound` and `connectionResult` events on the client side to keep the state machine consistent.
 
+## 2b. Physical Android Device via Dev Script
+
+The `scripts/dev.ts` development script supports deploying to physical Android devices via USB or wireless debugging.
+
+### Prerequisites
+
+1. **Enable Developer Options** on your Android device:
+   - Go to **Settings > About Phone**
+   - Tap **Build Number** 7 times
+   - Go back to **Settings > Developer Options**
+
+2. **Enable USB Debugging** (for USB connection):
+   - In Developer Options, enable **USB Debugging**
+   - Connect your device via USB
+   - Accept the USB debugging authorization prompt on your device
+
+3. **Enable Wireless Debugging** (for wireless connection):
+   - In Developer Options, enable **Wireless Debugging**
+   - Note the IP address and port (e.g., `192.168.1.100:5555`)
+   - For first-time pairing, you'll need the pairing code
+
+### Using the Dev Script
+
+Run the development script:
+
+```bash
+bun run start android
+```
+
+The script will detect connected devices and prompt you to select:
+
+```
+📱 Available devices:
+  [0]  Connect new physical device...
+  [1]  emulator-5554 (Pixel 6 API 34)        [emulator]
+  [2]  RF8N20XXXXX (Pixel 8)                [USB]
+  [3]  192.168.1.100:5555 (Pixel 7 Pro)     [wireless]
+
+⚡ Select devices (e.g. "1,2" or "all"):
+```
+
+- **Select [0]** to pair a new wireless device — the script will guide you through the pairing process
+- **Select by number** (e.g., `1,2`) to deploy to specific devices
+- **Select `all`** or `*` to deploy to all available devices
+
+### Live-Reload
+
+- **USB devices**: Uses `adb forward` to enable live-reload
+- **Wireless devices**: Uses your device's IP address for live-reload (device must be on the same network)
+- **Emulators**: Uses `adb reverse`
+
+### Key Commands
+
+During development, you can press:
+
+- `r` — Force rebuild and redeploy
+- `i` — Reinstall app (no rebuild)
+- `c` — Cold-reboot emulators
+- `p` — Pair a new wireless device
+- `a` — Open Android Studio
+- `q` — Quit
+
+### Environment Variables
+
+You can pre-configure devices in `example/.env`:
+
+```bash
+# Comma-separated list of device serials to auto-select
+ANDROID_DEVICES=emulator-5554,RF8N20XXXXX
+
+# Or specify emulators only
+EMULATOR_AVDS=Pixel_6_API_34,Pixel_7_API_35
+```
 
 ## 3. iOS + Mac (via Catalyst)
 

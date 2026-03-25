@@ -64,5 +64,5 @@ async function handleCommonBootstrap(): Promise<BootstrapContext> {
 
   await ensurePortFree(serverPort);
 
-  return { platform, serverIp, serverPort, emulators: [] };
+  return { platform, serverIp, serverPort, devices: [] };
 }

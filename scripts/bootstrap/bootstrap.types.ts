@@ -1,9 +1,9 @@
 import { Platform } from '../types';
-import { Emulator } from '../utils/emulator.utils';
+import { DeviceTarget } from '../utils/device.types';
 
 export interface BootstrapContext {
   platform: Platform;
-  emulators: Emulator[];
+  devices: DeviceTarget[];
   serverIp: string;
   serverPort: string;
 }

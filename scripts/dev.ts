@@ -19,20 +19,39 @@ main().catch((err) => {
 });
 
 function printBanner(ctx: BootstrapContext): void {
-  const emulatorList =
-    ctx.emulators.length > 0 ? ctx.emulators.map((e) => e.id).join(', ') : 'None (emulator deploy not available)';
+  const emulators = ctx.devices.filter((d) => d.kind === 'emulator').map((d) => d.id);
+  const physicalDevices = ctx.devices.filter((d) => d.kind === 'physical');
+  const iosSimulators = ctx.devices.filter((d) => d.kind === 'ios-simulator');
+
+  const formatDevices = (devices: typeof ctx.devices) => {
+    if (devices.length === 0) return 'None';
+    return devices.map((d) => d.name || d.id).join(', ');
+  };
+
+  const emulatorLine = emulators.length > 0 ? emulators.join(', ') : 'None';
+  const deviceLine = formatDevices(physicalDevices);
+  const iosLine = formatDevices(iosSimulators);
 
   const lines = [
     BOARDER_TOP,
     boxLine('LIVE-RELOAD READY'),
     BOARDER_MID,
-    boxLine(`Web server:  http://localhost:${ctx.serverPort}`),
-    boxLine(`Emulators:   ${emulatorList}`),
-    boxLine(`Platform:    ${ctx.platform}`),
+    boxLine(`Web server:    http://localhost:${ctx.serverPort}`),
+    boxLine(`Platform:      ${ctx.platform}`),
+  ];
+
+  if (ctx.platform === 'android') {
+    lines.push(boxLine(`Emulators:     ${emulatorLine}`));
+    lines.push(boxLine(`Devices:       ${deviceLine}`));
+  } else if (ctx.platform === 'ios') {
+    lines.push(boxLine(`Simulators:    ${iosLine}`));
+  }
+
+  lines.push(
     BOARDER_MID,
     boxLine('Web/JS changes:  Auto-loaded via Vite HMR'),
     boxLine('Native changes:  Auto-rebuilds plugin + redeploys all'),
     BOARDER_BOTTOM,
-  ];
+  );
   console.log(lines.join('\n'));
 }

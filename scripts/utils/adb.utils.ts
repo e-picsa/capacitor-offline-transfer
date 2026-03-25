@@ -19,8 +19,8 @@ const BASE_DELAY_MS = 1_000;
 const BOOT_POLL_INTERVAL_MS = 3_000;
 const BOOT_TIMEOUT_MS = 120_000;
 
-export async function adbReverse(emulatorId: string, port: string): Promise<void> {
-  await execCmd('adb', ['-s', emulatorId, 'reverse', `tcp:${port}`, `tcp:${port}`]);
+export async function adbSetupLiveReload(deviceId: string, port: string): Promise<void> {
+  await execCmd('adb', ['-s', deviceId, 'reverse', `tcp:${port}`, `tcp:${port}`]);
 }
 
 interface AdbInstallResult {
@@ -62,15 +62,15 @@ const FATAL_ERRORS: { patterns: string[]; message: string }[] = [
   },
   {
     patterns: ['unauthorized'],
-    message: 'Emulator unauthorized — accept the USB debugging prompt',
+    message: 'Device unauthorized — accept the USB debugging prompt on the device',
   },
   {
     patterns: ['insufficient_storage', 'not enough space'],
-    message: 'Insufficient storage on emulator — wipe data and restart',
+    message: 'Insufficient storage on device — free up space and try again',
   },
   {
     patterns: ['incompatible'],
-    message: 'APK is incompatible with the emulator architecture',
+    message: 'APK is incompatible with the device architecture',
   },
   {
     patterns: ['permission_denied', 'permission denied'],
@@ -103,38 +103,38 @@ function retryDelay(attempt: number): Promise<void> {
  * Polls `sys.boot_completed` until the device reports "1" or the timeout
  * is reached. Falls back to a fixed delay if the property can't be read.
  */
-async function waitForBoot(emulatorId: string): Promise<boolean> {
-  console.log(`\n    ⏳ emulator is still booting, waiting for boot…`);
+async function waitForBoot(deviceId: string): Promise<boolean> {
+  console.log(`\n    ⏳ device is still booting, waiting for boot…`);
   const start = Date.now();
 
   while (Date.now() - start < BOOT_TIMEOUT_MS) {
-    const { code, stdout } = await execCmd('adb', ['-s', emulatorId, 'shell', 'getprop', 'sys.boot_completed']);
+    const { code, stdout } = await execCmd('adb', ['-s', deviceId, 'shell', 'getprop', 'sys.boot_completed']);
 
     if (code === 0 && stdout.trim() === '1') {
-      console.log(`    ✅ emulator booted after ${Date.now() - start}ms`);
+      console.log(`    ✅ device booted after ${Date.now() - start}ms`);
       return true;
     }
 
     await delay(BOOT_POLL_INTERVAL_MS);
   }
 
-  console.error(`\n    ❌ emulator did not finish booting within ${BOOT_TIMEOUT_MS / 1_000}s`);
+  console.error(`\n    ❌ device did not finish booting within ${BOOT_TIMEOUT_MS / 1_000}s`);
   return false;
 }
 
-async function adbUninstall(emulatorId: string): Promise<boolean> {
-  console.log(`\n    uninstalling ${APP_ID} from ${emulatorId}…`);
-  const { code } = await execCmd('adb', ['-s', emulatorId, 'uninstall', APP_ID]);
+async function adbUninstall(deviceId: string): Promise<boolean> {
+  console.log(`\n    uninstalling ${APP_ID} from ${deviceId}…`);
+  const { code } = await execCmd('adb', ['-s', deviceId, 'uninstall', APP_ID]);
   return code === 0;
 }
 
-async function adbFreshInstall(emulatorId: string, apkPath: string): Promise<AdbInstallResult> {
-  const uninstalled = await adbUninstall(emulatorId);
+async function adbFreshInstall(deviceId: string, apkPath: string): Promise<AdbInstallResult> {
+  const uninstalled = await adbUninstall(deviceId);
   if (!uninstalled) {
     return { success: false, error: 'Failed to uninstall app before attempting a fresh install.' };
   }
 
-  const { code, stdout, stderr } = await execCmd('adb', ['-s', emulatorId, 'install', apkPath]);
+  const { code, stdout, stderr } = await execCmd('adb', ['-s', deviceId, 'install', apkPath]);
 
   if (code === 0) return { success: true };
 
@@ -177,11 +177,11 @@ const LAUNCH_ERRORS: { patterns: string[]; message: string }[] = [
   },
   {
     patterns: ['app is not installed', 'package does not exist'],
-    message: `App ${APP_ID} is not installed on the emulator`,
+    message: `App ${APP_ID} is not installed on the device`,
   },
   {
     patterns: ['device not ready', 'device offline'],
-    message: 'Emulator is not ready',
+    message: 'Device is not ready',
   },
   {
     patterns: ['security exception', 'permission denied'],
@@ -197,13 +197,13 @@ function getLaunchError(errorOutput: string): string | null {
   return null;
 }
 
-export async function adbLaunch(emulatorId: string): Promise<{ success: boolean; error?: string }> {
+export async function adbLaunch(deviceId: string): Promise<{ success: boolean; error?: string }> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     if (attempt > 1) await retryDelay(attempt);
 
     const { code, stdout, stderr } = await execCmd('adb', [
       '-s',
-      emulatorId,
+      deviceId,
       'shell',
       'am',
       'start',
@@ -237,7 +237,7 @@ export async function adbLaunch(emulatorId: string): Promise<{ success: boolean;
   return { success: false, error: 'Unknown launch error' };
 }
 
-export async function adbInstall(emulatorId: string): Promise<AdbInstallResult> {
+export async function adbInstall(deviceId: string): Promise<AdbInstallResult> {
   const apkPath = getApkPath();
 
   if (!existsSync(apkPath)) {
@@ -247,7 +247,7 @@ export async function adbInstall(emulatorId: string): Promise<AdbInstallResult> 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     if (attempt > 1) await retryDelay(attempt);
 
-    const { code, stdout, stderr } = await execCmd('adb', ['-s', emulatorId, 'install', '-r', apkPath]);
+    const { code, stdout, stderr } = await execCmd('adb', ['-s', deviceId, 'install', '-r', apkPath]);
 
     if (code === 0) return { success: true };
 
@@ -260,15 +260,15 @@ export async function adbInstall(emulatorId: string): Promise<AdbInstallResult> 
 
     if (classification === 'reinstall') {
       console.log(`\n    conflicting install detected, uninstalling and retrying…`);
-      return adbFreshInstall(emulatorId, apkPath);
+      return adbFreshInstall(deviceId, apkPath);
     }
 
     if (classification === 'boot') {
-      const booted = await waitForBoot(emulatorId);
+      const booted = await waitForBoot(deviceId);
       if (!booted) {
         return {
           success: false,
-          error: `Emulator did not finish booting within ${BOOT_TIMEOUT_MS / 1_000}s`,
+          error: `Device did not finish booting within ${BOOT_TIMEOUT_MS / 1_000}s`,
         };
       }
       // Don't count the boot wait as a failed attempt — retry immediately.
