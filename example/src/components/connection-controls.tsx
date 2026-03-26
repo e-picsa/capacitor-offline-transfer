@@ -27,7 +27,7 @@ export const ConnectionControls = () => {
         {isPending
           ? mode === 'advertising'
             ? 'Starting...'
-            : 'Stopping...'
+            : 'Discovering...'
           : mode !== 'idle'
             ? 'Disconnect'
             : 'Connect'}
