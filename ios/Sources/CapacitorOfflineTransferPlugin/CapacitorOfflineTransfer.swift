@@ -27,6 +27,8 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
     private var discoveryDict = [String: MCPeerID]()
     private var invitations = [String: (MCPeerID, (Bool, MCSession?) -> Void)]()
     private var peerIdToEndpointIdMap = [MCPeerID: String]()
+    private var incomingFileMetadata = [String: String]() // payloadId -> fileName
+    private var incomingResourceToFileName = [String: String]() // resourceName -> fileName for progress tracking
     
     func initialize(serviceId: String) {
         // serviceType must be 1-15 chars, only [a-z0-9] and hyphen
@@ -110,6 +112,12 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
         let fileURL = URL(fileURLWithPath: filePath)
         let payloadId = UUID().uuidString
         
+        let metadata: [String: String] = ["filePayloadId": payloadId, "fileName": fileName]
+        if let metadataData = try? JSONSerialization.data(withJSONObject: metadata, options: []),
+           let metadataString = String(data: metadataData, encoding: .utf8) {
+            sendMessage(endpointId: endpointId, data: metadataString)
+        }
+        
         session.sendResource(at: fileURL, withName: payloadId, toPeer: peer) { error in
             if let error = error {
                 self.delegate?.onTransferProgress(endpointId: endpointId, payloadId: payloadId, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
@@ -177,7 +185,16 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
             endpointId = UUID().uuidString
             NSLog("Warning: Unknown peer \(peerID.displayName), using fallback endpointId: \(endpointId)")
         }
+        
         if let message = String(data: data, encoding: .utf8) {
+            if let jsonData = message.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: String],
+               let payloadId = json["filePayloadId"],
+               let fileName = json["fileName"] {
+                incomingFileMetadata[payloadId] = fileName
+                incomingResourceToFileName[payloadId] = fileName
+                return
+            }
             delegate?.onMessageReceived(endpointId: endpointId, data: message)
         }
     }
@@ -195,11 +212,13 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
             NSLog("Warning: Unknown peer \(peerID.displayName), using fallback endpointId: \(endpointId)")
         }
         
+        let progressId = incomingResourceToFileName[resourceName] ?? resourceName
+        
         let cancellable = progress.publisher(for: \.completedUnitCount)
             .sink { [weak self] completed in
                 self?.delegate?.onTransferProgress(
                     endpointId: endpointId,
-                    payloadId: resourceName,
+                    payloadId: progressId,
                     bytesTransferred: completed,
                     totalBytes: progress.totalUnitCount,
                     status: "IN_PROGRESS"
@@ -219,25 +238,27 @@ extension CapacitorOfflineTransfer: MCSessionDelegate {
             NSLog("Warning: Unknown peer \(peerID.displayName), using fallback endpointId: \(endpointId)")
         }
         
+        let finalFileName = incomingFileMetadata.removeValue(forKey: resourceName) ?? resourceName
+        incomingResourceToFileName.removeValue(forKey: resourceName)
+        
         if let error = error {
-            delegate?.onTransferProgress(endpointId: endpointId, payloadId: resourceName, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
+            delegate?.onTransferProgress(endpointId: endpointId, payloadId: finalFileName, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
             return
         }
         
         guard let localURL = localURL else { return }
         
-        // Move to app's documents directory
         let fileManager = FileManager.default
         let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let destinationURL = documentsURL.appendingPathComponent(resourceName)
+        let destinationURL = documentsURL.appendingPathComponent(finalFileName)
         
         try? fileManager.removeItem(at: destinationURL)
         do {
             try fileManager.moveItem(at: localURL, to: destinationURL)
-            delegate?.onFileReceived(endpointId: endpointId, payloadId: resourceName, fileName: resourceName, path: destinationURL.path)
-            delegate?.onTransferProgress(endpointId: endpointId, payloadId: resourceName, bytesTransferred: 0, totalBytes: 0, status: "SUCCESS")
+            delegate?.onFileReceived(endpointId: endpointId, payloadId: finalFileName, fileName: finalFileName, path: destinationURL.path)
+            delegate?.onTransferProgress(endpointId: endpointId, payloadId: finalFileName, bytesTransferred: 0, totalBytes: 0, status: "SUCCESS")
         } catch {
-            delegate?.onTransferProgress(endpointId: endpointId, payloadId: resourceName, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
+            delegate?.onTransferProgress(endpointId: endpointId, payloadId: finalFileName, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
         }
     }
 }

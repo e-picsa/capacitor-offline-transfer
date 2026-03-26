@@ -105,6 +105,19 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         }
     }
 
+    @objc func startDiscovery(_ call: CAPPluginCall) {
+        do {
+            ensurePermissions(call: call) {
+                self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
+                self.implementation.startDiscovery()
+                self.notifyListeners("discoveryStarted", data: ["status": "SUCCESS"])
+                call.resolve(["success": true])
+            }
+        } catch {
+            call.reject("Start discovery failed: \(error.localizedDescription)")
+        }
+    }
+
     @objc func stopDiscovery(_ call: CAPPluginCall) {
         do {
             sessionStartTime = 0
