@@ -95,16 +95,30 @@ class CapacitorOfflineTransfer {
         return false
     }
 
-    fun startAdvertising(displayName: String?) {
-        nearbyManager.startAdvertising(displayName ?: Build.MODEL)
+    fun startAdvertising(displayName: String?, call: PluginCall) {
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            lanServerManager.start(8080, call)
+        } else {
+            nearbyManager.startAdvertising(displayName ?: Build.MODEL)
+            call.resolve()
+        }
     }
 
     fun stopAdvertising() {
+        lanServerManager.stop()
         nearbyManager.stopAdvertising()
     }
 
-    fun startDiscovery() {
-        nearbyManager.startDiscovery()
+    fun startDiscovery(call: PluginCall) {
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            // Emulators don't "discover", they just wait for manual connect via URL
+            call.resolve()
+        } else {
+            nearbyManager.startDiscovery()
+            call.resolve()
+        }
     }
 
     fun stopDiscovery() {
@@ -112,31 +126,62 @@ class CapacitorOfflineTransfer {
     }
 
     fun connect(endpointId: String, displayName: String?) {
-        nearbyManager.connect(endpointId, displayName ?: Build.MODEL)
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            lanClientManager.connect(endpointId, displayName)
+        } else {
+            nearbyManager.connect(endpointId, displayName ?: Build.MODEL)
+        }
     }
 
     fun acceptConnection(endpointId: String) {
-        nearbyManager.acceptConnection(endpointId)
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            // Unused in LAN
+        } else {
+            nearbyManager.acceptConnection(endpointId)
+        }
     }
 
     fun rejectConnection(endpointId: String) {
-        nearbyManager.rejectConnection(endpointId)
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            // Unused in LAN
+        } else {
+            nearbyManager.rejectConnection(endpointId)
+        }
     }
 
     fun disconnectFromEndpoint(endpointId: String) {
-        nearbyManager.disconnectFromEndpoint(endpointId)
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            lanClientManager.disconnect(endpointId)
+        } else {
+            nearbyManager.disconnectFromEndpoint(endpointId)
+        }
     }
 
     fun disconnect() {
+        lanServerManager.stop()
         nearbyManager.disconnect()
     }
 
     fun sendMessage(endpointId: String, data: String) {
-        nearbyManager.sendMessage(endpointId, data)
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            lanClientManager.sendMessage(endpointId, data)
+        } else {
+            nearbyManager.sendMessage(endpointId, data)
+        }
     }
 
     fun sendFile(endpointId: String, filePath: String, fileName: String) {
-        nearbyManager.sendFile(endpointId, filePath, fileName)
+        val caps = checkCapabilities()
+        if (caps.transferMethod == "lan") {
+            lanClientManager.sendFile(endpointId, filePath, fileName)
+        } else {
+            nearbyManager.sendFile(endpointId, filePath, fileName)
+        }
     }
 
     fun getDiscoveredEndpoints(): JSObject {

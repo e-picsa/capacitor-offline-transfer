@@ -20,14 +20,11 @@ import com.getcapacitor.annotation.PermissionCallback
             alias = "nearby",
             strings = [
                 Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.CHANGE_WIFI_STATE,
+                Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.NEARBY_WIFI_DEVICES,
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN
+                Manifest.permission.NEARBY_WIFI_DEVICES
             ]
         )
     ]
@@ -38,25 +35,42 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     private val implementation = CapacitorOfflineTransfer()
     private var sessionStartTime: Long = 0
 
-    private var pendingPermissionAction: (() -> Unit)? = null
-
     @PermissionCallback
     private fun permissionsCallback(call: PluginCall) {
         try {
             val state = getPermissionState("nearby")
             if (state == PermissionState.GRANTED) {
-                pendingPermissionAction?.invoke()
-                pendingPermissionAction = null
-                call.resolve()
+                when (call.methodName) {
+                    "startAdvertising" -> {
+                        sessionStartTime = System.currentTimeMillis()
+                        val displayName = call.getString("displayName")
+                        implementation.startAdvertising(displayName, call)
+                    }
+                    "startDiscovery" -> {
+                        sessionStartTime = System.currentTimeMillis()
+                        implementation.startDiscovery(call)
+                    }
+                    "requestPermissions" -> {
+                        val result = JSObject()
+                        result.put("nearby", "granted")
+                        call.resolve(result)
+                    }
+                    else -> call.resolve()
+                }
             } else {
-                pendingPermissionAction = null
-                call.reject("Permissions denied. Please enable in Settings.")
+                if (call.methodName == "requestPermissions") {
+                    val result = JSObject()
+                    result.put("nearby", state?.toString() ?: "denied")
+                    call.resolve(result)
+                } else {
+                    call.reject("Permissions denied. Please enable in Settings.")
+                }
             }
         } catch (e: Exception) {
-            pendingPermissionAction = null
             call.reject("Permission check failed: ${e.message}")
         }
     }
+
 
     /**
      * JS-callable method to check permission status.
@@ -87,13 +101,22 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         }
     }
 
-    private fun ensurePermissions(call: PluginCall, action: () -> Unit) {
+    private fun ensurePermissionsForMethod(call: PluginCall) {
         try {
             val state = getPermissionState("nearby")
             if (state == PermissionState.GRANTED) {
-                action()
+                when (call.methodName) {
+                    "startAdvertising" -> {
+                        sessionStartTime = System.currentTimeMillis()
+                        val displayName = call.getString("displayName")
+                        implementation.startAdvertising(displayName, call)
+                    }
+                    "startDiscovery" -> {
+                        sessionStartTime = System.currentTimeMillis()
+                        implementation.startDiscovery(call)
+                    }
+                }
             } else {
-                pendingPermissionAction = action
                 requestPermissionForAlias("nearby", call, "permissionsCallback")
             }
         } catch (e: Exception) {
@@ -192,21 +215,15 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         }
     }
 
-    /**
-     * Starts advertising to nearby devices using Nearby Connections API.
-     *
-     * Automatically checks and requests permissions before starting.
-     * If permissions are denied, rejects with "Permissions denied".
-     */
     @PluginMethod
     fun startAdvertising(call: PluginCall) {
         try {
-            ensurePermissions(call) {
+            if (implementation.checkCapabilities().transferMethod == "lan") {
                 sessionStartTime = System.currentTimeMillis()
-                val displayName = call.getString("displayName")
-                implementation.startAdvertising(displayName)
-                call.resolve()
+                implementation.startAdvertising(call.getString("displayName"), call)
+                return
             }
+            ensurePermissionsForMethod(call)
         } catch (e: Exception) {
             call.reject("Start advertising failed: ${e.message}")
         }
@@ -223,20 +240,15 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         }
     }
 
-    /**
-     * Starts discovering nearby devices using Nearby Connections API.
-     *
-     * Automatically checks and requests permissions before starting.
-     * If permissions are denied, rejects with "Permissions denied".
-     */
     @PluginMethod
     fun startDiscovery(call: PluginCall) {
         try {
-            ensurePermissions(call) {
+            if (implementation.checkCapabilities().transferMethod == "lan") {
                 sessionStartTime = System.currentTimeMillis()
-                implementation.startDiscovery()
-                call.resolve()
+                implementation.startDiscovery(call)
+                return
             }
+            ensurePermissionsForMethod(call)
         } catch (e: Exception) {
             call.reject("Start discovery failed: ${e.message}")
         }
