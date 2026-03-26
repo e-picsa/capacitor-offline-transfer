@@ -41,6 +41,8 @@ export interface Stats {
   currentSpeedBps: number;
 }
 
+export type ConnectionMode = 'idle' | 'advertising' | 'discovering' | 'connecting' | 'connected' | 'error';
+
 export const endpoints = signal<Record<string, EndpointInfo>>({});
 export const connectedEndpoints = signal<Record<string, ConnectedEndpoint>>({});
 export const activeTransfers = signal<Record<string, TransferProgress>>({});
@@ -53,6 +55,8 @@ export const stats = signal<Stats>({
 });
 export const capabilities = signal<PlatformCapabilities | null>(null);
 export const connectedEndpointId = signal<string | null>(null);
+export const connectionMode = signal<ConnectionMode>('idle');
+export const connectionError = signal<string | null>(null);
 
 let _setConnectedEndpointId: (id: string | null) => void = () => {};
 

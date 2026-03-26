@@ -2,7 +2,7 @@ import { startViteServer } from './utils/app.utils';
 import { handleBootstrap } from './bootstrap';
 import { runWatchers } from './watchers';
 import { BootstrapContext } from './bootstrap/bootstrap.types';
-import { BOARDER_BOTTOM, BOARDER_MID, BOARDER_TOP, boxLine, CONSOLE_WIDTH, pad } from './utils/console.utils';
+import { BOARDER_BOTTOM, BOARDER_MID, BOARDER_TOP, boxLine } from './utils/console.utils';
 
 async function main(): Promise<void> {
   const ctx = await handleBootstrap();

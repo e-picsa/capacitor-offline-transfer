@@ -1,19 +1,26 @@
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
+import { signal } from '@preact/signals';
 
 import { endpoints, connectedEndpoints } from '../state';
 import { logService, errMsg } from '../state/log.service';
+
+const connectingEndpointId = signal<string | null>(null);
 
 export const ConnectionPanel = () => {
   const endpointList = endpoints.value;
   const connected = connectedEndpoints.value;
   const connectedId = Object.keys(connected)[0] ?? null;
+  const connecting = connectingEndpointId.value;
 
   const handleConnect = async (endpointId: string, endpointName: string) => {
+    connectingEndpointId.value = endpointId;
     try {
       logService.info(`Connecting to ${endpointName}...`);
       await OfflineTransfer.connect({ endpointId, displayName: 'DemoUser' });
     } catch (e: unknown) {
       logService.error(`Connect Error: ${errMsg(e)}`);
+    } finally {
+      connectingEndpointId.value = null;
     }
   };
 
@@ -40,15 +47,18 @@ export const ConnectionPanel = () => {
               class={`py-1 px-3 rounded text-xs font-medium ${
                 connectedId === ep.endpointId
                   ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  : connecting === ep.endpointId
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
               }`}
               onClick={
                 connectedId === ep.endpointId
                   ? () => handleDisconnect(ep.endpointId)
                   : () => handleConnect(ep.endpointId, ep.endpointName)
               }
+              disabled={connecting === ep.endpointId}
             >
-              {connectedId === ep.endpointId ? 'Disconnect' : 'Connect'}
+              {connectedId === ep.endpointId ? 'Disconnect' : connecting === ep.endpointId ? '...' : 'Connect'}
             </button>
           </div>
         ))
