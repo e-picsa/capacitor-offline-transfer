@@ -1,6 +1,6 @@
 {
   "name": "@picsa/capacitor-offline-transfer",
-  "version": "8.1.5",
+  "version": "8.2.0",
   "workspaces": [
     "example"
   ],

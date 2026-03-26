@@ -1,5 +1,29 @@
 # Changelog
 
+## [8.2.0](https://github.com/e-picsa/capacitor-offline-transfer/compare/capacitor-offline-transfer-v8.1.5...capacitor-offline-transfer-v8.2.0) (2026-03-26)
+
+
+### Features
+
+* add syncFromPlugin method to synchronize native state ([#28](https://github.com/e-picsa/capacitor-offline-transfer/issues/28)) ([429e8ab](https://github.com/e-picsa/capacitor-offline-transfer/commit/429e8ab56d46f37c985b8087ade7291ec64d0ff0))
+* advertising and discovery listeners ([#35](https://github.com/e-picsa/capacitor-offline-transfer/issues/35)) ([f88d489](https://github.com/e-picsa/capacitor-offline-transfer/commit/f88d4896a207552ce94d3835bcf5639c99df6abf))
+* capability check ([#21](https://github.com/e-picsa/capacitor-offline-transfer/issues/21)) ([907a202](https://github.com/e-picsa/capacitor-offline-transfer/commit/907a2023237cf78e97d3215199fee245d157a5ea))
+* dev script enhancements ([#27](https://github.com/e-picsa/capacitor-offline-transfer/issues/27)) ([cbf6842](https://github.com/e-picsa/capacitor-offline-transfer/commit/cbf68427c8efd2c41c2533794fc2e424b29328a2))
+* dev workflow ([#17](https://github.com/e-picsa/capacitor-offline-transfer/issues/17)) ([734b504](https://github.com/e-picsa/capacitor-offline-transfer/commit/734b50436e77eb4531fac47f3a0f3af2a8efd585))
+* emulator connection bypass ([#14](https://github.com/e-picsa/capacitor-offline-transfer/issues/14)) ([38bfb2d](https://github.com/e-picsa/capacitor-offline-transfer/commit/38bfb2d167b132585d3d51c42ca348a461881a63))
+* emulator example ([#18](https://github.com/e-picsa/capacitor-offline-transfer/issues/18)) ([9952689](https://github.com/e-picsa/capacitor-offline-transfer/commit/9952689552c43aebd303b8f2654feb27e2a0a432))
+* example app live reload ([#22](https://github.com/e-picsa/capacitor-offline-transfer/issues/22)) ([8102456](https://github.com/e-picsa/capacitor-offline-transfer/commit/81024562a676cfccedbfe929dac46f83d19eddb1))
+* example app state UI ([#33](https://github.com/e-picsa/capacitor-offline-transfer/issues/33)) ([37bcc59](https://github.com/e-picsa/capacitor-offline-transfer/commit/37bcc593fb20902e7c316e89b344445e599adda4))
+* physical device testing ([#31](https://github.com/e-picsa/capacitor-offline-transfer/issues/31)) ([ce13324](https://github.com/e-picsa/capacitor-offline-transfer/commit/ce133244bb9116319e37057c9c0689b345eae629))
+* platform bootstrap ([#29](https://github.com/e-picsa/capacitor-offline-transfer/issues/29)) ([899612c](https://github.com/e-picsa/capacitor-offline-transfer/commit/899612cde4658ba7c139c2f28de1b0fd8709cbcb))
+* test framework ([#12](https://github.com/e-picsa/capacitor-offline-transfer/issues/12)) ([5fb687b](https://github.com/e-picsa/capacitor-offline-transfer/commit/5fb687b03a92403d50e5b970fa7c2bffd926a8ff))
+
+
+### Bug Fixes
+
+* native state ([#23](https://github.com/e-picsa/capacitor-offline-transfer/issues/23)) ([86754f8](https://github.com/e-picsa/capacitor-offline-transfer/commit/86754f825fb59af6140c61229ce6ff94ad03002a))
+* permission request ([#32](https://github.com/e-picsa/capacitor-offline-transfer/issues/32)) ([7282460](https://github.com/e-picsa/capacitor-offline-transfer/commit/7282460a1e2160cc54e9e9e6a0834a581e18a12f))
+
 ## [8.1.5](https://github.com/e-picsa/capacitor-offline-transfer/compare/capacitor-offline-transfer-v8.1.4...capacitor-offline-transfer-v8.1.5) (2026-03-17)
 
 
