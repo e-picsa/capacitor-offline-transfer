@@ -40,7 +40,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                 return
             }
             implementation.initialize(serviceId: serviceId)
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Initialize failed: \(error.localizedDescription)")
         }
@@ -87,7 +87,8 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                     return
                 }
                 self.implementation.startAdvertising(displayName: displayName)
-                call.resolve()
+                self.notifyListeners("advertisingStarted", data: ["status": "SUCCESS"])
+                call.resolve(["success": true])
             }
         } catch {
             call.reject("Start advertising failed: \(error.localizedDescription)")
@@ -98,7 +99,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         do {
             sessionStartTime = 0
             implementation.stopAdvertising()
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Stop advertising failed: \(error.localizedDescription)")
         }
@@ -109,7 +110,8 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
             ensurePermissions(call: call) {
                 self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
                 self.implementation.startDiscovery()
-                call.resolve()
+                self.notifyListeners("discoveryStarted", data: ["status": "SUCCESS"])
+                call.resolve(["success": true])
             }
         } catch {
             call.reject("Start discovery failed: \(error.localizedDescription)")
@@ -120,7 +122,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
         do {
             sessionStartTime = 0
             implementation.stopDiscovery()
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Stop discovery failed: \(error.localizedDescription)")
         }
@@ -133,7 +135,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                 return
             }
             implementation.connect(endpointId: endpointId)
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Connect failed: \(error.localizedDescription)")
         }
@@ -146,7 +148,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                 return
             }
             implementation.acceptConnection(endpointId: endpointId)
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Accept connection failed: \(error.localizedDescription)")
         }
@@ -159,7 +161,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                 return
             }
             implementation.rejectConnection(endpointId: endpointId)
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Reject connection failed: \(error.localizedDescription)")
         }
@@ -172,7 +174,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                 return
             }
             implementation.disconnectFromEndpoint(endpointId: endpointId)
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Disconnect failed: \(error.localizedDescription)")
         }
@@ -181,7 +183,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     @objc func disconnect(_ call: CAPPluginCall) {
         do {
             implementation.disconnect()
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Disconnect failed: \(error.localizedDescription)")
         }
@@ -195,7 +197,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                 return
             }
             implementation.sendMessage(endpointId: endpointId, data: data)
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Send message failed: \(error.localizedDescription)")
         }
@@ -209,8 +211,8 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
                 call.reject("endpointId, filePath, and fileName are required")
                 return
             }
-            implementation.sendFile(endpointId: endpointId, filePath: filePath, fileName: fileName)
-            call.resolve()
+            let payloadId = implementation.sendFile(endpointId: endpointId, filePath: filePath, fileName: fileName)
+            call.resolve(["payloadId": payloadId ?? fileName])
         } catch {
             call.reject("Send file failed: \(error.localizedDescription)")
         }
@@ -218,7 +220,7 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
 
     @objc func setLogLevel(_ call: CAPPluginCall) {
         do {
-            call.resolve()
+            call.resolve(["success": true])
         } catch {
             call.reject("Set log level failed: \(error.localizedDescription)")
         }

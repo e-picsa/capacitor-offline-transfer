@@ -18,12 +18,21 @@ export async function handleConnect(): Promise<void> {
   try {
     connectionMode.value = 'advertising';
     logService.info('Start Advertising...');
-    await OfflineTransfer.startAdvertising({
+
+    const advResult = await OfflineTransfer.startAdvertising({
       displayName: 'Device_' + Math.floor(Math.random() * 10000),
     });
-    connectionMode.value = 'discovering';
+
+    if (!advResult.success) {
+      throw new Error('Failed to start advertising');
+    }
+
     logService.info('Start Discovery...');
-    await OfflineTransfer.startDiscovery();
+    const discResult = await OfflineTransfer.startDiscovery();
+
+    if (!discResult.success) {
+      throw new Error('Failed to start discovery');
+    }
   } catch (e: unknown) {
     connectionMode.value = 'error';
     connectionError.value = e instanceof Error ? e.message : String(e);

@@ -2,6 +2,8 @@ import type { PlatformCapabilities } from '@picsa/capacitor-offline-transfer';
 import { OfflineTransfer, transferState } from '@picsa/capacitor-offline-transfer';
 import { signal } from '@preact/signals';
 
+import { logService } from './log.service';
+
 export interface EndpointInfo {
   endpointId: string;
   endpointName: string;
@@ -67,6 +69,17 @@ export function initPluginState(): () => void {
   transferState.subscribe<Record<string, ConnectedEndpoint>>('connectedEndpoints', (v) => {
     connectedEndpoints.value = v;
     const ids = Object.keys(v);
+    const hasConnections = ids.length > 0;
+
+    if (hasConnections) {
+      connectionMode.value = 'connected';
+    } else if (connectionMode.value === 'connected') {
+      // If we were connected and now have no endpoints, revert to a sensible state
+      // For now, we'll go to idle, but it could be discovering if we didn't stop it.
+      // However, handleConnect stops everything on disconnect.
+      connectionMode.value = 'idle';
+    }
+
     _setConnectedEndpointId(ids[0] ?? null);
   });
   transferState.subscribe<Record<string, TransferProgress>>('activeTransfers', (v) => {
@@ -103,11 +116,33 @@ export function initPluginState(): () => void {
     transferState.onTransferProgress(ev);
   });
 
+  const unsubAdvertisingStarted = OfflineTransfer.addListener('advertisingStarted', (ev) => {
+    logService.info('Advertising started: ' + ev.status);
+    if (connectionMode.value === 'idle' || connectionMode.value === 'error') {
+      connectionMode.value = 'advertising';
+    }
+  });
+
+  const unsubDiscoveryStarted = OfflineTransfer.addListener('discoveryStarted', (ev) => {
+    logService.info('Discovery started: ' + ev.status);
+    // Usually discovery starts after advertising in our handleConnect
+    connectionMode.value = 'discovering';
+  });
+
+  const unsubDiscoveryFailed = OfflineTransfer.addListener('discoveryFailed', (ev) => {
+    logService.error('Discovery failed: ' + ev.message);
+    connectionMode.value = 'error';
+    connectionError.value = ev.message;
+  });
+
   return async () => {
     (await unsubEndpointFound).remove();
     (await unsubEndpointLost).remove();
     (await unsubConnResult).remove();
     (await unsubFile).remove();
     (await unsubProgress).remove();
+    (await unsubAdvertisingStarted).remove();
+    (await unsubDiscoveryStarted).remove();
+    (await unsubDiscoveryFailed).remove();
   };
 }

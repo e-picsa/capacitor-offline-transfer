@@ -196,7 +196,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         try {
             val serviceId = call.getString("serviceId") ?: return call.reject("serviceId is required")
             implementation.initialize(serviceId)
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Initialize failed: ${e.message}")
         }
@@ -237,7 +237,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         try {
             sessionStartTime = 0
             implementation.stopAdvertising()
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Stop advertising failed: ${e.message}")
         }
@@ -262,7 +262,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         try {
             sessionStartTime = 0
             implementation.stopDiscovery()
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Stop discovery failed: ${e.message}")
         }
@@ -274,7 +274,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
             val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
             val displayName = call.getString("displayName")
             implementation.connect(endpointId, displayName)
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Connect failed: ${e.message}")
         }
@@ -285,7 +285,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         try {
             val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
             implementation.acceptConnection(endpointId)
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Accept connection failed: ${e.message}")
         }
@@ -296,7 +296,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         try {
             val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
             implementation.rejectConnection(endpointId)
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Reject connection failed: ${e.message}")
         }
@@ -307,7 +307,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
         try {
             val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
             implementation.disconnectFromEndpoint(endpointId)
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Disconnect failed: ${e.message}")
         }
@@ -317,7 +317,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     fun disconnect(call: PluginCall) {
         try {
             implementation.disconnect()
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Disconnect failed: ${e.message}")
         }
@@ -329,7 +329,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
             val endpointId = call.getString("endpointId") ?: return call.reject("endpointId is required")
             val data = call.getString("data") ?: return call.reject("data is required")
             implementation.sendMessage(endpointId, data)
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Send message failed: ${e.message}")
         }
@@ -349,8 +349,8 @@ class CapacitorOfflineTransferPlugin : Plugin() {
                 fileName = if (extension.isNotEmpty()) "file_${timestamp}_${uuid}.$extension" else "file_${timestamp}_${uuid}"
             }
 
-            implementation.sendFile(endpointId, filePath, fileName)
-            call.resolve()
+            val payloadId = implementation.sendFile(endpointId, filePath, fileName)
+            call.resolve(JSObject().apply { put("payloadId", payloadId ?: fileName) })
         } catch (e: Exception) {
             call.reject("Send file failed: ${e.message}")
         }
@@ -359,7 +359,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
     @PluginMethod
     fun setLogLevel(call: PluginCall) {
         try {
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } catch (e: Exception) {
             call.reject("Set log level failed: ${e.message}")
         }

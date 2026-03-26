@@ -1,7 +1,7 @@
 import { OfflineTransfer } from '@picsa/capacitor-offline-transfer';
 import { signal } from '@preact/signals';
 
-import { endpoints, connectedEndpoints } from '../state';
+import { endpoints, connectedEndpoints, connectionMode } from '../state';
 import { logService, errMsg } from '../state/log.service';
 
 const connectingEndpointId = signal<string | null>(null);
@@ -14,11 +14,18 @@ export const ConnectionPanel = () => {
 
   const handleConnect = async (endpointId: string, endpointName: string) => {
     connectingEndpointId.value = endpointId;
+    // Set global mode so the main connect button shows "Connecting..."
+    const prevMode = connectionMode.peek();
+    connectionMode.value = 'connecting';
+    
     try {
       logService.info(`Connecting to ${endpointName}...`);
       await OfflineTransfer.connect({ endpointId, displayName: 'DemoUser' });
+      // On success, the 'connectedEndpoints' subscription in state/index.ts will set mode to 'connected'
     } catch (e: unknown) {
       logService.error(`Connect Error: ${errMsg(e)}`);
+      // On error, revert to previous mode or discovery
+      connectionMode.value = prevMode;
     } finally {
       connectingEndpointId.value = null;
     }
