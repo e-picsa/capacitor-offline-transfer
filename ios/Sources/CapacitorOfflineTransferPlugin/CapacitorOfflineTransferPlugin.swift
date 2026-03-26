@@ -34,149 +34,223 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     }
 
     @objc func initialize(_ call: CAPPluginCall) {
-        guard let serviceId = call.getString("serviceId") else {
-            call.reject("serviceId is required")
-            return
+        do {
+            guard let serviceId = call.getString("serviceId") else {
+                call.reject("serviceId is required")
+                return
+            }
+            implementation.initialize(serviceId: serviceId)
+            call.resolve()
+        } catch {
+            call.reject("Initialize failed: \(error.localizedDescription)")
         }
-        implementation.initialize(serviceId: serviceId)
-        call.resolve()
     }
 
     @objc func checkCapabilities(_ call: CAPPluginCall) {
-        let capabilities: [String: Any] = [
-            "platform": "ios",
-            "transferMethod": "nearby",
-            "supportsNearby": true,
-            "isEmulator": false
-        ]
-        call.resolve(capabilities)
+        do {
+            let capabilities: [String: Any] = [
+                "platform": "ios",
+                "transferMethod": "nearby",
+                "supportsNearby": true,
+                "isEmulator": false
+            ]
+            call.resolve(capabilities)
+        } catch {
+            call.reject("Check capabilities failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func checkPermissions(_ call: CAPPluginCall) {
-        let result: [String: Any] = [
-            "nearby": "granted"
-        ]
-        call.resolve(result)
+        do {
+            let result: [String: Any] = [
+                "nearby": "granted"
+            ]
+            call.resolve(result)
+        } catch {
+            call.reject("Check permissions failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func requestPermissions(_ call: CAPPluginCall) {
-        let result: [String: Any] = [
-            "nearby": "granted"
-        ]
-        call.resolve(result)
+        do {
+            let result: [String: Any] = [
+                "nearby": "granted"
+            ]
+            call.resolve(result)
+        } catch {
+            call.reject("Request permissions failed: \(error.localizedDescription)")
+        }
     }
 
     private func ensurePermissions(call: CAPPluginCall, onGranted: @escaping () -> Void) {
-        // iOS permissions are declared in Info.plist, not runtime
-        // Always proceed - if permissions are missing, the system will handle it
-        onGranted()
+        do {
+            onGranted()
+        } catch {
+            call.reject("Permission check failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func startAdvertising(_ call: CAPPluginCall) {
-        ensurePermissions(call: call) {
-            self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
-            guard let displayName = call.getString("displayName") else {
-                call.reject("displayName is required")
-                return
+        do {
+            ensurePermissions(call: call) {
+                self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
+                guard let displayName = call.getString("displayName") else {
+                    call.reject("displayName is required")
+                    return
+                }
+                self.implementation.startAdvertising(displayName: displayName)
+                call.resolve()
             }
-            self.implementation.startAdvertising(displayName: displayName)
-            call.resolve()
+        } catch {
+            call.reject("Start advertising failed: \(error.localizedDescription)")
         }
     }
 
     @objc func stopAdvertising(_ call: CAPPluginCall) {
-        sessionStartTime = 0
-        implementation.stopAdvertising()
-        call.resolve()
+        do {
+            sessionStartTime = 0
+            implementation.stopAdvertising()
+            call.resolve()
+        } catch {
+            call.reject("Stop advertising failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func startDiscovery(_ call: CAPPluginCall) {
-        ensurePermissions(call: call) {
-            self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
-            self.implementation.startDiscovery()
-            call.resolve()
+        do {
+            ensurePermissions(call: call) {
+                self.sessionStartTime = Int(Date().timeIntervalSince1970 * 1000)
+                self.implementation.startDiscovery()
+                call.resolve()
+            }
+        } catch {
+            call.reject("Start discovery failed: \(error.localizedDescription)")
         }
     }
 
     @objc func stopDiscovery(_ call: CAPPluginCall) {
-        sessionStartTime = 0
-        implementation.stopDiscovery()
-        call.resolve()
+        do {
+            sessionStartTime = 0
+            implementation.stopDiscovery()
+            call.resolve()
+        } catch {
+            call.reject("Stop discovery failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func connect(_ call: CAPPluginCall) {
-        guard let endpointId = call.getString("endpointId") else {
-            call.reject("endpointId is required")
-            return
+        do {
+            guard let endpointId = call.getString("endpointId") else {
+                call.reject("endpointId is required")
+                return
+            }
+            implementation.connect(endpointId: endpointId)
+            call.resolve()
+        } catch {
+            call.reject("Connect failed: \(error.localizedDescription)")
         }
-        implementation.connect(endpointId: endpointId)
-        call.resolve()
     }
 
     @objc func acceptConnection(_ call: CAPPluginCall) {
-        guard let endpointId = call.getString("endpointId") else {
-            call.reject("endpointId is required")
-            return
+        do {
+            guard let endpointId = call.getString("endpointId") else {
+                call.reject("endpointId is required")
+                return
+            }
+            implementation.acceptConnection(endpointId: endpointId)
+            call.resolve()
+        } catch {
+            call.reject("Accept connection failed: \(error.localizedDescription)")
         }
-        implementation.acceptConnection(endpointId: endpointId)
-        call.resolve()
     }
 
     @objc func rejectConnection(_ call: CAPPluginCall) {
-        guard let endpointId = call.getString("endpointId") else {
-            call.reject("endpointId is required")
-            return
+        do {
+            guard let endpointId = call.getString("endpointId") else {
+                call.reject("endpointId is required")
+                return
+            }
+            implementation.rejectConnection(endpointId: endpointId)
+            call.resolve()
+        } catch {
+            call.reject("Reject connection failed: \(error.localizedDescription)")
         }
-        implementation.rejectConnection(endpointId: endpointId)
-        call.resolve()
     }
 
     @objc func disconnectFromEndpoint(_ call: CAPPluginCall) {
-        guard let endpointId = call.getString("endpointId") else {
-            call.reject("endpointId is required")
-            return
+        do {
+            guard let endpointId = call.getString("endpointId") else {
+                call.reject("endpointId is required")
+                return
+            }
+            implementation.disconnectFromEndpoint(endpointId: endpointId)
+            call.resolve()
+        } catch {
+            call.reject("Disconnect failed: \(error.localizedDescription)")
         }
-        implementation.disconnectFromEndpoint(endpointId: endpointId)
-        call.resolve()
     }
 
     @objc func disconnect(_ call: CAPPluginCall) {
-        implementation.disconnect()
-        call.resolve()
+        do {
+            implementation.disconnect()
+            call.resolve()
+        } catch {
+            call.reject("Disconnect failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func sendMessage(_ call: CAPPluginCall) {
-        guard let endpointId = call.getString("endpointId"),
-              let data = call.getString("data") else {
-            call.reject("endpointId and data are required")
-            return
+        do {
+            guard let endpointId = call.getString("endpointId"),
+                  let data = call.getString("data") else {
+                call.reject("endpointId and data are required")
+                return
+            }
+            implementation.sendMessage(endpointId: endpointId, data: data)
+            call.resolve()
+        } catch {
+            call.reject("Send message failed: \(error.localizedDescription)")
         }
-        implementation.sendMessage(endpointId: endpointId, data: data)
-        call.resolve()
     }
 
     @objc func sendFile(_ call: CAPPluginCall) {
-        guard let endpointId = call.getString("endpointId"),
-              let filePath = call.getString("filePath"),
-              let fileName = call.getString("fileName") else {
-            call.reject("endpointId, filePath, and fileName are required")
-            return
+        do {
+            guard let endpointId = call.getString("endpointId"),
+                  let filePath = call.getString("filePath"),
+                  let fileName = call.getString("fileName") else {
+                call.reject("endpointId, filePath, and fileName are required")
+                return
+            }
+            implementation.sendFile(endpointId: endpointId, filePath: filePath, fileName: fileName)
+            call.resolve()
+        } catch {
+            call.reject("Send file failed: \(error.localizedDescription)")
         }
-        implementation.sendFile(endpointId: endpointId, filePath: filePath, fileName: fileName)
-        call.resolve()
     }
 
     @objc func setLogLevel(_ call: CAPPluginCall) {
-        call.resolve()
+        do {
+            call.resolve()
+        } catch {
+            call.reject("Set log level failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func getState(_ call: CAPPluginCall) {
-        call.resolve(buildStateSnapshot())
+        do {
+            call.resolve(buildStateSnapshot())
+        } catch {
+            call.reject("Get state failed: \(error.localizedDescription)")
+        }
     }
 
     @objc func syncFromPlugin(_ call: CAPPluginCall) {
-        let snapshot = buildStateSnapshot()
-        call.resolve(snapshot)
+        do {
+            let snapshot = buildStateSnapshot()
+            call.resolve(snapshot)
+        } catch {
+            call.reject("Sync from plugin failed: \(error.localizedDescription)")
+        }
     }
 
     private func buildStateSnapshot() -> [String: Any] {
