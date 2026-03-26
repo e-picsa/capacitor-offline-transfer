@@ -55,7 +55,7 @@ class CapacitorOfflineTransferPlugin : Plugin() {
                         result.put("nearby", "granted")
                         call.resolve(result)
                     }
-                    else -> call.resolve()
+                    else -> call.reject("Unexpected method '${call.methodName}' in permissions callback.")
                 }
             } else {
                 if (call.methodName == "requestPermissions") {
