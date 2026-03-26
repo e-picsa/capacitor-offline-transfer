@@ -251,7 +251,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 val filePayload = Payload.fromFile(pfd)
                 val payloadId = filePayload.id.toString()
                 val metadata = JSObject().apply {
-                    put("filePayloadId", payloadId)
+                    put("filePayloadId", filePayload.id)
                     put("fileName", fileName)
                 }
                 val metadataPayload = Payload.fromBytes(metadata.toString().toByteArray())
