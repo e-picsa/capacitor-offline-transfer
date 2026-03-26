@@ -135,19 +135,13 @@ class CapacitorOfflineTransfer {
     }
 
     fun acceptConnection(endpointId: String) {
-        val caps = checkCapabilities()
-        if (caps.transferMethod == "lan") {
-            // Unused in LAN
-        } else {
+        if (checkCapabilities().transferMethod != "lan") {
             nearbyManager.acceptConnection(endpointId)
         }
     }
 
     fun rejectConnection(endpointId: String) {
-        val caps = checkCapabilities()
-        if (caps.transferMethod == "lan") {
-            // Unused in LAN
-        } else {
+        if (checkCapabilities().transferMethod != "lan") {
             nearbyManager.rejectConnection(endpointId)
         }
     }

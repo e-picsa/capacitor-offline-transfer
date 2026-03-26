@@ -61,33 +61,21 @@ public class CapacitorOfflineTransferPlugin: CAPPlugin, CAPBridgedPlugin, Capaci
     }
 
     @objc func checkPermissions(_ call: CAPPluginCall) {
-        do {
-            let result: [String: Any] = [
-                "nearby": "granted"
-            ]
-            call.resolve(result)
-        } catch {
-            call.reject("Check permissions failed: \(error.localizedDescription)")
-        }
+        let result: [String: Any] = [
+            "nearby": "granted"
+        ]
+        call.resolve(result)
     }
 
     @objc func requestPermissions(_ call: CAPPluginCall) {
-        do {
-            let result: [String: Any] = [
-                "nearby": "granted"
-            ]
-            call.resolve(result)
-        } catch {
-            call.reject("Request permissions failed: \(error.localizedDescription)")
-        }
+        let result: [String: Any] = [
+            "nearby": "granted"
+        ]
+        call.resolve(result)
     }
 
     private func ensurePermissions(call: CAPPluginCall, onGranted: @escaping () -> Void) {
-        do {
-            onGranted()
-        } catch {
-            call.reject("Permission check failed: \(error.localizedDescription)")
-        }
+        onGranted()
     }
 
     @objc func startAdvertising(_ call: CAPPluginCall) {
