@@ -3,7 +3,7 @@ import { OfflineTransfer, transferState } from '@picsa/capacitor-offline-transfe
 import { useSignal } from '@preact/signals';
 import { useEffect, useState } from 'preact/hooks';
 
-import { capabilities, connectedEndpoints, initPluginState } from '../state';
+import { capabilities, connectedEndpoints, connectionMode, connectionError, initPluginState } from '../state';
 import { logService } from '../state/log.service';
 
 import { ConnectionPanel } from './connection-panel';
@@ -25,7 +25,9 @@ export const AppShell = () => {
         await OfflineTransfer.setLogLevel({ logLevel: 3 });
 
         const caps = await OfflineTransfer.checkCapabilities();
-        await OfflineTransfer.syncFromPlugin();
+        const state = await OfflineTransfer.syncFromPlugin();
+        logService.info('Initialized');
+        logService.info(JSON.stringify(state, null, 2));
         transferState.onCapabilitiesDetected(caps);
 
         setIsLoading(false);
@@ -72,15 +74,48 @@ export const AppShell = () => {
   const connected = connectedEndpoints.value;
   const connectedId = Object.keys(connected)[0] ?? null;
   const isConnected = !!connectedId;
+  const mode = connectionMode.value;
+  const isPending = mode === 'advertising' || mode === 'discovering' || mode === 'connecting';
+
+  const getStatusBadge = () => {
+    const badges: Record<string, { text: string; class: string }> = {
+      advertising: { text: '📡 Advertising', class: 'bg-blue-100 text-blue-800' },
+      discovering: { text: '🔍 Discovering', class: 'bg-yellow-100 text-yellow-800' },
+      connecting: { text: '⏳ Connecting...', class: 'bg-yellow-100 text-yellow-800' },
+      connected: { text: '✅ Connected', class: 'bg-green-100 text-green-800' },
+      error: { text: '❌ ' + (connectionError.value || 'Error'), class: 'bg-red-100 text-red-800' },
+    };
+    const badge = badges[mode];
+    if (!badge) return null;
+    return <span class={`text-xs px-2 py-1 rounded ${badge.class}`}>{badge.text}</span>;
+  };
 
   const handleConnect = async () => {
-    if (isConnected) {
-      await OfflineTransfer.disconnect();
-    } else {
+    // Stop both advertising AND any endpoint connections
+    if (mode !== 'idle') {
+      connectionMode.value = 'idle';
+      connectionError.value = null;
+      await OfflineTransfer.stopAdvertising().catch(() => {});
+      await OfflineTransfer.stopDiscovery().catch(() => {});
+      for (const epId of Object.keys(connectedEndpoints.value)) {
+        await OfflineTransfer.disconnectFromEndpoint({ endpointId: epId }).catch(() => {});
+      }
+      return;
+    }
+
+    // Start advertising and discovering
+    try {
+      connectionMode.value = 'advertising';
+      logService.info('Start Advertising...');
       await OfflineTransfer.startAdvertising({
         displayName: 'Device_' + Math.floor(Math.random() * 10000),
       });
+      connectionMode.value = 'discovering';
+      logService.info('Start Discovery...');
       await OfflineTransfer.startDiscovery();
+    } catch (e: unknown) {
+      connectionMode.value = 'error';
+      connectionError.value = e instanceof Error ? e.message : String(e);
     }
   };
 
@@ -127,16 +162,26 @@ export const AppShell = () => {
                     {caps?.isEmulator ? ' (Emulator)' : ''}
                   </p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2 items-center">
+                  {getStatusBadge()}
                   <button
                     class={
-                      isConnected
-                        ? 'bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded text-sm'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded text-sm'
+                      isPending
+                        ? 'bg-gray-400 text-white font-medium py-2 px-4 rounded text-sm cursor-not-allowed'
+                        : isConnected || mode !== 'idle'
+                          ? 'bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded text-sm'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded text-sm'
                     }
                     onClick={handleConnect}
+                    disabled={isPending}
                   >
-                    {isConnected ? 'Disconnect' : 'Connect'}
+                    {isPending
+                      ? mode === 'advertising'
+                        ? 'Starting...'
+                        : 'Stopping...'
+                      : mode !== 'idle'
+                        ? 'Disconnect'
+                        : 'Connect'}
                   </button>
                 </div>
               </div>
@@ -145,6 +190,15 @@ export const AppShell = () => {
                 <div class="bg-green-50 border border-green-200 rounded p-3 mb-4">
                   <p class="text-sm text-green-700">
                     Connected to <span class="font-medium">{connected[connectedId]?.endpointName || connectedId}</span>
+                  </p>
+                </div>
+              ) : mode !== 'idle' ? (
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+                  <p class="text-sm text-blue-700">
+                    {mode === 'advertising' && 'Waiting for nearby devices to discover you...'}
+                    {mode === 'discovering' && 'Looking for nearby devices...'}
+                    {mode === 'connecting' && 'Attempting to connect...'}
+                    {mode === 'error' && connectionError.value}
                   </p>
                 </div>
               ) : (
