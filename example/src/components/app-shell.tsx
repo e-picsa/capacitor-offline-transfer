@@ -3,11 +3,14 @@ import { OfflineTransfer, transferState } from '@picsa/capacitor-offline-transfe
 import { useSignal } from '@preact/signals';
 import { useEffect, useState } from 'preact/hooks';
 
-import { capabilities, connectedEndpoints, connectionMode, connectionError, initPluginState } from '../state';
+import { capabilities, connectedEndpoints, initPluginState } from '../state';
 import { logService } from '../state/log.service';
 
+import { AppHeader } from './app-header';
+import { ConnectionControls } from './connection-controls';
 import { ConnectionPanel } from './connection-panel';
-import { LogConsole } from './log-console';
+import { ConnectionStatus } from './connection-status';
+import { LogPanel } from './log-panel';
 import { TransferPanel } from './transfer-panel';
 import { ToastContainer } from './ui/toast';
 
@@ -74,66 +77,16 @@ export const AppShell = () => {
   const connected = connectedEndpoints.value;
   const connectedId = Object.keys(connected)[0] ?? null;
   const isConnected = !!connectedId;
-  const mode = connectionMode.value;
-  const isPending = mode === 'advertising' || mode === 'discovering' || mode === 'connecting';
-
-  const getStatusBadge = () => {
-    const badges: Record<string, { text: string; class: string }> = {
-      advertising: { text: '📡 Advertising', class: 'bg-blue-100 text-blue-800' },
-      discovering: { text: '🔍 Discovering', class: 'bg-yellow-100 text-yellow-800' },
-      connecting: { text: '⏳ Connecting...', class: 'bg-yellow-100 text-yellow-800' },
-      connected: { text: '✅ Connected', class: 'bg-green-100 text-green-800' },
-      error: { text: '❌ ' + (connectionError.value || 'Error'), class: 'bg-red-100 text-red-800' },
-    };
-    const badge = badges[mode];
-    if (!badge) return null;
-    return <span class={`text-xs px-2 py-1 rounded ${badge.class}`}>{badge.text}</span>;
-  };
-
-  const handleConnect = async () => {
-    // Stop both advertising AND any endpoint connections
-    if (mode !== 'idle') {
-      connectionMode.value = 'idle';
-      connectionError.value = null;
-      await OfflineTransfer.stopAdvertising().catch(() => {});
-      await OfflineTransfer.stopDiscovery().catch(() => {});
-      for (const epId of Object.keys(connectedEndpoints.value)) {
-        await OfflineTransfer.disconnectFromEndpoint({ endpointId: epId }).catch(() => {});
-      }
-      return;
-    }
-
-    // Start advertising and discovering
-    try {
-      connectionMode.value = 'advertising';
-      logService.info('Start Advertising...');
-      await OfflineTransfer.startAdvertising({
-        displayName: 'Device_' + Math.floor(Math.random() * 10000),
-      });
-      connectionMode.value = 'discovering';
-      logService.info('Start Discovery...');
-      await OfflineTransfer.startDiscovery();
-    } catch (e: unknown) {
-      connectionMode.value = 'error';
-      connectionError.value = e instanceof Error ? e.message : String(e);
-    }
-  };
 
   return (
     <div class="min-h-screen bg-white font-sans flex flex-col">
       <ToastContainer />
 
-      <header class="bg-blue-600 text-white px-4 pt-3 pb-3 flex items-center justify-between pt-[env(safe-area-inset-top)]">
-        <h1 class="text-xl font-semibold">Offline Transfer</h1>
-        <button
-          class="bg-blue-500 hover:bg-blue-400 text-white font-medium py-1 px-3 rounded text-sm"
-          onClick={() => {
-            showLogs.value = !showLogs.value;
-          }}
-        >
-          Logs
-        </button>
-      </header>
+      <AppHeader
+        onToggleLogs={() => {
+          showLogs.value = !showLogs.value;
+        }}
+      />
 
       <main class="flex-1 max-w-lg mx-auto p-4 w-full">
         {isLoading ? (
@@ -162,50 +115,10 @@ export const AppShell = () => {
                     {caps?.isEmulator ? ' (Emulator)' : ''}
                   </p>
                 </div>
-                <div class="flex gap-2 items-center">
-                  {getStatusBadge()}
-                  <button
-                    class={
-                      isPending
-                        ? 'bg-gray-400 text-white font-medium py-2 px-4 rounded text-sm cursor-not-allowed'
-                        : isConnected || mode !== 'idle'
-                          ? 'bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded text-sm'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded text-sm'
-                    }
-                    onClick={handleConnect}
-                    disabled={isPending}
-                  >
-                    {isPending
-                      ? mode === 'advertising'
-                        ? 'Starting...'
-                        : 'Stopping...'
-                      : mode !== 'idle'
-                        ? 'Disconnect'
-                        : 'Connect'}
-                  </button>
-                </div>
+                <ConnectionControls />
               </div>
 
-              {isConnected ? (
-                <div class="bg-green-50 border border-green-200 rounded p-3 mb-4">
-                  <p class="text-sm text-green-700">
-                    Connected to <span class="font-medium">{connected[connectedId]?.endpointName || connectedId}</span>
-                  </p>
-                </div>
-              ) : mode !== 'idle' ? (
-                <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
-                  <p class="text-sm text-blue-700">
-                    {mode === 'advertising' && 'Waiting for nearby devices to discover you...'}
-                    {mode === 'discovering' && 'Looking for nearby devices...'}
-                    {mode === 'connecting' && 'Attempting to connect...'}
-                    {mode === 'error' && connectionError.value}
-                  </p>
-                </div>
-              ) : (
-                <div class="bg-gray-50 border border-gray-200 rounded p-3 mb-4">
-                  <p class="text-sm text-gray-500">Tap Connect to start advertising and discovering nearby devices.</p>
-                </div>
-              )}
+              <ConnectionStatus />
 
               <ConnectionPanel />
             </section>
@@ -215,32 +128,12 @@ export const AppShell = () => {
         )}
       </main>
 
-      {showLogs.value ? (
-        <>
-          <div
-            class="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => {
-              showLogs.value = false;
-            }}
-          ></div>
-          <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-lg z-50 max-h-[60vh] overflow-hidden">
-            <div class="flex items-center justify-between p-3 border-b border-gray-200">
-              <h3 class="font-medium">Logs</h3>
-              <button
-                class="text-gray-500 hover:text-gray-700"
-                onClick={() => {
-                  showLogs.value = false;
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <div class="overflow-y-auto max-h-[calc(60vh-50px)]">
-              <LogConsole />
-            </div>
-          </div>
-        </>
-      ) : null}
+      <LogPanel
+        isOpen={showLogs.value}
+        onClose={() => {
+          showLogs.value = false;
+        }}
+      />
     </div>
   );
 };
