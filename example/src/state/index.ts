@@ -2,6 +2,8 @@ import type { PlatformCapabilities } from '@picsa/capacitor-offline-transfer';
 import { OfflineTransfer, transferState } from '@picsa/capacitor-offline-transfer';
 import { signal } from '@preact/signals';
 
+import { logService } from './log.service';
+
 export interface EndpointInfo {
   endpointId: string;
   endpointName: string;
@@ -103,11 +105,29 @@ export function initPluginState(): () => void {
     transferState.onTransferProgress(ev);
   });
 
+  const unsubAdvertisingStarted = OfflineTransfer.addListener('advertisingStarted', (ev) => {
+    logService.info('Advertising started: ' + ev.status);
+  });
+
+  const unsubDiscoveryStarted = OfflineTransfer.addListener('discoveryStarted', (ev) => {
+    logService.info('Discovery started: ' + ev.status);
+    connectionMode.value = 'discovering';
+  });
+
+  const unsubDiscoveryFailed = OfflineTransfer.addListener('discoveryFailed', (ev) => {
+    logService.error('Discovery failed: ' + ev.message);
+    connectionMode.value = 'error';
+    connectionError.value = ev.message;
+  });
+
   return async () => {
     (await unsubEndpointFound).remove();
     (await unsubEndpointLost).remove();
     (await unsubConnResult).remove();
     (await unsubFile).remove();
     (await unsubProgress).remove();
+    (await unsubAdvertisingStarted).remove();
+    (await unsubDiscoveryStarted).remove();
+    (await unsubDiscoveryFailed).remove();
   };
 }
