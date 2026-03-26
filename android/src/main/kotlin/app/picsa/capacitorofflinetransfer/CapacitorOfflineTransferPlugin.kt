@@ -115,6 +115,9 @@ class CapacitorOfflineTransferPlugin : Plugin() {
                         sessionStartTime = System.currentTimeMillis()
                         implementation.startDiscovery(call)
                     }
+                    else -> {
+                        call.reject("Method ${call.methodName} not supported here.")
+                    }
                 }
             } else {
                 requestPermissionForAlias("nearby", call, "permissionsCallback")
