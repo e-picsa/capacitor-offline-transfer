@@ -44,7 +44,7 @@
         "@capacitor/ios": "^8.0.0",
         "@capacitor/share": "^8.0.1",
         "@capacitor/splash-screen": "^8.0.0",
-        "@picsa/capacitor-offline-transfer": "file:..",
+        "@picsa/capacitor-offline-transfer": "*",
         "@preact/preset-vite": "^2.10.4",
         "@preact/signals": "^2.8.2",
         "@tailwindcss/vite": "^4.2.2",
@@ -196,7 +196,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.120.0", "", {}, "sha512-k1YNu55DuvAip/MGE1FTsIuU3FUCn6v/ujG9V7Nq5Df/kX2CWb13hhwD0lmJGMGqE+bE1MXvv9SZVnMzEXlWcg=="],
 
-    "@picsa/capacitor-offline-transfer": ["@picsa/capacitor-offline-transfer@root:", {}],
+    "@picsa/capacitor-offline-transfer": ["@picsa/capacitor-offline-transfer@8.1.5", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-qdfkMxHWm8w05dfvWoRJGBoI00kD4R2nF9O9WtJlDdh1H6gio9wVtFzmxc4POUUGE3NPCdn5jUpiIaoBL9eqFQ=="],
 
     "@preact/preset-vite": ["@preact/preset-vite@2.10.4", "", { "dependencies": { "@babel/plugin-transform-react-jsx": "^7.27.1", "@babel/plugin-transform-react-jsx-development": "^7.27.1", "@prefresh/vite": "^2.4.11", "@rollup/pluginutils": "^5.0.0", "babel-plugin-transform-hook-names": "^1.0.2", "debug": "^4.4.3", "magic-string": "^0.30.21", "picocolors": "^1.1.1", "vite-prerender-plugin": "^0.5.8", "zimmerframe": "^1.1.4" }, "peerDependencies": { "@babel/core": "7.x", "vite": "2.x || 3.x || 4.x || 5.x || 6.x || 7.x || 8.x" } }, "sha512-L7RQRs2GiG0lLUz7JSg07vU6lhlzdIthH0eqYZmRR70tTB9ikKCq2LHr+PZzhzIOco3Dioi6P6e/fjAmDUMJbQ=="],
 
