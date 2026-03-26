@@ -20,62 +20,75 @@ const WEB_CAPABILITIES: PlatformCapabilities = {
 export class OfflineTransferWeb extends WebPlugin implements OfflineTransferPlugin {
   private initialized = false;
 
-  async initialize(_options: { serviceId: string }): Promise<void> {
+  async initialize(_options: { serviceId: string }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
     this.initialized = true;
     transferState.onCapabilitiesDetected(WEB_CAPABILITIES);
+    return { success: true };
   }
 
   async checkCapabilities(): Promise<PlatformCapabilities> {
     return WEB_CAPABILITIES;
   }
 
-  async startAdvertising(_options: { displayName: string }): Promise<void> {
+  async startAdvertising(_options: { displayName: string }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async stopAdvertising(): Promise<void> {
+  async stopAdvertising(): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async startDiscovery(): Promise<void> {
+  async startDiscovery(): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async stopDiscovery(): Promise<void> {
+  async stopDiscovery(): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async connect(_options: { endpointId: string; displayName: string }): Promise<void> {
+  async connect(_options: { endpointId: string; displayName: string }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async acceptConnection(_options: { endpointId: string }): Promise<void> {
+  async acceptConnection(_options: { endpointId: string }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async rejectConnection(_options: { endpointId: string }): Promise<void> {
+  async rejectConnection(_options: { endpointId: string }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async disconnectFromEndpoint(_options: { endpointId: string }): Promise<void> {
+  async disconnectFromEndpoint(_options: { endpointId: string }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async disconnect(): Promise<void> {
+  async disconnect(): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async sendMessage(_options: { endpointId: string; data: string }): Promise<void> {
+  async sendMessage(_options: { endpointId: string; data: string }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
-  async sendFile(_options: { endpointId: string; filePath: string; fileName: string }): Promise<void> {
+  async sendFile(_options: { endpointId: string; filePath: string; fileName: string }): Promise<{ payloadId: string }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { payloadId: _options.fileName };
   }
 
-  async setLogLevel(_options: { logLevel: number }): Promise<void> {
+  async setLogLevel(_options: { logLevel: number }): Promise<{ success: true }> {
     console.warn('OfflineTransfer: Web implementation not available');
+    return { success: true };
   }
 
   addListener(eventName: string, listenerFunc: (...args: any[]) => any): any {

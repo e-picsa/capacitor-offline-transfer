@@ -101,7 +101,7 @@ class CapacitorOfflineTransfer {
             lanServerManager.start(8080, call)
         } else {
             nearbyManager.startAdvertising(displayName ?: Build.MODEL)
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         }
     }
 
@@ -114,10 +114,10 @@ class CapacitorOfflineTransfer {
         val caps = checkCapabilities()
         if (caps.transferMethod == "lan") {
             // Emulators don't "discover", they just wait for manual connect via URL
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         } else {
             nearbyManager.startDiscovery()
-            call.resolve()
+            call.resolve(JSObject().apply { put("success", true) })
         }
     }
 
@@ -169,10 +169,11 @@ class CapacitorOfflineTransfer {
         }
     }
 
-    fun sendFile(endpointId: String, filePath: String, fileName: String) {
+    fun sendFile(endpointId: String, filePath: String, fileName: String): String? {
         val caps = checkCapabilities()
-        if (caps.transferMethod == "lan") {
+        return if (caps.transferMethod == "lan") {
             lanClientManager.sendFile(endpointId, filePath, fileName)
+            fileName
         } else {
             nearbyManager.sendFile(endpointId, filePath, fileName)
         }

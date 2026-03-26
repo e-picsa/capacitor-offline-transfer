@@ -31,7 +31,7 @@ export interface OfflineTransferPlugin {
    *                          - **iOS Requirement**: Must match the `NSBonjourServices` entry in `Info.plist`.
    *                          - **Android**: Used as the Google Nearby Connections Service ID.
    */
-  initialize(options: { serviceId: string }): Promise<void>;
+  initialize(options: { serviceId: string }): Promise<{ success: true }>;
 
   /**
    * Checks platform capabilities and determines the best available transfer method.
@@ -42,65 +42,65 @@ export interface OfflineTransferPlugin {
   /**
    * Starts advertising the device to nearby peers.
    */
-  startAdvertising(options: { displayName: string }): Promise<void>;
+  startAdvertising(options: { displayName: string }): Promise<{ success: true }>;
 
   /**
    * Stops advertising.
    */
-  stopAdvertising(): Promise<void>;
+  stopAdvertising(): Promise<{ success: true }>;
 
   /**
    * Starts discovery of nearby peers.
    */
-  startDiscovery(): Promise<void>;
+  startDiscovery(): Promise<{ success: true }>;
 
   /**
    * Stops discovery.
    */
-  stopDiscovery(): Promise<void>;
+  stopDiscovery(): Promise<{ success: true }>;
 
   /**
    * Requests a connection to a discovered endpoint.
    */
-  connect(options: { endpointId: string; displayName: string }): Promise<void>;
+  connect(options: { endpointId: string; displayName: string }): Promise<{ success: true }>;
 
   /**
    * Accepts an incoming connection request.
    */
-  acceptConnection(options: { endpointId: string }): Promise<void>;
+  acceptConnection(options: { endpointId: string }): Promise<{ success: true }>;
 
   /**
    * Rejects an incoming connection request.
    */
-  rejectConnection(options: { endpointId: string }): Promise<void>;
+  rejectConnection(options: { endpointId: string }): Promise<{ success: true }>;
 
   /**
    * Disconnects from a specific endpoint.
    */
-  disconnectFromEndpoint(options: { endpointId: string }): Promise<void>;
+  disconnectFromEndpoint(options: { endpointId: string }): Promise<{ success: true }>;
 
   /**
    * Disconnects from all connected endpoints.
    */
-  disconnect(): Promise<void>;
+  disconnect(): Promise<{ success: true }>;
 
   /**
    * Sends a small text message to a connected endpoint.
    */
-  sendMessage(options: { endpointId: string; data: string }): Promise<void>;
+  sendMessage(options: { endpointId: string; data: string }): Promise<{ success: true }>;
 
   /**
    * Sends a large file to a connected endpoint.
    * Uses Payload.Type.FILE (Android) or Resource URLs (iOS) to avoid OOM.
    * @param options.filePath The local path or URL to the file.
    */
-  sendFile(options: { endpointId: string; filePath: string; fileName: string }): Promise<void>;
+  sendFile(options: { endpointId: string; filePath: string; fileName: string }): Promise<{ payloadId: string }>;
 
   /**
    * Sets the logging level.
    * @param options.logLevel (0=None, 1=Error, 2=Warn, 3=Info, 4=Debug, 5=Verbose)
    */
-  setLogLevel(options: { logLevel: number }): Promise<void>;
+  setLogLevel(options: { logLevel: number }): Promise<{ success: true }>;
 
   /**
    * Event Listeners
@@ -138,6 +138,21 @@ export interface OfflineTransferPlugin {
   addListener(
     eventName: 'fileReceived',
     listenerFunc: (event: FileReceivedEvent) => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  addListener(
+    eventName: 'advertisingStarted',
+    listenerFunc: (event: AdvertisingStartedEvent) => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  addListener(
+    eventName: 'discoveryStarted',
+    listenerFunc: (event: DiscoveryStartedEvent) => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  addListener(
+    eventName: 'discoveryFailed',
+    listenerFunc: (event: DiscoveryFailedEvent) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -209,6 +224,18 @@ export interface FileReceivedEvent {
   payloadId: string;
   fileName: string;
   path: string;
+}
+
+export interface AdvertisingStartedEvent {
+  status: 'SUCCESS';
+}
+
+export interface DiscoveryStartedEvent {
+  status: 'SUCCESS';
+}
+
+export interface DiscoveryFailedEvent {
+  message: string;
 }
 
 export interface TransferStateSnapshot {

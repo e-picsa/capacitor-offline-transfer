@@ -96,7 +96,8 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
     private val payloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
             if (payload.type == Payload.Type.BYTES) {
-                val data = String(payload.asBytes()!!)
+                val bytes = payload.asBytes() ?: return
+                val data = String(bytes)
                 try {
                     val json = JSObject(data)
                     if (json.has("filePayloadId") && json.has("fileName")) {
@@ -169,6 +170,11 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         val options = AdvertisingOptions.Builder().setStrategy(strategy).build()
         Nearby.getConnectionsClient(context)
             .startAdvertising(displayName, serviceId, connectionLifecycleCallback, options)
+            .addOnSuccessListener {
+                plugin.emit("advertisingStarted", JSObject().apply {
+                    put("status", "SUCCESS")
+                })
+            }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Advertising failed", e)
                 plugin.emit("connectionResult", JSObject().apply {
@@ -187,10 +193,14 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         val options = DiscoveryOptions.Builder().setStrategy(strategy).build()
         Nearby.getConnectionsClient(context)
             .startDiscovery(serviceId, endpointDiscoveryCallback, options)
+            .addOnSuccessListener {
+                plugin.emit("discoveryStarted", JSObject().apply {
+                    put("status", "SUCCESS")
+                })
+            }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Discovery failed", e)
-                plugin.emit("endpointLost", JSObject().apply {
-                    put("endpointId", "local")
+                plugin.emit("discoveryFailed", JSObject().apply {
                     put("message", "Discovery failed: ${e.message}")
                 })
             }
@@ -234,19 +244,22 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
         Nearby.getConnectionsClient(context).sendPayload(endpointId, payload)
     }
 
-    fun sendFile(endpointId: String, filePath: String, fileName: String) {
-        try {
+    fun sendFile(endpointId: String, filePath: String, fileName: String): String? {
+        return try {
             val uri = Uri.parse(filePath)
             context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
                 val filePayload = Payload.fromFile(pfd)
+                val payloadId = filePayload.id.toString()
                 val metadata = JSObject().apply {
-                    put("filePayloadId", filePayload.id)
+                    put("filePayloadId", payloadId)
                     put("fileName", fileName)
                 }
                 val metadataPayload = Payload.fromBytes(metadata.toString().toByteArray())
                 Nearby.getConnectionsClient(context).sendPayload(endpointId, metadataPayload)
                 Nearby.getConnectionsClient(context).sendPayload(endpointId, filePayload)
+                payloadId
             }
+            null
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send file", e)
             plugin.emit("transferProgress", JSObject().apply {
@@ -256,6 +269,7 @@ class NearbyConnectionsManager(private val context: Context, private val plugin:
                 put("totalBytes", 0L)
                 put("status", "FAILURE")
             })
+            null
         }
     }
 

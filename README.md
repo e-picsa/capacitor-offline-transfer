@@ -235,6 +235,9 @@ Add these to your `Info.plist`:
 * [`addListener('messageReceived', ...)`](#addlistenermessagereceived-)
 * [`addListener('transferProgress', ...)`](#addlistenertransferprogress-)
 * [`addListener('fileReceived', ...)`](#addlistenerfilereceived-)
+* [`addListener('advertisingStarted', ...)`](#addlisteneradvertisingstarted-)
+* [`addListener('discoveryStarted', ...)`](#addlistenerdiscoverystarted-)
+* [`addListener('discoveryFailed', ...)`](#addlistenerdiscoveryfailed-)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`removeAllListeners()`](#removealllisteners)
@@ -251,7 +254,7 @@ Add these to your `Info.plist`:
 ### initialize(...)
 
 ```typescript
-initialize(options: { serviceId: string; }) => Promise<void>
+initialize(options: { serviceId: string; }) => Promise<{ success: true; }>
 ```
 
 Initializes the plugin with a unique service identifier.
@@ -262,6 +265,8 @@ Only devices using the same `serviceId` will be able to discover and connect to 
 | Param         | Type                                | Description            |
 | ------------- | ----------------------------------- | ---------------------- |
 | **`options`** | <code>{ serviceId: string; }</code> | Initialization options |
+
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
 
 --------------------
 
@@ -283,7 +288,7 @@ Call this after initialization to know what features are available.
 ### startAdvertising(...)
 
 ```typescript
-startAdvertising(options: { displayName: string; }) => Promise<void>
+startAdvertising(options: { displayName: string; }) => Promise<{ success: true; }>
 ```
 
 Starts advertising the device to nearby peers.
@@ -292,16 +297,20 @@ Starts advertising the device to nearby peers.
 | ------------- | ------------------------------------- |
 | **`options`** | <code>{ displayName: string; }</code> |
 
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
+
 --------------------
 
 
 ### stopAdvertising()
 
 ```typescript
-stopAdvertising() => Promise<void>
+stopAdvertising() => Promise<{ success: true; }>
 ```
 
 Stops advertising.
+
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
 
 --------------------
 
@@ -309,10 +318,12 @@ Stops advertising.
 ### startDiscovery()
 
 ```typescript
-startDiscovery() => Promise<void>
+startDiscovery() => Promise<{ success: true; }>
 ```
 
 Starts discovery of nearby peers.
+
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
 
 --------------------
 
@@ -320,10 +331,12 @@ Starts discovery of nearby peers.
 ### stopDiscovery()
 
 ```typescript
-stopDiscovery() => Promise<void>
+stopDiscovery() => Promise<{ success: true; }>
 ```
 
 Stops discovery.
+
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
 
 --------------------
 
@@ -331,7 +344,7 @@ Stops discovery.
 ### connect(...)
 
 ```typescript
-connect(options: { endpointId: string; displayName: string; }) => Promise<void>
+connect(options: { endpointId: string; displayName: string; }) => Promise<{ success: true; }>
 ```
 
 Requests a connection to a discovered endpoint.
@@ -340,13 +353,15 @@ Requests a connection to a discovered endpoint.
 | ------------- | --------------------------------------------------------- |
 | **`options`** | <code>{ endpointId: string; displayName: string; }</code> |
 
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
+
 --------------------
 
 
 ### acceptConnection(...)
 
 ```typescript
-acceptConnection(options: { endpointId: string; }) => Promise<void>
+acceptConnection(options: { endpointId: string; }) => Promise<{ success: true; }>
 ```
 
 Accepts an incoming connection request.
@@ -355,13 +370,15 @@ Accepts an incoming connection request.
 | ------------- | ------------------------------------ |
 | **`options`** | <code>{ endpointId: string; }</code> |
 
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
+
 --------------------
 
 
 ### rejectConnection(...)
 
 ```typescript
-rejectConnection(options: { endpointId: string; }) => Promise<void>
+rejectConnection(options: { endpointId: string; }) => Promise<{ success: true; }>
 ```
 
 Rejects an incoming connection request.
@@ -370,13 +387,15 @@ Rejects an incoming connection request.
 | ------------- | ------------------------------------ |
 | **`options`** | <code>{ endpointId: string; }</code> |
 
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
+
 --------------------
 
 
 ### disconnectFromEndpoint(...)
 
 ```typescript
-disconnectFromEndpoint(options: { endpointId: string; }) => Promise<void>
+disconnectFromEndpoint(options: { endpointId: string; }) => Promise<{ success: true; }>
 ```
 
 Disconnects from a specific endpoint.
@@ -385,16 +404,20 @@ Disconnects from a specific endpoint.
 | ------------- | ------------------------------------ |
 | **`options`** | <code>{ endpointId: string; }</code> |
 
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
+
 --------------------
 
 
 ### disconnect()
 
 ```typescript
-disconnect() => Promise<void>
+disconnect() => Promise<{ success: true; }>
 ```
 
 Disconnects from all connected endpoints.
+
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
 
 --------------------
 
@@ -402,7 +425,7 @@ Disconnects from all connected endpoints.
 ### sendMessage(...)
 
 ```typescript
-sendMessage(options: { endpointId: string; data: string; }) => Promise<void>
+sendMessage(options: { endpointId: string; data: string; }) => Promise<{ success: true; }>
 ```
 
 Sends a small text message to a connected endpoint.
@@ -411,13 +434,15 @@ Sends a small text message to a connected endpoint.
 | ------------- | -------------------------------------------------- |
 | **`options`** | <code>{ endpointId: string; data: string; }</code> |
 
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
+
 --------------------
 
 
 ### sendFile(...)
 
 ```typescript
-sendFile(options: { endpointId: string; filePath: string; fileName: string; }) => Promise<void>
+sendFile(options: { endpointId: string; filePath: string; fileName: string; }) => Promise<{ payloadId: string; }>
 ```
 
 Sends a large file to a connected endpoint.
@@ -427,13 +452,15 @@ Uses Payload.Type.FILE (Android) or Resource URLs (iOS) to avoid OOM.
 | ------------- | ------------------------------------------------------------------------ |
 | **`options`** | <code>{ endpointId: string; filePath: string; fileName: string; }</code> |
 
+**Returns:** <code>Promise&lt;{ payloadId: string; }&gt;</code>
+
 --------------------
 
 
 ### setLogLevel(...)
 
 ```typescript
-setLogLevel(options: { logLevel: number; }) => Promise<void>
+setLogLevel(options: { logLevel: number; }) => Promise<{ success: true; }>
 ```
 
 Sets the logging level.
@@ -441,6 +468,8 @@ Sets the logging level.
 | Param         | Type                               |
 | ------------- | ---------------------------------- |
 | **`options`** | <code>{ logLevel: number; }</code> |
+
+**Returns:** <code>Promise&lt;{ success: true; }&gt;</code>
 
 --------------------
 
@@ -553,6 +582,54 @@ addListener(eventName: 'fileReceived', listenerFunc: (event: FileReceivedEvent) 
 | ------------------ | ----------------------------------------------------------------------------------- |
 | **`eventName`**    | <code>'fileReceived'</code>                                                         |
 | **`listenerFunc`** | <code>(event: <a href="#filereceivedevent">FileReceivedEvent</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+
+--------------------
+
+
+### addListener('advertisingStarted', ...)
+
+```typescript
+addListener(eventName: 'advertisingStarted', listenerFunc: (event: AdvertisingStartedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+```
+
+| Param              | Type                                                                                            |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'advertisingStarted'</code>                                                               |
+| **`listenerFunc`** | <code>(event: <a href="#advertisingstartedevent">AdvertisingStartedEvent</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+
+--------------------
+
+
+### addListener('discoveryStarted', ...)
+
+```typescript
+addListener(eventName: 'discoveryStarted', listenerFunc: (event: DiscoveryStartedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+```
+
+| Param              | Type                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'discoveryStarted'</code>                                                             |
+| **`listenerFunc`** | <code>(event: <a href="#discoverystartedevent">DiscoveryStartedEvent</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+
+--------------------
+
+
+### addListener('discoveryFailed', ...)
+
+```typescript
+addListener(eventName: 'discoveryFailed', listenerFunc: (event: DiscoveryFailedEvent) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+```
+
+| Param              | Type                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'discoveryFailed'</code>                                                            |
+| **`listenerFunc`** | <code>(event: <a href="#discoveryfailedevent">DiscoveryFailedEvent</a>) =&gt; void</code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
@@ -707,6 +784,27 @@ Returns the state snapshot directly in the resolved promise.
 | **`payloadId`**  | <code>string</code> |
 | **`fileName`**   | <code>string</code> |
 | **`path`**       | <code>string</code> |
+
+
+#### AdvertisingStartedEvent
+
+| Prop         | Type                   |
+| ------------ | ---------------------- |
+| **`status`** | <code>'SUCCESS'</code> |
+
+
+#### DiscoveryStartedEvent
+
+| Prop         | Type                   |
+| ------------ | ---------------------- |
+| **`status`** | <code>'SUCCESS'</code> |
+
+
+#### DiscoveryFailedEvent
+
+| Prop          | Type                |
+| ------------- | ------------------- |
+| **`message`** | <code>string</code> |
 
 
 #### PermissionStatus

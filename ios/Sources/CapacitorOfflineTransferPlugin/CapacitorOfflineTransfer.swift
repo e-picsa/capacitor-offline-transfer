@@ -105,15 +105,17 @@ protocol CapacitorOfflineTransferDelegate: AnyObject {
         }
     }
     
-    func sendFile(endpointId: String, filePath: String, fileName: String) {
-        guard let peer = peersDict[endpointId] else { return }
+    func sendFile(endpointId: String, filePath: String, fileName: String) -> String? {
+        guard let peer = peersDict[endpointId] else { return nil }
         let fileURL = URL(fileURLWithPath: filePath)
+        let payloadId = UUID().uuidString
         
-        session.sendResource(at: fileURL, withName: fileName, toPeer: peer) { error in
+        session.sendResource(at: fileURL, withName: payloadId, toPeer: peer) { error in
             if let error = error {
-                self.delegate?.onTransferProgress(endpointId: endpointId, payloadId: fileName, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
+                self.delegate?.onTransferProgress(endpointId: endpointId, payloadId: payloadId, bytesTransferred: 0, totalBytes: 0, status: "FAILURE")
             }
         }
+        return payloadId
     }
 
     func getDiscoveredEndpoints() -> [String: [String: Any]] {
