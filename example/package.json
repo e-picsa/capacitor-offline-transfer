@@ -19,7 +19,7 @@
     "@capacitor/ios": "^8.0.0",
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.0",
-    "@picsa/capacitor-offline-transfer": "*",
+    "@picsa/capacitor-offline-transfer": "file:..",
     "@preact/preset-vite": "^2.10.4",
     "@preact/signals": "^2.8.2",
     "@tailwindcss/vite": "^4.2.2",

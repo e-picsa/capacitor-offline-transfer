@@ -10,6 +10,12 @@ export async function openAndroidStudio(): Promise<void> {
 }
 
 export async function syncAndroidNative(): Promise<boolean> {
+  // Ensure bun installs from child to update parent plugin file link
+
+  // NOTE - cannot rely on bun workspace "@picsa/capacitor-offline-transfer": "*"
+  // to sync due to global caching
+  const installedOk = await runInExample(['bun', 'install'], 'Install module code');
+  if (!installedOk) return false;
   const syncOk = await runInExample(['bunx', 'cap', 'sync', 'android'], 'cap sync android');
   if (!syncOk) return false;
   return await runGradleBuild();
